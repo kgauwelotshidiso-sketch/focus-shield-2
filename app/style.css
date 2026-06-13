@@ -1,0 +1,36 @@
+body {
+        background: #121212;
+            color: white;
+                font-family: Arial, sans-serif;
+                    margin: 0;
+                        padding: 20px;
+                        }
+
+                        .container {
+                            max-width: 400px;
+                                margin: auto;
+                                }
+
+                                .card {
+                                    background: #1e1e1e;
+                                        padding: 15px;
+                                            margin-bottom: 15px;
+                                                border-radius: 10px;
+                                                }
+
+                                                .streak {
+                                                    font-size: 32px;
+                                                        font-weight: bold;
+                                                        }
+
+                                                        button {
+                                                            width: 100%;
+                                                                padding: 15px;
+                                                                    margin-top: 10px;
+                                                                        border: none;
+                                                                            border-radius: 10px;
+                                                                                background: #4f46e5;
+                                                                                    color: white;
+                                                                                        font-size: 16px;
+                                                                                        }
+}
