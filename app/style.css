@@ -33,3 +33,15 @@ body {
                                                                                     color: white;
                                                                                         font-size: 16px;
                                                                                         }
+.container {
+        max-width: 500px;
+            margin: auto;
+                padding: 20px;
+                }
+
+                .card {
+                    background: #1c1c1c;
+                        padding: 20px;
+                            border-radius: 10px;
+                                margin-bottom: 15px;
+                                }
