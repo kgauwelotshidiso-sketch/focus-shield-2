@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=autogoals1">
+    <link rel="stylesheet" href="style.css?v=goalpopupfix1">
 </head>
 <body>
 
@@ -3523,6 +3523,38 @@ function saveFocusShieldGoals(goals) {
 }
 
 
+
+function showGoalCompletionPopup(goalNames) {
+    const oldPopup = document.getElementById("goalPopupOverlay");
+
+    if (oldPopup) {
+        oldPopup.remove();
+    }
+
+    let goalList = "";
+
+    goalNames.forEach(function(goalName) {
+        goalList += `<p class="goal-popup-name">${escapeHtml(goalName)}</p>`;
+    });
+
+    const popup = document.createElement("div");
+    popup.id = "goalPopupOverlay";
+    popup.innerHTML = `
+        <div class="goal-popup">
+            <div class="goal-popup-icon">&#127919;</div>
+            <h2>Goal Completed!</h2>
+            ${goalList}
+            <button id="closeGoalPopupBtn">Continue</button>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById("closeGoalPopupBtn").addEventListener("click", function() {
+        popup.remove();
+    });
+}
+
 function normalizeGoalCategory(value) {
     return String(value || "").trim().toLowerCase();
 }
@@ -3572,7 +3604,7 @@ function autoProgressFocusShieldGoals(category, amount) {
 
     if (completedGoalNames.length > 0) {
         setTimeout(function() {
-            alert("Goal completed: " + completedGoalNames.join(", "));
+            showGoalCompletionPopup(completedGoalNames);
         }, 250);
     }
 }
@@ -3617,10 +3649,17 @@ function createFocusShieldGoal(title, target, unit, category) {
     goals.unshift(newGoal);
     saveFocusShieldGoals(goals);
     openGoalManagerPage();
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 250);
+    }
 }
 
 function updateFocusShieldGoalProgress(goalId, changeAmount) {
     const goals = getFocusShieldGoals();
+    let completedGoalNames = [];
 
     goals.forEach(function(goal) {
         if (goal.id === goalId && !goal.completed) {
@@ -3630,6 +3669,7 @@ function updateFocusShieldGoalProgress(goalId, changeAmount) {
                 goal.progress = Number(goal.target || 1);
                 goal.completed = true;
                 goal.completedAt = new Date().toISOString();
+                completedGoalNames.push(goal.title);
             }
         }
     });
@@ -3640,17 +3680,25 @@ function updateFocusShieldGoalProgress(goalId, changeAmount) {
 
 function completeFocusShieldGoal(goalId) {
     const goals = getFocusShieldGoals();
+    let completedGoalNames = [];
 
     goals.forEach(function(goal) {
-        if (goal.id === goalId) {
+        if (goal.id === goalId && !goal.completed) {
             goal.progress = Number(goal.target || 1);
             goal.completed = true;
             goal.completedAt = new Date().toISOString();
+            completedGoalNames.push(goal.title);
         }
     });
 
     saveFocusShieldGoals(goals);
     openGoalManagerPage();
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 250);
+    }
 }
 
 function deleteFocusShieldGoal(goalId) {
@@ -3890,6 +3938,139 @@ if (upgradedGoalsBtn) {
 
 
 setTimeout(updateHomeGoalSystem, 1100);
+
+/* Goal Completion Popup Fix */
+function showGoalCompletionPopup(goalNames) {
+    const oldPopup = document.getElementById("goalPopupOverlay");
+
+    if (oldPopup) {
+        oldPopup.remove();
+    }
+
+    let goalList = "";
+
+    goalNames.forEach(function(goalName) {
+        goalList += `<p class="goal-popup-name">${escapeHtml(goalName)}</p>`;
+    });
+
+    const popup = document.createElement("div");
+    popup.id = "goalPopupOverlay";
+    popup.innerHTML = `
+        <div class="goal-popup">
+            <div class="goal-popup-icon">&#127919;</div>
+            <h2>Goal Completed!</h2>
+            ${goalList}
+            <button id="closeGoalPopupBtn">Continue</button>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById("closeGoalPopupBtn").addEventListener("click", function() {
+        popup.remove();
+    });
+}
+
+function updateFocusShieldGoalProgress(goalId, changeAmount) {
+    const goals = getFocusShieldGoals();
+    let completedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (goal.id === goalId && !goal.completed) {
+            const target = Math.max(1, Number(goal.target || 1));
+            goal.progress = Math.max(0, Number(goal.progress || 0) + Number(changeAmount || 1));
+
+            if (goal.progress >= target) {
+                goal.progress = target;
+                goal.completed = true;
+                goal.completedAt = new Date().toISOString();
+                completedGoalNames.push(goal.title);
+            }
+        }
+    });
+
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 300);
+    }
+}
+
+function completeFocusShieldGoal(goalId) {
+    const goals = getFocusShieldGoals();
+    let completedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (goal.id === goalId && !goal.completed) {
+            goal.progress = Math.max(1, Number(goal.target || 1));
+            goal.completed = true;
+            goal.completedAt = new Date().toISOString();
+            completedGoalNames.push(goal.title);
+        }
+    });
+
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 300);
+    }
+}
+
+function autoProgressFocusShieldGoals(category, amount) {
+    if (typeof getFocusShieldGoals !== "function" || typeof saveFocusShieldGoals !== "function") {
+        return;
+    }
+
+    const goals = getFocusShieldGoals();
+    const targetCategory = normalizeGoalCategory(category);
+    let updated = false;
+    let completedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (goal.completed) {
+            return;
+        }
+
+        const goalCategory = normalizeGoalCategory(goal.category);
+
+        if (goalCategory !== targetCategory) {
+            return;
+        }
+
+        const target = Math.max(1, Number(goal.target || 1));
+        goal.progress = Math.max(0, Number(goal.progress || 0) + Number(amount || 1));
+
+        if (goal.progress >= target) {
+            goal.progress = target;
+            goal.completed = true;
+            goal.completedAt = new Date().toISOString();
+            completedGoalNames.push(goal.title);
+        }
+
+        updated = true;
+    });
+
+    if (updated) {
+        saveFocusShieldGoals(goals);
+
+        if (typeof updateHomeGoalSystem === "function") {
+            updateHomeGoalSystem();
+        }
+    }
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 300);
+    }
+}
+
 </script>
 
 </body>
