@@ -47,6 +47,12 @@
     </div>
 
     <div class="card">
+        <h2>Discipline Level</h2>
+        <h3 id="homeLevel">Level 1</h3>
+        <p id="homeXp">XP: 0 / 25</p>
+    </div>
+
+    <div class="card">
         <h2>Focus Sessions</h2>
         <h3 id="homeFocusSessions">0</h3>
     </div>
@@ -83,6 +89,7 @@
     <button id="timerBtn">Focus Timer</button>
     <button id="concentrationBtn">Concentration</button>
     <button id="progressBtn">Progress</button>
+    <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
     <button id="reflectionHistoryBtn">Reflection History</button>
@@ -517,6 +524,98 @@ function checkBadgeUnlocks() {
     return false;
 }
 
+
+function getReflectionCount() {
+    const reflectionHistory = localStorage.getItem("reflectionHistory");
+
+    if (reflectionHistory === null) {
+        return 0;
+    }
+
+    const history = JSON.parse(reflectionHistory);
+    const dates = Object.keys(history);
+
+    let count = 0;
+
+    dates.forEach(function(dateKey) {
+        const reflection = history[dateKey];
+
+        if (
+            reflection &&
+            (
+                String(reflection.happened || "").trim() !== "" ||
+                String(reflection.learned || "").trim() !== "" ||
+                String(reflection.improve || "").trim() !== ""
+            )
+        ) {
+            count++;
+        }
+    });
+
+    return count;
+}
+
+function getTotalXp() {
+    const listeningXp = getNumber("totalListeningWins") * 5;
+    const focusXp = getNumber("focusSessions") * 10;
+    const concentrationXp = getNumber("concentrationSessions") * 10;
+    const reflectionXp = getReflectionCount() * 10;
+
+    return listeningXp + focusXp + concentrationXp + reflectionXp;
+}
+
+function getLevelInfo() {
+    const xpPerLevel = 25;
+    const totalXp = getTotalXp();
+
+    const level = Math.floor(totalXp / xpPerLevel) + 1;
+    const currentLevelXp = totalXp % xpPerLevel;
+    const xpNeeded = xpPerLevel;
+
+    return {
+        totalXp: totalXp,
+        level: level,
+        currentLevelXp: currentLevelXp,
+        xpNeeded: xpNeeded
+    };
+}
+
+function updateHomeLevel() {
+    const homeLevel = document.getElementById("homeLevel");
+    const homeXp = document.getElementById("homeXp");
+
+    if (!homeLevel || !homeXp) {
+        return;
+    }
+
+    const levelInfo = getLevelInfo();
+
+    homeLevel.textContent = "Level " + levelInfo.level;
+    homeXp.textContent = "XP: " + levelInfo.currentLevelXp + " / " + levelInfo.xpNeeded;
+}
+
+function getXpBreakdownHtml() {
+    const listeningWins = getNumber("totalListeningWins");
+    const focusSessions = getNumber("focusSessions");
+    const concentrationSessions = getNumber("concentrationSessions");
+    const reflectionCount = getReflectionCount();
+
+    const listeningXp = listeningWins * 5;
+    const focusXp = focusSessions * 10;
+    const concentrationXp = concentrationSessions * 10;
+    const reflectionXp = reflectionCount * 10;
+
+    return `
+        <div class="card">
+            <h2>XP Breakdown</h2>
+            <p><strong>Listening Wins:</strong> ${listeningWins} × 5 XP = ${listeningXp} XP</p>
+            <p><strong>Focus Sessions:</strong> ${focusSessions} × 10 XP = ${focusXp} XP</p>
+            <p><strong>Concentration Sessions:</strong> ${concentrationSessions} × 10 XP = ${concentrationXp} XP</p>
+            <p><strong>Daily Reflections:</strong> ${reflectionCount} × 10 XP = ${reflectionXp} XP</p>
+        </div>
+    `;
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -542,6 +641,7 @@ function formatTimer(seconds) {
 
 updateHomeStats();
 updateHomeBadges();
+updateHomeLevel();
 initializeBadgeMemory();
 
 document.getElementById("goalsBtn").addEventListener("click", function() {
@@ -1206,6 +1306,47 @@ if (achievementsBtn) {
             </div>
 
             ${getBadgeHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+
+const levelBtn = document.getElementById("levelBtn");
+
+if (levelBtn) {
+    levelBtn.addEventListener("click", function() {
+        const levelInfo = getLevelInfo();
+        const progressPercent = Math.round((levelInfo.currentLevelXp / levelInfo.xpNeeded) * 100);
+
+        showPage(`
+            <h1>Discipline Level</h1>
+
+            <div class="card level-card">
+                <h2>Current Level</h2>
+                <h3>Level ${levelInfo.level}</h3>
+                <p>XP: ${levelInfo.currentLevelXp} / ${levelInfo.xpNeeded}</p>
+
+                <div class="xp-bar">
+                    <div class="xp-fill" style="width: ${progressPercent}%"></div>
+                </div>
+
+                <p>Total XP earned: ${levelInfo.totalXp}</p>
+            </div>
+
+            <div class="card">
+                <h2>How XP Works</h2>
+                <p><strong>Listening Win:</strong> 5 XP</p>
+                <p><strong>Focus Session:</strong> 10 XP</p>
+                <p><strong>Concentration Session:</strong> 10 XP</p>
+                <p><strong>Daily Reflection:</strong> 10 XP</p>
+            </div>
+
+            ${getXpBreakdownHtml()}
 
             <button id="backBtn">Back</button>
         `);
