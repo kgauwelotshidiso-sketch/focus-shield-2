@@ -21,6 +21,11 @@
     </div>
 
     <div class="card">
+        <h2>Total Listening Wins</h2>
+        <h3 id="homeTotalWins">0</h3>
+    </div>
+
+    <div class="card">
         <h2>Today's Affirmation</h2>
         <p>"I pause, I listen, and I follow my dreams."</p>
     </div>
@@ -47,6 +52,7 @@ function formatDays(number) {
     if (number === 1) {
         return "1 Day";
     }
+
     return number + " Days";
 }
 
@@ -89,9 +95,11 @@ function updateLongestStreak(currentStreak) {
 function updateHomeStats() {
     const currentStreak = getCurrentStreak();
     const longestStreak = updateLongestStreak(currentStreak);
+    const totalWins = getNumber("totalListeningWins");
 
     document.getElementById("homeStreak").textContent = formatDays(currentStreak);
     document.getElementById("homeLongestStreak").textContent = formatDays(longestStreak);
+    document.getElementById("homeTotalWins").textContent = totalWins;
 }
 
 function updateStreakForToday() {
@@ -219,6 +227,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
     }
 
     let listeningCount = getNumber("listeningCount");
+    let totalWins = getNumber("totalListeningWins");
     let currentStreak = getCurrentStreak();
     let longestStreak = updateLongestStreak(currentStreak);
     const lastStreakDate = localStorage.getItem("lastStreakDate");
@@ -231,6 +240,12 @@ document.getElementById("progressBtn").addEventListener("click", function() {
             <h3 id="listeningCount">${listeningCount}</h3>
             <p>Times I paused and listened before speaking.</p>
             <p><strong>Today:</strong> ${today}</p>
+        </div>
+
+        <div class="card">
+            <h2>Total Listening Wins</h2>
+            <h3 id="totalWinsCount">${totalWins}</h3>
+            <p>All listening wins recorded since starting Focus Shield.</p>
         </div>
 
         <div class="card">
@@ -254,14 +269,17 @@ document.getElementById("progressBtn").addEventListener("click", function() {
 
     document.getElementById("addListeningBtn").addEventListener("click", function() {
         listeningCount++;
+        totalWins++;
 
         saveValue("listeningCount", listeningCount);
+        saveValue("totalListeningWins", totalWins);
         saveValue("listeningDate", today);
 
         const updatedStreak = updateStreakForToday();
         const updatedLongestStreak = updateLongestStreak(updatedStreak);
 
         document.getElementById("listeningCount").textContent = listeningCount;
+        document.getElementById("totalWinsCount").textContent = totalWins;
         document.getElementById("streakCount").textContent = formatDays(updatedStreak);
         document.getElementById("longestStreakCount").textContent = formatDays(updatedLongestStreak);
         document.getElementById("streakStatus").textContent = "Completed today.";
