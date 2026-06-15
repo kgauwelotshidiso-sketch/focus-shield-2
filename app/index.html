@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=backupdata1">
+    <link rel="stylesheet" href="style.css?v=goalsystem1">
 </head>
 <body>
 
@@ -65,6 +65,12 @@
         <h2>Backup / Export Data</h2>
         <h3 id="homeBackupStatus">Ready</h3>
         <p>Export your Focus Shield progress so you can restore it later.</p>
+    </div>
+
+    <div class="card goal-system-card">
+        <h2>Goal System</h2>
+        <h3 id="homeGoalSystemTitle">0 Active Goals</h3>
+        <p id="homeGoalSystemText">Create goals and track real progress.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -861,6 +867,7 @@ updateHomeWeaknessDetection();
 updateHomeSmartSuggestions();
 updateHomeDisciplineCoach();
 updateHomeStreakProtection();
+updateHomeGoalSystem();
 }
 
 function isTodayReflectionWritten() {
@@ -3484,6 +3491,330 @@ if (backupDataBtn) {
     });
 }
 
+
+function getFocusShieldGoals() {
+    const saved = localStorage.getItem("focusShieldGoals");
+
+    if (!saved) {
+        return [];
+    }
+
+    try {
+        const goals = JSON.parse(saved);
+
+        if (Array.isArray(goals)) {
+            return goals;
+        }
+
+        return [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveFocusShieldGoals(goals) {
+    localStorage.setItem("focusShieldGoals", JSON.stringify(goals));
+}
+
+function createFocusShieldGoal(title, target, unit, category) {
+    const goals = getFocusShieldGoals();
+
+    const cleanTitle = String(title || "").trim();
+    const cleanUnit = String(unit || "wins").trim();
+    const cleanCategory = String(category || "Discipline").trim();
+    const cleanTarget = Math.max(1, Number(target || 1));
+
+    if (cleanTitle === "") {
+        alert("Write a goal name first.");
+        return;
+    }
+
+    const newGoal = {
+        id: String(Date.now()) + "-" + String(Math.floor(Math.random() * 100000)),
+        title: cleanTitle,
+        target: cleanTarget,
+        progress: 0,
+        unit: cleanUnit,
+        category: cleanCategory,
+        completed: false,
+        createdAt: new Date().toISOString(),
+        completedAt: null
+    };
+
+    goals.unshift(newGoal);
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+}
+
+function updateFocusShieldGoalProgress(goalId, changeAmount) {
+    const goals = getFocusShieldGoals();
+
+    goals.forEach(function(goal) {
+        if (goal.id === goalId && !goal.completed) {
+            goal.progress = Math.max(0, Number(goal.progress || 0) + changeAmount);
+
+            if (goal.progress >= Number(goal.target || 1)) {
+                goal.progress = Number(goal.target || 1);
+                goal.completed = true;
+                goal.completedAt = new Date().toISOString();
+            }
+        }
+    });
+
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+}
+
+function completeFocusShieldGoal(goalId) {
+    const goals = getFocusShieldGoals();
+
+    goals.forEach(function(goal) {
+        if (goal.id === goalId) {
+            goal.progress = Number(goal.target || 1);
+            goal.completed = true;
+            goal.completedAt = new Date().toISOString();
+        }
+    });
+
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+}
+
+function deleteFocusShieldGoal(goalId) {
+    const confirmDelete = confirm("Delete this goal?");
+
+    if (!confirmDelete) {
+        return;
+    }
+
+    const goals = getFocusShieldGoals().filter(function(goal) {
+        return goal.id !== goalId;
+    });
+
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+}
+
+function getGoalSystemStats() {
+    const goals = getFocusShieldGoals();
+
+    const activeGoals = goals.filter(function(goal) {
+        return !goal.completed;
+    });
+
+    const completedGoals = goals.filter(function(goal) {
+        return goal.completed;
+    });
+
+    let totalProgress = 0;
+
+    activeGoals.forEach(function(goal) {
+        const target = Math.max(1, Number(goal.target || 1));
+        const progress = Math.min(Number(goal.progress || 0), target);
+        totalProgress += Math.round((progress / target) * 100);
+    });
+
+    const averageProgress = activeGoals.length > 0
+        ? Math.round(totalProgress / activeGoals.length)
+        : 0;
+
+    return {
+        totalGoals: goals.length,
+        activeGoals: activeGoals.length,
+        completedGoals: completedGoals.length,
+        averageProgress: averageProgress
+    };
+}
+
+function updateHomeGoalSystem() {
+    const titleElement = document.getElementById("homeGoalSystemTitle");
+    const textElement = document.getElementById("homeGoalSystemText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const stats = getGoalSystemStats();
+
+    titleElement.textContent = stats.activeGoals + " Active Goal" + (stats.activeGoals === 1 ? "" : "s");
+
+    if (stats.activeGoals > 0) {
+        textElement.textContent = "Average progress: " + stats.averageProgress + "%";
+    } else if (stats.completedGoals > 0) {
+        textElement.textContent = stats.completedGoals + " completed goal" + (stats.completedGoals === 1 ? "" : "s") + ". Add your next target.";
+    } else {
+        textElement.textContent = "Create goals and track real progress.";
+    }
+}
+
+function getGoalCardHtml(goal) {
+    const target = Math.max(1, Number(goal.target || 1));
+    const progress = Math.min(Number(goal.progress || 0), target);
+    const percent = Math.round((progress / target) * 100);
+    const statusText = goal.completed ? "Completed" : "Active";
+    const cardClass = goal.completed ? "goal-item completed-goal" : "goal-item active-goal";
+
+    return `
+        <div class="${cardClass}">
+            <div class="goal-item-top">
+                <div>
+                    <h2>${escapeHtml(goal.title)}</h2>
+                    <p>${escapeHtml(goal.category || "Discipline")}</p>
+                </div>
+                <strong>${statusText}</strong>
+            </div>
+
+            <div class="goal-progress-row">
+                <span>${progress} / ${target} ${escapeHtml(goal.unit || "wins")}</span>
+                <strong>${percent}%</strong>
+            </div>
+
+            <div class="goal-progress-bar">
+                <div class="goal-progress-fill" style="width: ${percent}%"></div>
+            </div>
+
+            <div class="goal-actions">
+                <button class="goal-minus-btn" data-goal-id="${goal.id}" ${goal.completed ? "disabled" : ""}>-1</button>
+                <button class="goal-plus-btn" data-goal-id="${goal.id}" ${goal.completed ? "disabled" : ""}>+1</button>
+                <button class="goal-complete-btn" data-goal-id="${goal.id}" ${goal.completed ? "disabled" : ""}>Complete</button>
+                <button class="goal-delete-btn danger-btn" data-goal-id="${goal.id}">Delete</button>
+            </div>
+        </div>
+    `;
+}
+
+function getGoalManagerHtml() {
+    const goals = getFocusShieldGoals();
+    const stats = getGoalSystemStats();
+
+    let activeGoalsHtml = "";
+    let completedGoalsHtml = "";
+
+    goals.forEach(function(goal) {
+        if (goal.completed) {
+            completedGoalsHtml += getGoalCardHtml(goal);
+        } else {
+            activeGoalsHtml += getGoalCardHtml(goal);
+        }
+    });
+
+    if (activeGoalsHtml === "") {
+        activeGoalsHtml = `<p>No active goals yet. Create one below.</p>`;
+    }
+
+    if (completedGoalsHtml === "") {
+        completedGoalsHtml = `<p>No completed goals yet.</p>`;
+    }
+
+    return `
+        <div class="card goal-system-card">
+            <h2>Goal Overview</h2>
+            <h3>${stats.activeGoals} Active</h3>
+            <p><strong>Completed:</strong> ${stats.completedGoals}</p>
+            <p><strong>Average active progress:</strong> ${stats.averageProgress}%</p>
+        </div>
+
+        <div class="card goal-create-card">
+            <h2>Create New Goal</h2>
+
+            <label>Goal name</label>
+            <input id="goalTitleInput" class="goal-input" type="text" placeholder="Example: Complete 5 focus sessions">
+
+            <label>Target number</label>
+            <input id="goalTargetInput" class="goal-input" type="number" min="1" value="5">
+
+            <label>Unit</label>
+            <input id="goalUnitInput" class="goal-input" type="text" value="sessions">
+
+            <label>Category</label>
+            <select id="goalCategoryInput" class="goal-input">
+                <option value="Listening">Listening</option>
+                <option value="Focus">Focus</option>
+                <option value="Concentration">Concentration</option>
+                <option value="Reflection">Reflection</option>
+                <option value="Fitness">Fitness</option>
+                <option value="Discipline">Discipline</option>
+            </select>
+
+            <button id="createGoalBtn">Create Goal</button>
+        </div>
+
+        <div class="card">
+            <h2>Active Goals</h2>
+            ${activeGoalsHtml}
+        </div>
+
+        <div class="card">
+            <h2>Completed Goals</h2>
+            ${completedGoalsHtml}
+        </div>
+    `;
+}
+
+function bindGoalManagerEvents() {
+    const createGoalBtn = document.getElementById("createGoalBtn");
+
+    if (createGoalBtn) {
+        createGoalBtn.addEventListener("click", function() {
+            const title = document.getElementById("goalTitleInput").value;
+            const target = document.getElementById("goalTargetInput").value;
+            const unit = document.getElementById("goalUnitInput").value;
+            const category = document.getElementById("goalCategoryInput").value;
+
+            createFocusShieldGoal(title, target, unit, category);
+        });
+    }
+
+    document.querySelectorAll(".goal-plus-btn").forEach(function(button) {
+        button.addEventListener("click", function() {
+            updateFocusShieldGoalProgress(button.dataset.goalId, 1);
+        });
+    });
+
+    document.querySelectorAll(".goal-minus-btn").forEach(function(button) {
+        button.addEventListener("click", function() {
+            updateFocusShieldGoalProgress(button.dataset.goalId, -1);
+        });
+    });
+
+    document.querySelectorAll(".goal-complete-btn").forEach(function(button) {
+        button.addEventListener("click", function() {
+            completeFocusShieldGoal(button.dataset.goalId);
+        });
+    });
+
+    document.querySelectorAll(".goal-delete-btn").forEach(function(button) {
+        button.addEventListener("click", function() {
+            deleteFocusShieldGoal(button.dataset.goalId);
+        });
+    });
+}
+
+function openGoalManagerPage() {
+    showPage(`
+        <h1>Goals</h1>
+
+        ${getGoalManagerHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    bindGoalManagerEvents();
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+const upgradedGoalsBtn = document.getElementById("goalsBtn");
+
+if (upgradedGoalsBtn) {
+    upgradedGoalsBtn.addEventListener("click", function(event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openGoalManagerPage();
+    }, true);
+}
+
+
+setTimeout(updateHomeGoalSystem, 1100);
 </script>
 
 </body>
