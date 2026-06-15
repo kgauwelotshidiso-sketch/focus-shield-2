@@ -77,6 +77,7 @@
     <button id="concentrationBtn">Concentration</button>
     <button id="progressBtn">Progress</button>
     <button id="reflectionBtn">Reflection</button>
+    <button id="reflectionHistoryBtn">Reflection History</button>
     <button id="settingsBtn">Settings</button>
 
 </div>
@@ -282,6 +283,15 @@ function updateStreakForToday() {
     updateLongestStreak(streakCount);
 
     return streakCount;
+}
+
+function escapeHtml(text) {
+    return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
 function showPage(content) {
@@ -875,6 +885,61 @@ if (reflectionBtn) {
 }
 
 updateHomeReflectionStatus();
+
+
+
+const reflectionHistoryBtn = document.getElementById("reflectionHistoryBtn");
+
+if (reflectionHistoryBtn) {
+    reflectionHistoryBtn.addEventListener("click", function() {
+        const reflectionHistory = getReflectionHistory();
+        const dates = Object.keys(reflectionHistory).sort().reverse();
+
+        let historyHtml = "";
+
+        if (dates.length === 0) {
+            historyHtml = `
+                <div class="card">
+                    <h2>No Reflection History Yet</h2>
+                    <p>Your saved daily reflections will appear here.</p>
+                </div>
+            `;
+        } else {
+            dates.forEach(function(dateKey) {
+                const reflection = reflectionHistory[dateKey];
+
+                const happened = escapeHtml(reflection.happened || "");
+                const learned = escapeHtml(reflection.learned || "");
+                const improve = escapeHtml(reflection.improve || "");
+
+                historyHtml += `
+                    <div class="card reflection-entry">
+                        <h2>${dateKey}</h2>
+
+                        <p><strong>What happened today?</strong></p>
+                        <p class="reflection-answer">${happened || "Not written."}</p>
+
+                        <p><strong>What did I learn?</strong></p>
+                        <p class="reflection-answer">${learned || "Not written."}</p>
+
+                        <p><strong>How will I improve tomorrow?</strong></p>
+                        <p class="reflection-answer">${improve || "Not written."}</p>
+                    </div>
+                `;
+            });
+        }
+
+        showPage(`
+            <h1>Reflection History</h1>
+
+            ${historyHtml}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
 
 </script>
 

@@ -186,3 +186,12 @@ textarea {
 textarea:focus {
     border-color: rgba(56, 189, 248, 0.7);
 }
+
+.reflection-entry {
+    border-left: 4px solid #38bdf8;
+}
+
+.reflection-answer {
+    white-space: pre-wrap;
+    color: #e2e8f0;
+}
