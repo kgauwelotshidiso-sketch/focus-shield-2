@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=disciplinecoach1">
+    <link rel="stylesheet" href="style.css?v=streaklongestfix1">
 </head>
 <body>
 
@@ -53,6 +53,12 @@
         <h2>Discipline Coach</h2>
         <h3 id="homeCoachVerdict">Analyzing...</h3>
         <p id="homeCoachText">Your coach dashboard is preparing your next instruction.</p>
+    </div>
+
+    <div class="card streak-protection-card">
+        <h2>Streak Protection</h2>
+        <h3 id="homeStreakProtectionTitle">Checking...</h3>
+        <p id="homeStreakProtectionText">Focus Shield is checking your streak risk.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -131,6 +137,7 @@
     <button id="weaknessBtn">Weakness Detection</button>
     <button id="smartSuggestionsBtn">Smart Suggestions</button>
     <button id="disciplineCoachBtn">Discipline Coach</button>
+    <button id="streakProtectionBtn">Streak Protection</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
@@ -846,6 +853,7 @@ updateHomeWeeklyReport();
 updateHomeWeaknessDetection();
 updateHomeSmartSuggestions();
 updateHomeDisciplineCoach();
+updateHomeStreakProtection();
 }
 
 function isTodayReflectionWritten() {
@@ -1621,7 +1629,7 @@ function getSmartSuggestionsInfo() {
     const weakness = getWeaknessDetectionInfo();
 
     const currentStreak = getSmartCurrentStreakValue();
-    const longestStreak = getNumber("longestStreak");
+    const longestStreak = getSmartLongestStreakValue();
     const listeningWins = getNumber("listeningCount");
 
     const suggestions = [];
@@ -2059,6 +2067,184 @@ function getDisciplineCoachHtml() {
             <h2>Weakness Action</h2>
             <h3>${escapeHtml(coach.weaknessName)}</h3>
             <p>${escapeHtml(coach.weaknessAction)}</p>
+        </div>
+    `;
+}
+
+
+
+function getSmartLongestStreakValue() {
+    const possibleKeys = [
+        "longestStreak",
+        "bestStreak",
+        "highestStreak",
+        "maxStreak",
+        "longestListeningStreak"
+    ];
+
+    for (let i = 0; i < possibleKeys.length; i++) {
+        const rawValue = localStorage.getItem(possibleKeys[i]);
+
+        if (rawValue !== null) {
+            const numberValue = Number(rawValue);
+
+            if (!Number.isNaN(numberValue) && numberValue > 0) {
+                return numberValue;
+            }
+        }
+    }
+
+    const currentStreak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    return currentStreak;
+}
+
+function getStreakProtectionInfo() {
+    const listeningWins = getNumber("listeningCount");
+    const currentStreak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    const longestStreak = getSmartLongestStreakValue();
+    const review = getDailyReviewInfo();
+
+    const now = new Date();
+    const hour = now.getHours();
+
+    let timeRisk = "Low";
+
+    if (hour >= 18 && listeningWins === 0) {
+        timeRisk = "High";
+    } else if (hour >= 12 && listeningWins === 0) {
+        timeRisk = "Medium";
+    }
+
+    let status = "At Risk";
+    let protectionLevel = 0;
+    let title = "Streak At Risk";
+    let message = "Get 1 listening win now to protect your streak.";
+    let minimumAction = "Pause, fully listen once, then record 1 listening win.";
+    let nextAction = "After that, aim for 3 / 3 to complete today's mission.";
+
+    if (listeningWins >= 1 && listeningWins < 3) {
+        status = "Protected";
+        protectionLevel = 50;
+        title = "Streak Protected";
+        message = "Your streak has minimum protection today.";
+        minimumAction = "You already have at least 1 listening win today.";
+        const remaining = 3 - listeningWins;
+        nextAction = "Get " + remaining + " more listening win" + (remaining === 1 ? "" : "s") + " to fully protect the day.";
+    }
+
+    if (listeningWins >= 3) {
+        status = "Fully Protected";
+        protectionLevel = 100;
+        title = "Fully Protected";
+        message = "Today's mission is complete. Your streak is strongly protected.";
+        minimumAction = "No emergency action needed. Maintain control for the rest of the day.";
+        nextAction = "Optional: complete one focus or concentration session to strengthen the day.";
+    }
+
+    let riskLevel = "Low";
+
+    if (status === "At Risk" && timeRisk === "High") {
+        riskLevel = "High";
+    } else if (status === "At Risk") {
+        riskLevel = "Medium";
+    } else if (status === "Protected" && !review.missionComplete) {
+        riskLevel = "Low-Medium";
+    }
+
+    let coachWarning = "Your streak is safe for now.";
+
+    if (status === "At Risk") {
+        coachWarning = "Do not wait for motivation. Protect the streak with one small listening win.";
+    } else if (status === "Protected") {
+        coachWarning = "Minimum streak protection is done, but the mission is not fully complete.";
+    } else {
+        coachWarning = "Strong day. Do not use completion as an excuse to become careless.";
+    }
+
+    return {
+        status: status,
+        title: title,
+        message: message,
+        minimumAction: minimumAction,
+        nextAction: nextAction,
+        listeningWins: listeningWins,
+        currentStreak: currentStreak,
+        longestStreak: longestStreak,
+        protectionLevel: protectionLevel,
+        riskLevel: riskLevel,
+        timeRisk: timeRisk,
+        hour: hour,
+        coachWarning: coachWarning,
+        missionComplete: review.missionComplete
+    };
+}
+
+function updateHomeStreakProtection() {
+    const titleElement = document.getElementById("homeStreakProtectionTitle");
+    const textElement = document.getElementById("homeStreakProtectionText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const protection = getStreakProtectionInfo();
+
+    titleElement.textContent = protection.title;
+    textElement.textContent = protection.message;
+}
+
+function getStreakProtectionHtml() {
+    const protection = getStreakProtectionInfo();
+
+    return `
+        <div class="card streak-protection-card">
+            <h2>Streak Status</h2>
+            <h3>${escapeHtml(protection.status)}</h3>
+            <p>${escapeHtml(protection.message)}</p>
+
+            <div class="streak-protection-bar">
+                <div class="streak-protection-fill" style="width: ${protection.protectionLevel}%"></div>
+            </div>
+        </div>
+
+        <div class="card coach-command-card">
+            <h2>Minimum Action</h2>
+            <h3>${escapeHtml(protection.minimumAction)}</h3>
+            <p>This is the smallest action required to protect the streak today.</p>
+        </div>
+
+        <div class="card">
+            <h2>Streak Snapshot</h2>
+            <p><strong>Listening Wins Today:</strong> ${protection.listeningWins} / 3</p>
+            <p><strong>Current Streak:</strong> ${protection.currentStreak} day${protection.currentStreak === 1 ? "" : "s"}</p>
+            <p><strong>Longest Streak:</strong> ${protection.longestStreak} day${protection.longestStreak === 1 ? "" : "s"}</p>
+            <p><strong>Mission Complete:</strong> ${protection.missionComplete ? "Yes" : "No"}</p>
+            <p><strong>Risk Level:</strong> ${escapeHtml(protection.riskLevel)}</p>
+            <p><strong>Time Risk:</strong> ${escapeHtml(protection.timeRisk)}</p>
+        </div>
+
+        <div class="card smart-suggestions-card">
+            <h2>Next Protection Step</h2>
+            <h3>${escapeHtml(protection.nextAction)}</h3>
+            <p>Do this after the minimum action is complete.</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Coach Warning</h2>
+            <p>${escapeHtml(protection.coachWarning)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Protection Levels</h2>
+            <p><strong>0 wins:</strong> Streak at risk</p>
+            <p><strong>1 win:</strong> Minimum streak protection</p>
+            <p><strong>3 wins:</strong> Fully protected mission day</p>
         </div>
     `;
 }
@@ -2884,7 +3070,7 @@ function getAdvancedAchievementBadges() {
     const totalListeningWins = getNumber("totalListeningWins");
     const weeklyWins = getNumber("weeklyWins");
     const currentStreak = getSmartCurrentStreakValue();
-    const longestStreak = getNumber("longestStreak");
+    const longestStreak = getSmartLongestStreakValue();
     const focusSessions = getNumber("focusSessions");
     const concentrationSessions = getNumber("concentrationSessions");
     const reflectionCount = getReflectionCount();
@@ -3081,6 +3267,26 @@ if (disciplineCoachBtn) {
 
 
 setTimeout(updateHomeDisciplineCoach, 900);
+
+
+const streakProtectionBtn = document.getElementById("streakProtectionBtn");
+
+if (streakProtectionBtn) {
+    streakProtectionBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Streak Protection</h1>
+
+            ${getStreakProtectionHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+setTimeout(updateHomeStreakProtection, 1000);
 </script>
 
 </body>
