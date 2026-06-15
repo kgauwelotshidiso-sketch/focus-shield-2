@@ -31,6 +31,16 @@
     </div>
 
     <div class="card">
+        <h2>Focus Sessions</h2>
+        <h3 id="homeFocusSessions">0</h3>
+    </div>
+
+    <div class="card">
+        <h2>Total Focus Time</h2>
+        <h3 id="homeFocusTime">0 Minutes</h3>
+    </div>
+
+    <div class="card">
         <h2>Concentration Sessions</h2>
         <h3 id="homeConcentrationSessions">0</h3>
     </div>
@@ -188,6 +198,10 @@ function updateHomeStats() {
     const longestStreak = updateLongestStreak(currentStreak);
     const totalWins = getNumber("totalListeningWins");
     const weeklyWins = getWeeklyWins();
+
+    const focusSessions = getNumber("focusSessions");
+    const focusMinutes = getNumber("focusMinutes");
+
     const concentrationSessions = getNumber("concentrationSessions");
     const concentrationMinutes = getNumber("concentrationMinutes");
 
@@ -195,6 +209,10 @@ function updateHomeStats() {
     document.getElementById("homeLongestStreak").textContent = formatDays(longestStreak);
     document.getElementById("homeTotalWins").textContent = totalWins;
     document.getElementById("homeWeeklyWins").textContent = weeklyWins;
+
+    document.getElementById("homeFocusSessions").textContent = focusSessions;
+    document.getElementById("homeFocusTime").textContent = formatMinutes(focusMinutes);
+
     document.getElementById("homeConcentrationSessions").textContent = concentrationSessions;
     document.getElementById("homeConcentrationTime").textContent = formatMinutes(concentrationMinutes);
 }
@@ -269,35 +287,156 @@ document.getElementById("goalsBtn").addEventListener("click", function() {
 });
 
 document.getElementById("timerBtn").addEventListener("click", function() {
+    let focusSessions = getNumber("focusSessions");
+    let focusMinutes = getNumber("focusMinutes");
+
     showPage(`
         <h1>Focus Timer</h1>
 
         <div class="card">
-            <h2 id="timer">10:00</h2>
+            <h2>Timer</h2>
+            <h3 id="focusTimer">Choose a session</h3>
+            <p id="focusStatus">Select a duration, then press Start.</p>
         </div>
 
-        <button id="startBtn">Start</button>
+        <div class="card">
+            <h2>Completed Focus Sessions</h2>
+            <h3 id="focusSessionsCount">${focusSessions}</h3>
+        </div>
+
+        <div class="card">
+            <h2>Total Focus Time</h2>
+            <h3 id="focusMinutesCount">${formatMinutes(focusMinutes)}</h3>
+        </div>
+
+        <button id="tenSecondFocusBtn">10 Seconds Test</button>
+        <button id="fiveFocusBtn">5 Minutes</button>
+        <button id="tenFocusBtn">10 Minutes</button>
+        <button id="fifteenFocusBtn">15 Minutes</button>
+        <button id="twentyFiveFocusBtn">25 Minutes</button>
+
+        <button id="startFocusBtn">Start</button>
+        <button id="pauseFocusBtn">Pause</button>
+        <button id="resetFocusBtn">Reset</button>
         <button id="backBtn">Back</button>
     `);
 
-    let timeLeft = 600;
+    let selectedMinutes = 0;
+    let timeLeft = 0;
+    let interval = null;
     let running = false;
 
-    document.getElementById("startBtn").addEventListener("click", function() {
+    function selectFocusSession(minutes) {
+        selectedMinutes = minutes;
+        timeLeft = minutes * 60;
+        running = false;
+
+        if (interval !== null) {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        document.getElementById("focusTimer").textContent = formatTimer(timeLeft);
+        document.getElementById("focusStatus").textContent = minutes + " minute focus session selected.";
+    }
+
+    function completeFocusSession() {
+        focusSessions++;
+        focusMinutes += selectedMinutes;
+
+        saveValue("focusSessions", focusSessions);
+        saveValue("focusMinutes", focusMinutes);
+
+        document.getElementById("focusSessionsCount").textContent = focusSessions;
+        document.getElementById("focusMinutesCount").textContent = formatMinutes(focusMinutes);
+        document.getElementById("focusTimer").textContent = "Session complete";
+        document.getElementById("focusStatus").textContent = "Well done. You completed a focus session.";
+
+        alert("Focus Session Complete!");
+    }
+
+    document.getElementById("tenSecondFocusBtn").addEventListener("click", function() {
+        selectedMinutes = 1;
+        timeLeft = 10;
+        running = false;
+
+        if (interval !== null) {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        document.getElementById("focusTimer").textContent = formatTimer(timeLeft);
+        document.getElementById("focusStatus").textContent = "10 second test focus session selected.";
+    });
+
+    document.getElementById("fiveFocusBtn").addEventListener("click", function() {
+        selectFocusSession(5);
+    });
+
+    document.getElementById("tenFocusBtn").addEventListener("click", function() {
+        selectFocusSession(10);
+    });
+
+    document.getElementById("fifteenFocusBtn").addEventListener("click", function() {
+        selectFocusSession(15);
+    });
+
+    document.getElementById("twentyFiveFocusBtn").addEventListener("click", function() {
+        selectFocusSession(25);
+    });
+
+    document.getElementById("startFocusBtn").addEventListener("click", function() {
+        if (selectedMinutes === 0) {
+            alert("Choose a session duration first.");
+            return;
+        }
+
         if (running) return;
 
         running = true;
+        document.getElementById("focusStatus").textContent = "Focus session running.";
 
-        const interval = setInterval(function() {
+        interval = setInterval(function() {
             timeLeft--;
 
-            document.getElementById("timer").textContent = formatTimer(timeLeft);
+            document.getElementById("focusTimer").textContent = formatTimer(timeLeft);
 
             if (timeLeft <= 0) {
                 clearInterval(interval);
-                alert("Focus Session Complete!");
+                interval = null;
+                running = false;
+                completeFocusSession();
             }
         }, 1000);
+    });
+
+    document.getElementById("pauseFocusBtn").addEventListener("click", function() {
+        if (interval !== null) {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        running = false;
+        document.getElementById("focusStatus").textContent = "Focus session paused.";
+    });
+
+    document.getElementById("resetFocusBtn").addEventListener("click", function() {
+        if (selectedMinutes === 0) {
+            document.getElementById("focusTimer").textContent = "Choose a session";
+            document.getElementById("focusStatus").textContent = "Select a duration, then press Start.";
+            return;
+        }
+
+        if (interval !== null) {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        timeLeft = selectedMinutes * 60;
+        running = false;
+
+        document.getElementById("focusTimer").textContent = formatTimer(timeLeft);
+        document.getElementById("focusStatus").textContent = "Timer reset.";
     });
 
     document.getElementById("backBtn").addEventListener("click", goHome);
