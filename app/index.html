@@ -616,6 +616,90 @@ function getXpBreakdownHtml() {
     `;
 }
 
+
+function getSavedDisciplineLevel() {
+    return Number(localStorage.getItem("disciplineLevelMemory") || 0);
+}
+
+function saveDisciplineLevel(level) {
+    localStorage.setItem("disciplineLevelMemory", level);
+}
+
+function initializeLevelMemory() {
+    if (localStorage.getItem("disciplineLevelMemory") !== null) {
+        return;
+    }
+
+    const levelInfo = getLevelInfo();
+    saveDisciplineLevel(levelInfo.level);
+}
+
+function showLevelUpPopup(level) {
+    const existingBadgePopup = document.getElementById("badgePopupOverlay");
+
+    if (existingBadgePopup) {
+        const closeBadgeButton = document.getElementById("closeBadgePopupBtn");
+
+        if (closeBadgeButton) {
+            closeBadgeButton.addEventListener("click", function() {
+                setTimeout(function() {
+                    showLevelUpPopup(level);
+                }, 150);
+            }, { once: true });
+        }
+
+        return;
+    }
+
+    const oldPopup = document.getElementById("levelPopupOverlay");
+
+    if (oldPopup) {
+        oldPopup.remove();
+    }
+
+    const popup = document.createElement("div");
+    popup.id = "levelPopupOverlay";
+    popup.innerHTML = `
+        <div class="level-popup">
+            <div class="level-popup-icon">&#9889;</div>
+            <h2>Level Up!</h2>
+            <p>You reached</p>
+            <h3>Level ${level}</h3>
+            <button id="closeLevelPopupBtn">Continue</button>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById("closeLevelPopupBtn").addEventListener("click", function() {
+        popup.remove();
+    });
+}
+
+function checkLevelUp() {
+    const levelInfo = getLevelInfo();
+    const currentLevel = levelInfo.level;
+    const savedLevel = getSavedDisciplineLevel();
+
+    if (savedLevel === 0) {
+        saveDisciplineLevel(currentLevel);
+        return false;
+    }
+
+    if (currentLevel < savedLevel) {
+        saveDisciplineLevel(currentLevel);
+        return false;
+    }
+
+    if (currentLevel > savedLevel) {
+        saveDisciplineLevel(currentLevel);
+        showLevelUpPopup(currentLevel);
+        return true;
+    }
+
+    return false;
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -642,6 +726,7 @@ function formatTimer(seconds) {
 updateHomeStats();
 updateHomeBadges();
 updateHomeLevel();
+initializeLevelMemory();
 initializeBadgeMemory();
 
 document.getElementById("goalsBtn").addEventListener("click", function() {
@@ -731,8 +816,9 @@ document.getElementById("timerBtn").addEventListener("click", function() {
         document.getElementById("focusStatus").textContent = "Well done. You completed a focus session.";
 
         const badgeUnlocked = checkBadgeUnlocks();
+        const leveledUp = checkLevelUp();
 
-        if (!badgeUnlocked) {
+        if (!badgeUnlocked && !leveledUp) {
             alert("Focus Session Complete!");
         }
     }
@@ -889,8 +975,9 @@ document.getElementById("concentrationBtn").addEventListener("click", function()
                 document.getElementById("concentrationTimer").textContent = "Session complete";
 
                 const badgeUnlocked = checkBadgeUnlocks();
+                const leveledUp = checkLevelUp();
 
-                if (!badgeUnlocked) {
+                if (!badgeUnlocked && !leveledUp) {
                     alert("Concentration Session Complete!");
                 }
             }
@@ -1005,6 +1092,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         document.getElementById("streakStatus").textContent = "Completed today.";
         document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
         checkBadgeUnlocks();
+        checkLevelUp();
     });
 
     document.getElementById("resetListeningBtn").addEventListener("click", function() {
@@ -1040,6 +1128,7 @@ if (settingsBtn) {
             <button id="resetFocusStatsBtn">Reset Focus Stats</button>
             <button id="resetConcentrationStatsBtn">Reset Concentration Stats</button>
             <button id="resetBadgeMemoryBtn">Reset Badge Memory Only</button>
+            <button id="resetLevelMemoryBtn">Reset Level Memory Only</button>
             <button id="resetAllStatsBtn">Reset All Stats</button>
             <button id="backBtn">Back</button>
         `);
@@ -1075,6 +1164,11 @@ if (settingsBtn) {
         document.getElementById("resetBadgeMemoryBtn").addEventListener("click", function() {
             localStorage.removeItem("unlockedBadges");
             alert("Badge memory has been reset. Existing stats were not deleted.");
+        });
+
+        document.getElementById("resetLevelMemoryBtn").addEventListener("click", function() {
+            localStorage.removeItem("disciplineLevelMemory");
+            alert("Level memory has been reset. Existing stats were not deleted.");
         });
 
         document.getElementById("resetAllStatsBtn").addEventListener("click", function() {
@@ -1201,8 +1295,9 @@ if (reflectionBtn) {
             saveReflectionHistory(updatedHistory);
 
             const badgeUnlocked = checkBadgeUnlocks();
+            const leveledUp = checkLevelUp();
 
-            if (!badgeUnlocked) {
+            if (!badgeUnlocked && !leveledUp) {
                 alert("Daily reflection saved.");
             }
         });
