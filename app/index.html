@@ -11,6 +11,12 @@
 
     <h1>Focus Shield</h1>
 
+    <div class="card mission-card">
+        <h2>Today's Mission</h2>
+        <h3 id="homeMissionProgress">0 / 3</h3>
+        <p id="homeMissionText">Pause and fully listen before speaking at least 3 times today.</p>
+    </div>
+
     <div class="dashboard-grid">
 
     <div class="card">
@@ -199,7 +205,23 @@ function updateLongestStreak(currentStreak) {
     return longestStreak;
 }
 
+function resetListeningIfNewDay() {
+    const today = getToday();
+    const savedDate = localStorage.getItem("listeningDate");
+
+    if (savedDate !== today) {
+        saveValue("listeningCount", 0);
+        saveValue("listeningDate", today);
+        updateTodayHistory(0);
+    }
+}
+
 function updateHomeStats() {
+    resetListeningIfNewDay();
+
+    const missionTarget = 3;
+    const listeningCount = getNumber("listeningCount");
+
     const currentStreak = getCurrentStreak();
     const longestStreak = updateLongestStreak(currentStreak);
     const totalWins = getNumber("totalListeningWins");
@@ -210,6 +232,14 @@ function updateHomeStats() {
 
     const concentrationSessions = getNumber("concentrationSessions");
     const concentrationMinutes = getNumber("concentrationMinutes");
+
+    document.getElementById("homeMissionProgress").textContent = listeningCount + " / " + missionTarget;
+
+    if (listeningCount >= missionTarget) {
+        document.getElementById("homeMissionText").textContent = "Mission complete. Strong discipline today.";
+    } else {
+        document.getElementById("homeMissionText").textContent = "Pause and fully listen before speaking at least 3 times today.";
+    }
 
     document.getElementById("homeStreak").textContent = formatDays(currentStreak);
     document.getElementById("homeLongestStreak").textContent = formatDays(longestStreak);

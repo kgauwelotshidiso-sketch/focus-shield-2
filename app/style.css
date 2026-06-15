@@ -159,3 +159,12 @@ strong {
         grid-template-columns: 1fr;
     }
 }
+
+.mission-card {
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+}
+
+.mission-card h3 {
+    font-size: 34px;
+}
