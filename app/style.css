@@ -195,3 +195,23 @@ textarea:focus {
     white-space: pre-wrap;
     color: #e2e8f0;
 }
+
+.badge-card {
+    border-left: 4px solid rgba(148, 163, 184, 0.45);
+}
+
+.badge-unlocked {
+    border-left-color: #facc15;
+}
+
+.badge-unlocked h3 {
+    color: #facc15;
+}
+
+.badge-locked {
+    opacity: 0.75;
+}
+
+.badge-locked h3 {
+    color: #94a3b8;
+}

@@ -40,6 +40,12 @@
     </div>
 
     <div class="card">
+        <h2>Achievement Badges</h2>
+        <h3 id="homeBadgeCount">0 / 8</h3>
+        <p id="homeBadgeText">Tap Achievements to view badges.</p>
+    </div>
+
+    <div class="card">
         <h2>Focus Sessions</h2>
         <h3 id="homeFocusSessions">0</h3>
     </div>
@@ -76,6 +82,7 @@
     <button id="timerBtn">Focus Timer</button>
     <button id="concentrationBtn">Concentration</button>
     <button id="progressBtn">Progress</button>
+    <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
     <button id="reflectionHistoryBtn">Reflection History</button>
     <button id="settingsBtn">Settings</button>
@@ -294,6 +301,132 @@ function escapeHtml(text) {
         .replaceAll("'", "&#039;");
 }
 
+
+function hasReflectionSaved() {
+    const reflectionHistory = localStorage.getItem("reflectionHistory");
+
+    if (reflectionHistory === null) {
+        return false;
+    }
+
+    const history = JSON.parse(reflectionHistory);
+    const dates = Object.keys(history);
+
+    return dates.some(function(dateKey) {
+        const reflection = history[dateKey];
+
+        return (
+            reflection &&
+            (
+                String(reflection.happened || "").trim() !== "" ||
+                String(reflection.learned || "").trim() !== "" ||
+                String(reflection.improve || "").trim() !== ""
+            )
+        );
+    });
+}
+
+function getBadges() {
+    const listeningCount = getNumber("listeningCount");
+    const totalWins = getNumber("totalListeningWins");
+    const weeklyWins = getWeeklyWins();
+    const currentStreak = getCurrentStreak();
+    const longestStreak = getLongestStreak();
+    const focusSessions = getNumber("focusSessions");
+    const concentrationSessions = getNumber("concentrationSessions");
+
+    return [
+        {
+            name: "First Listening Win",
+            description: "Record your first listening win.",
+            unlocked: totalWins >= 1
+        },
+        {
+            name: "3 Wins Today",
+            description: "Complete today's mission by recording 3 listening wins.",
+            unlocked: listeningCount >= 3
+        },
+        {
+            name: "7 Total Listening Wins",
+            description: "Reach 7 total listening wins.",
+            unlocked: totalWins >= 7
+        },
+        {
+            name: "Weekly Warrior",
+            description: "Record 7 listening wins within the last 7 days.",
+            unlocked: weeklyWins >= 7
+        },
+        {
+            name: "7 Day Streak",
+            description: "Build a 7 day listening streak.",
+            unlocked: currentStreak >= 7 || longestStreak >= 7
+        },
+        {
+            name: "First Reflection",
+            description: "Save your first daily reflection.",
+            unlocked: hasReflectionSaved()
+        },
+        {
+            name: "First Focus Session",
+            description: "Complete your first focus timer session.",
+            unlocked: focusSessions >= 1
+        },
+        {
+            name: "First Concentration Session",
+            description: "Complete your first concentration session.",
+            unlocked: concentrationSessions >= 1
+        }
+    ];
+}
+
+function getUnlockedBadgeCount() {
+    const badges = getBadges();
+    return badges.filter(function(badge) {
+        return badge.unlocked;
+    }).length;
+}
+
+function updateHomeBadges() {
+    const badgeCount = document.getElementById("homeBadgeCount");
+    const badgeText = document.getElementById("homeBadgeText");
+
+    if (!badgeCount || !badgeText) {
+        return;
+    }
+
+    const badges = getBadges();
+    const unlocked = getUnlockedBadgeCount();
+
+    badgeCount.textContent = unlocked + " / " + badges.length;
+
+    if (unlocked === badges.length) {
+        badgeText.textContent = "All badges unlocked. Elite discipline.";
+    } else {
+        badgeText.textContent = "Tap Achievements to view badges.";
+    }
+}
+
+function getBadgeHtml() {
+    const badges = getBadges();
+    let html = "";
+
+    badges.forEach(function(badge) {
+        const status = badge.unlocked ? "Unlocked" : "Locked";
+        const symbol = badge.unlocked ? "🏆" : "🔒";
+        const className = badge.unlocked ? "badge-unlocked" : "badge-locked";
+
+        html += `
+            <div class="card badge-card ${className}">
+                <h2>${symbol} ${badge.name}</h2>
+                <h3>${status}</h3>
+                <p>${badge.description}</p>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -318,6 +451,7 @@ function formatTimer(seconds) {
 }
 
 updateHomeStats();
+updateHomeBadges();
 
 document.getElementById("goalsBtn").addEventListener("click", function() {
     showPage(`
@@ -933,6 +1067,33 @@ if (reflectionHistoryBtn) {
             <h1>Reflection History</h1>
 
             ${historyHtml}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+
+const achievementsBtn = document.getElementById("achievementsBtn");
+
+if (achievementsBtn) {
+    achievementsBtn.addEventListener("click", function() {
+        const badges = getBadges();
+        const unlocked = getUnlockedBadgeCount();
+
+        showPage(`
+            <h1>Achievements</h1>
+
+            <div class="card">
+                <h2>Badges Unlocked</h2>
+                <h3>${unlocked} / ${badges.length}</h3>
+                <p>Badges are unlocked through listening wins, streaks, reflection, focus, and concentration.</p>
+            </div>
+
+            ${getBadgeHtml()}
 
             <button id="backBtn">Back</button>
         `);
