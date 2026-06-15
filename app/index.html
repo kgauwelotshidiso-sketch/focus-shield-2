@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Focus Shield</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
@@ -1493,6 +1495,10 @@ if (levelBtn) {
     });
 }
 
+
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js");
+}
 </script>
 
 </body>
