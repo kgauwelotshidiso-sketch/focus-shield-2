@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=advancedachievements1">
+    <link rel="stylesheet" href="style.css?v=weaknessdetection1">
 </head>
 <body>
 
@@ -35,6 +35,12 @@
         <h2>Weekly Report</h2>
         <h3 id="homeWeeklyAverage">0%</h3>
         <p id="homeWeeklyText">Build your 7-day discipline record.</p>
+    </div>
+
+    <div class="card weakness-card">
+        <h2>Weakness Detection</h2>
+        <h3 id="homeWeaknessTitle">Analyzing...</h3>
+        <p id="homeWeaknessText">Focus Shield is checking your discipline pattern.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -110,6 +116,7 @@
     <button id="progressBtn">Progress</button>
     <button id="dailyReviewBtn">Daily Review</button>
     <button id="weeklyReportBtn">Weekly Report</button>
+    <button id="weaknessBtn">Weakness Detection</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
@@ -822,6 +829,7 @@ function incrementDailyReviewAction(actionName) {
     saveDailyActionData(data);
     updateHomeDailyReviewScore();
 updateHomeWeeklyReport();
+updateHomeWeaknessDetection();
 }
 
 function isTodayReflectionWritten() {
@@ -1346,6 +1354,7 @@ function refreshPhase2DashboardCards() {
 
     if (typeof updateHomeWeeklyReport === "function") {
         updateHomeWeeklyReport();
+updateHomeWeaknessDetection();
     }
 
     if (typeof updateHomeStats === "function") {
@@ -1363,6 +1372,183 @@ function refreshPhase2DashboardCards() {
     if (typeof updateDailyDisciplineMessage === "function") {
         updateDailyDisciplineMessage();
     }
+}
+
+
+function getWeaknessDetectionInfo() {
+    const report = getWeeklyReportInfo();
+    const review = getDailyReviewInfo();
+
+    const weaknessTargets = [
+        {
+            key: "mission",
+            name: "Listening Mission",
+            completed: report.missionDays,
+            target: 5,
+            reason: "You are not completing the 3-listening-win mission often enough.",
+            action: "Get 3 listening wins today. Pause, listen fully, then speak."
+        },
+        {
+            key: "reflection",
+            name: "Daily Reflection",
+            completed: report.reflectionDays,
+            target: 5,
+            reason: "You are not reviewing your day often enough.",
+            action: "Write today's reflection before the day ends."
+        },
+        {
+            key: "focus",
+            name: "Focus Sessions",
+            completed: report.focusDays,
+            target: 3,
+            reason: "Your focus timer training is too low this week.",
+            action: "Complete one 5-minute focus session today."
+        },
+        {
+            key: "concentration",
+            name: "Concentration Sessions",
+            completed: report.concentrationDays,
+            target: 3,
+            reason: "Your concentration training is too low this week.",
+            action: "Complete one concentration session using your affirmation."
+        }
+    ];
+
+    weaknessTargets.forEach(function(item) {
+        item.ratio = item.completed / item.target;
+        item.gap = item.target - item.completed;
+    });
+
+    weaknessTargets.sort(function(a, b) {
+        if (a.ratio === b.ratio) {
+            return b.gap - a.gap;
+        }
+
+        return a.ratio - b.ratio;
+    });
+
+    let mainWeakness = weaknessTargets[0];
+
+    if (!review.missionComplete) {
+        mainWeakness = weaknessTargets.find(function(item) {
+            return item.key === "mission";
+        });
+    } else if (!review.reflectionWritten) {
+        mainWeakness = weaknessTargets.find(function(item) {
+            return item.key === "reflection";
+        });
+    } else if (!review.focusDone) {
+        mainWeakness = weaknessTargets.find(function(item) {
+            return item.key === "focus";
+        });
+    } else if (!review.concentrationDone) {
+        mainWeakness = weaknessTargets.find(function(item) {
+            return item.key === "concentration";
+        });
+    }
+
+    let severity = "Low";
+    let summary = "Your discipline system is balanced today.";
+
+    if (mainWeakness.ratio < 0.4) {
+        severity = "High";
+        summary = "This area is holding back your weekly discipline score.";
+    } else if (mainWeakness.ratio < 0.75) {
+        severity = "Medium";
+        summary = "This area needs attention before it becomes your main pattern.";
+    }
+
+    if (
+        review.missionComplete &&
+        review.reflectionWritten &&
+        review.focusDone &&
+        review.concentrationDone
+    ) {
+        summary = "Today is balanced. Your next target is weekly consistency.";
+    }
+
+    return {
+        name: mainWeakness.name,
+        reason: mainWeakness.reason,
+        action: mainWeakness.action,
+        completed: mainWeakness.completed,
+        target: mainWeakness.target,
+        severity: severity,
+        summary: summary,
+        weeklyAverage: report.averageScore,
+        dailyScore: review.score,
+        allTargets: weaknessTargets
+    };
+}
+
+function updateHomeWeaknessDetection() {
+    const titleElement = document.getElementById("homeWeaknessTitle");
+    const textElement = document.getElementById("homeWeaknessText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const weakness = getWeaknessDetectionInfo();
+
+    titleElement.textContent = weakness.name;
+    textElement.textContent = weakness.action;
+}
+
+function getWeaknessTargetsHtml() {
+    const weakness = getWeaknessDetectionInfo();
+    let html = '<div class="card"><h2>Weakness Breakdown</h2>';
+
+    weakness.allTargets.forEach(function(item) {
+        const percent = Math.min(Math.round((item.completed / item.target) * 100), 100);
+
+        html += `
+            <div class="weakness-row">
+                <div class="weakness-row-top">
+                    <span>${item.name}</span>
+                    <strong>${item.completed} / ${item.target}</strong>
+                </div>
+                <div class="weakness-bar">
+                    <div class="weakness-fill" style="width: ${percent}%"></div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    return html;
+}
+
+function getWeaknessDetectionHtml() {
+    const weakness = getWeaknessDetectionInfo();
+
+    return `
+        <div class="card weakness-card">
+            <h2>Main Weakness</h2>
+            <h3>${weakness.name}</h3>
+            <p>${weakness.summary}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Reason</h2>
+            <p>${weakness.reason}</p>
+        </div>
+
+        <div class="card daily-review-card">
+            <h2>Recommended Action</h2>
+            <p>${weakness.action}</p>
+        </div>
+
+        <div class="card">
+            <h2>Current Scores</h2>
+            <p><strong>Today:</strong> ${weakness.dailyScore}%</p>
+            <p><strong>Weekly Average:</strong> ${weakness.weeklyAverage}%</p>
+            <p><strong>Weakness Severity:</strong> ${weakness.severity}</p>
+        </div>
+
+        ${getWeaknessTargetsHtml()}
+    `;
 }
 
 function showPage(content) {
@@ -1766,6 +1952,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         checkLevelUp();
         updateHomeDailyReviewScore();
 updateHomeWeeklyReport();
+updateHomeWeaknessDetection();
     });
 
     document.getElementById("resetListeningBtn").addEventListener("click", function() {
@@ -1971,6 +2158,7 @@ if (reflectionBtn) {
             const leveledUp = checkLevelUp();
             updateHomeDailyReviewScore();
 updateHomeWeeklyReport();
+updateHomeWeaknessDetection();
 
             if (!badgeUnlocked && !leveledUp) {
                 alert("Daily reflection saved.");
@@ -2321,6 +2509,24 @@ if (advancedAchievementsBtn) {
         event.stopImmediatePropagation();
         openAdvancedAchievementsPage();
     }, true);
+}
+
+
+
+const weaknessBtn = document.getElementById("weaknessBtn");
+
+if (weaknessBtn) {
+    weaknessBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Weakness Detection</h1>
+
+            ${getWeaknessDetectionHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
 }
 
 </script>
