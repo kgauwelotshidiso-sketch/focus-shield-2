@@ -133,3 +133,29 @@ strong {
         font-size: 15px;
     }
 }
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.dashboard-grid .card {
+    margin-bottom: 0;
+    min-height: 120px;
+}
+
+.dashboard-grid h2 {
+    font-size: 14px;
+}
+
+.dashboard-grid h3 {
+    font-size: 24px;
+}
+
+@media (max-width: 340px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
