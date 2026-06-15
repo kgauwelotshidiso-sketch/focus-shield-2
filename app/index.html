@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Focus Shield</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css?v=2">
@@ -427,6 +428,67 @@ function getBadgeHtml() {
     return html;
 }
 
+
+function getSavedUnlockedBadges() {
+    const saved = localStorage.getItem("unlockedBadges");
+
+    if (saved === null) {
+        return [];
+    }
+
+    return JSON.parse(saved);
+}
+
+function saveUnlockedBadges(badgeNames) {
+    localStorage.setItem("unlockedBadges", JSON.stringify(badgeNames));
+}
+
+function initializeBadgeMemory() {
+    const saved = localStorage.getItem("unlockedBadges");
+
+    if (saved !== null) {
+        return;
+    }
+
+    const currentlyUnlocked = getBadges()
+        .filter(function(badge) {
+            return badge.unlocked;
+        })
+        .map(function(badge) {
+            return badge.name;
+        });
+
+    saveUnlockedBadges(currentlyUnlocked);
+}
+
+function checkBadgeUnlocks() {
+    const savedUnlockedBadges = getSavedUnlockedBadges();
+
+    const currentlyUnlockedBadges = getBadges()
+        .filter(function(badge) {
+            return badge.unlocked;
+        })
+        .map(function(badge) {
+            return badge.name;
+        });
+
+    const newlyUnlockedBadges = currentlyUnlockedBadges.filter(function(badgeName) {
+        return !savedUnlockedBadges.includes(badgeName);
+    });
+
+    if (newlyUnlockedBadges.length > 0) {
+        saveUnlockedBadges(currentlyUnlockedBadges);
+
+        let message = "🏆 Badge Unlocked!";
+
+        newlyUnlockedBadges.forEach(function(badgeName) {
+            message += "\n" + badgeName;
+        });
+
+        alert(message);
+    }
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -452,6 +514,7 @@ function formatTimer(seconds) {
 
 updateHomeStats();
 updateHomeBadges();
+initializeBadgeMemory();
 
 document.getElementById("goalsBtn").addEventListener("click", function() {
     showPage(`
@@ -539,6 +602,7 @@ document.getElementById("timerBtn").addEventListener("click", function() {
         document.getElementById("focusTimer").textContent = "Session complete";
         document.getElementById("focusStatus").textContent = "Well done. You completed a focus session.";
 
+        checkBadgeUnlocks();
         alert("Focus Session Complete!");
     }
 
@@ -693,6 +757,8 @@ document.getElementById("concentrationBtn").addEventListener("click", function()
                 document.getElementById("concentrationMinutes").textContent = formatMinutes(concentrationMinutes);
                 document.getElementById("concentrationTimer").textContent = "Session complete";
 
+                checkBadgeUnlocks();
+
                 alert("Concentration Session Complete!");
             }
         }, 1000);
@@ -805,6 +871,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         document.getElementById("longestStreakCount").textContent = formatDays(updatedLongestStreak);
         document.getElementById("streakStatus").textContent = "Completed today.";
         document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
+        checkBadgeUnlocks();
     });
 
     document.getElementById("resetListeningBtn").addEventListener("click", function() {
@@ -839,6 +906,7 @@ if (settingsBtn) {
             <button id="resetTodayBtn">Reset Today's Listening Count</button>
             <button id="resetFocusStatsBtn">Reset Focus Stats</button>
             <button id="resetConcentrationStatsBtn">Reset Concentration Stats</button>
+            <button id="resetBadgeMemoryBtn">Reset Badge Memory Only</button>
             <button id="resetAllStatsBtn">Reset All Stats</button>
             <button id="backBtn">Back</button>
         `);
@@ -871,6 +939,11 @@ if (settingsBtn) {
             alert("Concentration stats have been reset.");
         });
 
+        document.getElementById("resetBadgeMemoryBtn").addEventListener("click", function() {
+            localStorage.removeItem("unlockedBadges");
+            alert("Badge memory has been reset. Existing stats were not deleted.");
+        });
+
         document.getElementById("resetAllStatsBtn").addEventListener("click", function() {
             const confirmReset = confirm("Are you sure you want to reset all Focus Shield stats?");
 
@@ -892,6 +965,8 @@ if (settingsBtn) {
 
             localStorage.removeItem("concentrationSessions");
             localStorage.removeItem("concentrationMinutes");
+
+            localStorage.removeItem("unlockedBadges");
 
             alert("All stats have been reset.");
             location.reload();
@@ -991,6 +1066,8 @@ if (reflectionBtn) {
             };
 
             saveReflectionHistory(updatedHistory);
+
+            checkBadgeUnlocks();
 
             alert("Daily reflection saved.");
         });
