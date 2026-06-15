@@ -18,6 +18,11 @@
         <p id="homeMissionText">Pause and fully listen before speaking at least 3 times today.</p>
     </div>
 
+    <div class="card quote-card">
+        <h2>Daily Discipline Message</h2>
+        <p id="dailyQuoteText">Loading today's message...</p>
+    </div>
+
     <div class="dashboard-grid">
 
     <div class="card">
@@ -700,6 +705,43 @@ function checkLevelUp() {
     return false;
 }
 
+
+function getDailyDisciplineMessage() {
+    const messages = [
+        "Pause before you speak. That pause is where discipline begins.",
+        "Do not chase emotion. Return to your goal.",
+        "Listening fully is strength, not silence.",
+        "Small wins repeated daily become identity.",
+        "You are training your mind every time you return after forgetting.",
+        "Today, choose control over impulse.",
+        "A disciplined person does not need perfect feelings to act correctly.",
+        "Your future is built by the small decision you repeat today.",
+        "Do not rush to respond. Understand first.",
+        "One honest win today is better than empty motivation.",
+        "The goal is not perfection. The goal is returning faster.",
+        "Stay calm. Stay present. Stay aligned with your dream.",
+        "Every pause is proof that you are mastering yourself.",
+        "Your emotions can speak, but your goals must lead.",
+        "Win the next conversation. Win the next choice."
+    ];
+
+    const today = new Date();
+    const startOfYear = new Date(today.getFullYear(), 0, 0);
+    const dayNumber = Math.floor((today - startOfYear) / 86400000);
+
+    return messages[dayNumber % messages.length];
+}
+
+function updateDailyDisciplineMessage() {
+    const dailyQuoteText = document.getElementById("dailyQuoteText");
+
+    if (!dailyQuoteText) {
+        return;
+    }
+
+    dailyQuoteText.textContent = getDailyDisciplineMessage();
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -724,6 +766,7 @@ function formatTimer(seconds) {
 }
 
 updateHomeStats();
+updateDailyDisciplineMessage();
 updateHomeBadges();
 updateHomeLevel();
 initializeLevelMemory();
