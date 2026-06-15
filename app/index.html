@@ -2,37 +2,283 @@
 <html>
 <head>
     <title>Focus Shield</title>
-        <link rel="stylesheet" href="style.css">
-        </head>
-        <body>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
+<div class="container">
+
+    <h1>Focus Shield</h1>
+
+    <div class="card">
+        <h2>Current Streak</h2>
+        <h3 id="homeStreak">0 Days</h3>
+    </div>
+
+    <div class="card">
+        <h2>Longest Streak</h2>
+        <h3 id="homeLongestStreak">0 Days</h3>
+    </div>
+
+    <div class="card">
+        <h2>Today's Affirmation</h2>
+        <p>"I pause, I listen, and I follow my dreams."</p>
+    </div>
+
+    <button id="goalsBtn">Goals</button>
+    <button id="timerBtn">Focus Timer</button>
+    <button id="concentrationBtn">Concentration</button>
+    <button id="progressBtn">Progress</button>
+
+</div>
+
+<script>
+function getToday() {
+    return new Date().toDateString();
+}
+
+function getYesterday() {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toDateString();
+}
+
+function formatDays(number) {
+    if (number === 1) {
+        return "1 Day";
+    }
+    return number + " Days";
+}
+
+function getNumber(key) {
+    return Number(localStorage.getItem(key) || 0);
+}
+
+function saveValue(key, value) {
+    localStorage.setItem(key, value);
+}
+
+function getCurrentStreak() {
+    const today = getToday();
+    const yesterday = getYesterday();
+    const lastStreakDate = localStorage.getItem("lastStreakDate");
+    const streakCount = getNumber("streakCount");
+
+    if (lastStreakDate === today || lastStreakDate === yesterday) {
+        return streakCount;
+    }
+
+    return 0;
+}
+
+function getLongestStreak() {
+    return getNumber("longestStreakCount");
+}
+
+function updateLongestStreak(currentStreak) {
+    let longestStreak = getLongestStreak();
+
+    if (currentStreak > longestStreak) {
+        longestStreak = currentStreak;
+        saveValue("longestStreakCount", longestStreak);
+    }
+
+    return longestStreak;
+}
+
+function updateHomeStats() {
+    const currentStreak = getCurrentStreak();
+    const longestStreak = updateLongestStreak(currentStreak);
+
+    document.getElementById("homeStreak").textContent = formatDays(currentStreak);
+    document.getElementById("homeLongestStreak").textContent = formatDays(longestStreak);
+}
+
+function updateStreakForToday() {
+    const today = getToday();
+    const yesterday = getYesterday();
+    const lastStreakDate = localStorage.getItem("lastStreakDate");
+
+    let streakCount = getNumber("streakCount");
+
+    if (lastStreakDate === today) {
+        return streakCount;
+    }
+
+    if (lastStreakDate === yesterday) {
+        streakCount++;
+    } else {
+        streakCount = 1;
+    }
+
+    saveValue("streakCount", streakCount);
+    saveValue("lastStreakDate", today);
+    updateLongestStreak(streakCount);
+
+    return streakCount;
+}
+
+function showPage(content) {
+    document.body.innerHTML = `
         <div class="container">
+            ${content}
+        </div>
+    `;
+}
 
-            <h1>Focus Shield</h1>
+function goHome() {
+    location.reload();
+}
 
-                <div class="card">
-                        <h2>Current Streak</h2>
-                                <h3 id="homeStreak">0 Days</h3>
-                                    </div>
+updateHomeStats();
 
-                                        <div class="card">
-                                                <h2>Longest Streak</h2>
-                                                        <h3 id="homeLongestStreak">0 Days</h3>
-                                                            </div>
+document.getElementById("goalsBtn").addEventListener("click", function() {
+    showPage(`
+        <h1>My Goals</h1>
 
-                                                                <div class="card">
-                                                                        <h2>Today's Affirmation</h2>
-                                                                                <p>"I pause, I listen, and I follow my dreams."</p>
-                                                                                    </div>
+        <div class="card">
+            <h2>Listening Goal</h2>
+            <p>Wait for people to finish speaking before I respond.</p>
+        </div>
 
-                                                                                        <button id="goalsBtn">Goals</button>
-                                                                                            <button id="timerBtn">Focus Timer</button>
-                                                                                                <button id="concentrationBtn">Concentration</button>
-                                                                                                    <button id="progressBtn">Progress</button>
+        <div class="card">
+            <h2>Fitness Goal</h2>
+            <p>Build a fit body and stay disciplined.</p>
+        </div>
 
-                                                                                                    </div>
+        <button id="backBtn">Back</button>
+    `);
 
-                                                                                                    <script src="app.js?v=5"></script>
+    document.getElementById("backBtn").addEventListener("click", goHome);
+});
 
-                                                                                                    </body>
-                                                                                                    </html>
+document.getElementById("timerBtn").addEventListener("click", function() {
+    showPage(`
+        <h1>Focus Timer</h1>
+
+        <div class="card">
+            <h2 id="timer">10:00</h2>
+        </div>
+
+        <button id="startBtn">Start</button>
+        <button id="backBtn">Back</button>
+    `);
+
+    let timeLeft = 600;
+    let running = false;
+
+    document.getElementById("startBtn").addEventListener("click", function() {
+        if (running) return;
+
+        running = true;
+
+        const interval = setInterval(function() {
+            timeLeft--;
+
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+
+            if (seconds < 10) {
+                seconds = "0" + seconds;
+            }
+
+            document.getElementById("timer").textContent = minutes + ":" + seconds;
+
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                alert("Focus Session Complete!");
+            }
+        }, 1000);
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+});
+
+document.getElementById("concentrationBtn").addEventListener("click", function() {
+    showPage(`
+        <h1>Concentration Trainer</h1>
+
+        <div class="card">
+            <h2>Affirmation</h2>
+            <p>"I pause, I listen, and I follow my dreams."</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+});
+
+document.getElementById("progressBtn").addEventListener("click", function() {
+    const today = getToday();
+    const savedDate = localStorage.getItem("listeningDate");
+
+    if (savedDate !== today) {
+        saveValue("listeningCount", 0);
+        saveValue("listeningDate", today);
+    }
+
+    let listeningCount = getNumber("listeningCount");
+    let currentStreak = getCurrentStreak();
+    let longestStreak = updateLongestStreak(currentStreak);
+    const lastStreakDate = localStorage.getItem("lastStreakDate");
+
+    showPage(`
+        <h1>Progress Tracker</h1>
+
+        <div class="card">
+            <h2>Listening Practice Today</h2>
+            <h3 id="listeningCount">${listeningCount}</h3>
+            <p>Times I paused and listened before speaking.</p>
+            <p><strong>Today:</strong> ${today}</p>
+        </div>
+
+        <div class="card">
+            <h2>Current Streak</h2>
+            <h3 id="streakCount">${formatDays(currentStreak)}</h3>
+            <p id="streakStatus">
+                ${lastStreakDate === today ? "Completed today." : "Add one listening win today to protect your streak."}
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Longest Streak</h2>
+            <h3 id="longestStreakCount">${formatDays(longestStreak)}</h3>
+            <p>Your best discipline streak so far.</p>
+        </div>
+
+        <button id="addListeningBtn">+ Add Listening Win</button>
+        <button id="resetListeningBtn">Reset Today</button>
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("addListeningBtn").addEventListener("click", function() {
+        listeningCount++;
+
+        saveValue("listeningCount", listeningCount);
+        saveValue("listeningDate", today);
+
+        const updatedStreak = updateStreakForToday();
+        const updatedLongestStreak = updateLongestStreak(updatedStreak);
+
+        document.getElementById("listeningCount").textContent = listeningCount;
+        document.getElementById("streakCount").textContent = formatDays(updatedStreak);
+        document.getElementById("longestStreakCount").textContent = formatDays(updatedLongestStreak);
+        document.getElementById("streakStatus").textContent = "Completed today.";
+    });
+
+    document.getElementById("resetListeningBtn").addEventListener("click", function() {
+        listeningCount = 0;
+
+        saveValue("listeningCount", listeningCount);
+        saveValue("listeningDate", today);
+
+        document.getElementById("listeningCount").textContent = listeningCount;
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+});
+</script>
+
+</body>
+</html>
