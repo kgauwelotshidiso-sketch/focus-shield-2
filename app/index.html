@@ -26,6 +26,11 @@
     </div>
 
     <div class="card">
+        <h2>This Week's Wins</h2>
+        <h3 id="homeWeeklyWins">0</h3>
+    </div>
+
+    <div class="card">
         <h2>Today's Affirmation</h2>
         <p>"I pause, I listen, and I follow my dreams."</p>
     </div>
@@ -48,6 +53,17 @@ function getYesterday() {
     return yesterday.toDateString();
 }
 
+function getDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return year + "-" + month + "-" + day;
+}
+
+function getTodayKey() {
+    return getDateKey(new Date());
+}
+
 function formatDays(number) {
     if (number === 1) {
         return "1 Day";
@@ -62,6 +78,63 @@ function getNumber(key) {
 
 function saveValue(key, value) {
     localStorage.setItem(key, value);
+}
+
+function getHistory() {
+    const savedHistory = localStorage.getItem("listeningHistory");
+
+    if (savedHistory === null) {
+        return {};
+    }
+
+    return JSON.parse(savedHistory);
+}
+
+function saveHistory(history) {
+    localStorage.setItem("listeningHistory", JSON.stringify(history));
+}
+
+function getWeeklyWins() {
+    const history = getHistory();
+    let total = 0;
+
+    for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+
+        const key = getDateKey(date);
+        total += Number(history[key] || 0);
+    }
+
+    return total;
+}
+
+function getWeeklyHistoryHtml() {
+    const history = getHistory();
+    let html = "";
+
+    for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+
+        const key = getDateKey(date);
+        const label = date.toDateString();
+        const wins = Number(history[key] || 0);
+
+        html += `
+            <p><strong>${label}:</strong> ${wins} wins</p>
+        `;
+    }
+
+    return html;
+}
+
+function updateTodayHistory(count) {
+    const history = getHistory();
+    const todayKey = getTodayKey();
+
+    history[todayKey] = count;
+    saveHistory(history);
 }
 
 function getCurrentStreak() {
@@ -96,10 +169,12 @@ function updateHomeStats() {
     const currentStreak = getCurrentStreak();
     const longestStreak = updateLongestStreak(currentStreak);
     const totalWins = getNumber("totalListeningWins");
+    const weeklyWins = getWeeklyWins();
 
     document.getElementById("homeStreak").textContent = formatDays(currentStreak);
     document.getElementById("homeLongestStreak").textContent = formatDays(longestStreak);
     document.getElementById("homeTotalWins").textContent = totalWins;
+    document.getElementById("homeWeeklyWins").textContent = weeklyWins;
 }
 
 function updateStreakForToday() {
@@ -227,9 +302,13 @@ document.getElementById("progressBtn").addEventListener("click", function() {
     }
 
     let listeningCount = getNumber("listeningCount");
+    updateTodayHistory(listeningCount);
+
     let totalWins = getNumber("totalListeningWins");
     let currentStreak = getCurrentStreak();
     let longestStreak = updateLongestStreak(currentStreak);
+    let weeklyWins = getWeeklyWins();
+
     const lastStreakDate = localStorage.getItem("lastStreakDate");
 
     showPage(`
@@ -249,6 +328,12 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         </div>
 
         <div class="card">
+            <h2>This Week's Wins</h2>
+            <h3 id="weeklyWinsCount">${weeklyWins}</h3>
+            <p>Your listening wins from the last 7 days.</p>
+        </div>
+
+        <div class="card">
             <h2>Current Streak</h2>
             <h3 id="streakCount">${formatDays(currentStreak)}</h3>
             <p id="streakStatus">
@@ -260,6 +345,13 @@ document.getElementById("progressBtn").addEventListener("click", function() {
             <h2>Longest Streak</h2>
             <h3 id="longestStreakCount">${formatDays(longestStreak)}</h3>
             <p>Your best discipline streak so far.</p>
+        </div>
+
+        <div class="card">
+            <h2>Last 7 Days History</h2>
+            <div id="weeklyHistory">
+                ${getWeeklyHistoryHtml()}
+            </div>
         </div>
 
         <button id="addListeningBtn">+ Add Listening Win</button>
@@ -275,14 +367,19 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         saveValue("totalListeningWins", totalWins);
         saveValue("listeningDate", today);
 
+        updateTodayHistory(listeningCount);
+
         const updatedStreak = updateStreakForToday();
         const updatedLongestStreak = updateLongestStreak(updatedStreak);
+        const updatedWeeklyWins = getWeeklyWins();
 
         document.getElementById("listeningCount").textContent = listeningCount;
         document.getElementById("totalWinsCount").textContent = totalWins;
+        document.getElementById("weeklyWinsCount").textContent = updatedWeeklyWins;
         document.getElementById("streakCount").textContent = formatDays(updatedStreak);
         document.getElementById("longestStreakCount").textContent = formatDays(updatedLongestStreak);
         document.getElementById("streakStatus").textContent = "Completed today.";
+        document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
     });
 
     document.getElementById("resetListeningBtn").addEventListener("click", function() {
@@ -291,7 +388,11 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         saveValue("listeningCount", listeningCount);
         saveValue("listeningDate", today);
 
+        updateTodayHistory(listeningCount);
+
         document.getElementById("listeningCount").textContent = listeningCount;
+        document.getElementById("weeklyWinsCount").textContent = getWeeklyWins();
+        document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
     });
 
     document.getElementById("backBtn").addEventListener("click", goHome);
