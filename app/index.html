@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=weaknessdetection1">
+    <link rel="stylesheet" href="style.css?v=smartsuggestionsfix1">
 </head>
 <body>
 
@@ -41,6 +41,12 @@
         <h2>Weakness Detection</h2>
         <h3 id="homeWeaknessTitle">Analyzing...</h3>
         <p id="homeWeaknessText">Focus Shield is checking your discipline pattern.</p>
+    </div>
+
+    <div class="card smart-suggestions-card">
+        <h2>Smart Suggestions</h2>
+        <h3 id="homeSmartSuggestionTitle">Next Action</h3>
+        <p id="homeSmartSuggestionText">Focus Shield is choosing your next move.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -117,6 +123,7 @@
     <button id="dailyReviewBtn">Daily Review</button>
     <button id="weeklyReportBtn">Weekly Report</button>
     <button id="weaknessBtn">Weakness Detection</button>
+    <button id="smartSuggestionsBtn">Smart Suggestions</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
@@ -830,6 +837,7 @@ function incrementDailyReviewAction(actionName) {
     updateHomeDailyReviewScore();
 updateHomeWeeklyReport();
 updateHomeWeaknessDetection();
+updateHomeSmartSuggestions();
 }
 
 function isTodayReflectionWritten() {
@@ -1549,6 +1557,309 @@ function getWeaknessDetectionHtml() {
 
         ${getWeaknessTargetsHtml()}
     `;
+}
+
+
+
+function getSmartCurrentStreakValue() {
+    const possibleKeys = [
+        "currentStreak",
+        "streak",
+        "listeningStreak",
+        "dailyStreak",
+        "currentListeningStreak"
+    ];
+
+    for (let i = 0; i < possibleKeys.length; i++) {
+        const rawValue = localStorage.getItem(possibleKeys[i]);
+
+        if (rawValue !== null) {
+            const numberValue = Number(rawValue);
+
+            if (!Number.isNaN(numberValue) && numberValue > 0) {
+                return numberValue;
+            }
+        }
+    }
+
+    if (typeof getNumber === "function" && getNumber("listeningCount") > 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+function addSmartSuggestion(list, priority, title, action, reason, category) {
+    const duplicate = list.some(function(item) {
+        return item.title === title;
+    });
+
+    if (duplicate) {
+        return;
+    }
+
+    list.push({
+        priority: priority,
+        title: title,
+        action: action,
+        reason: reason,
+        category: category
+    });
+}
+
+function getSmartSuggestionsInfo() {
+    const review = getDailyReviewInfo();
+    const weekly = getWeeklyReportInfo();
+    const weakness = getWeaknessDetectionInfo();
+
+    const currentStreak = getSmartCurrentStreakValue();
+    const longestStreak = getNumber("longestStreak");
+    const listeningWins = getNumber("listeningCount");
+
+    const suggestions = [];
+
+    if (!review.missionComplete) {
+        const remaining = 3 - Math.min(listeningWins, 3);
+
+        addSmartSuggestion(
+            suggestions,
+            100,
+            "Complete Today's Mission",
+            "Get " + remaining + " more listening win" + (remaining === 1 ? "" : "s") + " today.",
+            "Your listening mission is the foundation of the app.",
+            "Listening"
+        );
+    }
+
+    if (!review.reflectionWritten) {
+        addSmartSuggestion(
+            suggestions,
+            95,
+            "Write Today's Reflection",
+            "Write what happened, what you learned, and how you will improve tomorrow.",
+            "Reflection turns the day into a lesson instead of just a memory.",
+            "Reflection"
+        );
+    }
+
+    if (!review.focusDone) {
+        addSmartSuggestion(
+            suggestions,
+            90,
+            "Do One Focus Session",
+            "Complete one 5-minute focus session today.",
+            "Your focus timer training is currently holding back your discipline score.",
+            "Focus"
+        );
+    }
+
+    if (!review.concentrationDone) {
+        addSmartSuggestion(
+            suggestions,
+            85,
+            "Train Concentration",
+            "Complete one concentration session using your affirmation.",
+            "Concentration strengthens your ability to return after forgetting.",
+            "Concentration"
+        );
+    }
+
+    if (weekly.averageScore < 25) {
+        addSmartSuggestion(
+            suggestions,
+            80,
+            "Rebuild Weekly Momentum",
+            "Aim for one small win today instead of trying to fix the whole week at once.",
+            "Your weekly average is still low, so the goal is recovery through consistency.",
+            "Weekly"
+        );
+    } else if (weekly.averageScore < 50) {
+        addSmartSuggestion(
+            suggestions,
+            75,
+            "Stabilize The Week",
+            "Complete the same small discipline routine for the next 2 days.",
+            "Your weekly score shows potential, but consistency is still weak.",
+            "Weekly"
+        );
+    }
+
+    if (weakness.name === "Listening Mission") {
+        addSmartSuggestion(
+            suggestions,
+            78,
+            "Prioritize Listening",
+            "In your next conversation, pause and let the person finish fully before speaking.",
+            "Your weakest area is connected to listening discipline.",
+            "Weakness"
+        );
+    }
+
+    if (weakness.name === "Focus Sessions") {
+        addSmartSuggestion(
+            suggestions,
+            78,
+            "Fix Focus Weakness",
+            "Use the 5-minute focus timer today before doing anything else.",
+            "Focus Sessions are your main detected weakness.",
+            "Weakness"
+        );
+    }
+
+    if (weakness.name === "Concentration Sessions") {
+        addSmartSuggestion(
+            suggestions,
+            78,
+            "Fix Concentration Weakness",
+            "Repeat: I pause, I listen, and I follow my dreams.",
+            "Concentration training is your main detected weakness.",
+            "Weakness"
+        );
+    }
+
+    if (weakness.name === "Daily Reflection") {
+        addSmartSuggestion(
+            suggestions,
+            78,
+            "Fix Reflection Weakness",
+            "Write a short reflection even if it is only 2 lines.",
+            "Your review habit is too low this week.",
+            "Weakness"
+        );
+    }
+
+    if (currentStreak === 0) {
+        addSmartSuggestion(
+            suggestions,
+            70,
+            "Restart The Streak",
+            "Get one listening win today to restart your streak.",
+            "A broken streak is not failure. The danger is not restarting.",
+            "Streak"
+        );
+    } else if (currentStreak < 3) {
+        addSmartSuggestion(
+            suggestions,
+            65,
+            "Protect The Streak",
+            "Complete today’s mission so your streak continues.",
+            "Your streak is still young, so it needs protection.",
+            "Streak"
+        );
+    } else if (currentStreak >= 3) {
+        addSmartSuggestion(
+            suggestions,
+            60,
+            "Build On The Streak",
+            "Keep the streak alive without chasing perfection.",
+            "You already have momentum. Protect it with simple daily actions.",
+            "Streak"
+        );
+    }
+
+    if (review.score >= 90) {
+        addSmartSuggestion(
+            suggestions,
+            55,
+            "Maintain Elite Standard",
+            "Repeat the same routine tomorrow. Do not add unnecessary pressure.",
+            "Your daily score is strong. The goal now is consistency.",
+            "Maintenance"
+        );
+    }
+
+    suggestions.sort(function(a, b) {
+        return b.priority - a.priority;
+    });
+
+    const primary = suggestions[0] || {
+        title: "Stay Consistent",
+        action: "Complete one small discipline action today.",
+        reason: "Small wins repeated daily build identity.",
+        category: "General"
+    };
+
+    return {
+        primary: primary,
+        suggestions: suggestions.slice(0, 5),
+        dailyScore: review.score,
+        weeklyAverage: weekly.averageScore,
+        weaknessName: weakness.name,
+        currentStreak: currentStreak,
+        longestStreak: longestStreak
+    };
+}
+
+function updateHomeSmartSuggestions() {
+    const titleElement = document.getElementById("homeSmartSuggestionTitle");
+    const textElement = document.getElementById("homeSmartSuggestionText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const smart = getSmartSuggestionsInfo();
+
+    titleElement.textContent = smart.primary.title;
+    textElement.textContent = smart.primary.action;
+}
+
+function getSmartSuggestionCardsHtml() {
+    const smart = getSmartSuggestionsInfo();
+    let html = "";
+
+    smart.suggestions.forEach(function(item, index) {
+        html += `
+            <div class="smart-suggestion-item">
+                <div class="smart-suggestion-number">${index + 1}</div>
+                <div>
+                    <h2>${escapeHtml(item.title)}</h2>
+                    <p><strong>Action:</strong> ${escapeHtml(item.action)}</p>
+                    <p><strong>Reason:</strong> ${escapeHtml(item.reason)}</p>
+                    <span class="smart-category">${escapeHtml(item.category)}</span>
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function getSmartSuggestionsHtml() {
+    const smart = getSmartSuggestionsInfo();
+
+    return `
+        <div class="card smart-suggestions-card">
+            <h2>Best Next Action</h2>
+            <h3>${escapeHtml(smart.primary.title)}</h3>
+            <p>${escapeHtml(smart.primary.action)}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Why This Matters</h2>
+            <p>${escapeHtml(smart.primary.reason)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Current Discipline Snapshot</h2>
+            <p><strong>Today:</strong> ${smart.dailyScore}%</p>
+            <p><strong>Weekly Average:</strong> ${smart.weeklyAverage}%</p>
+            <p><strong>Main Weakness:</strong> ${escapeHtml(smart.weaknessName)}</p>
+            <p><strong>Current Streak:</strong> ${smart.currentStreak} day${smart.currentStreak === 1 ? "" : "s"}</p>
+        </div>
+
+        <div class="card">
+            <h2>Top Suggestions</h2>
+            ${getSmartSuggestionCardsHtml()}
+        </div>
+    `;
+}
+
+
+function forceSmartSuggestionsRefresh() {
+    if (typeof updateHomeSmartSuggestions === "function") {
+        updateHomeSmartSuggestions();
+    }
 }
 
 function showPage(content) {
@@ -2371,7 +2682,7 @@ function getAdvancedAchievementBadges() {
     const listeningCount = getNumber("listeningCount");
     const totalListeningWins = getNumber("totalListeningWins");
     const weeklyWins = getNumber("weeklyWins");
-    const currentStreak = getNumber("currentStreak");
+    const currentStreak = getSmartCurrentStreakValue();
     const longestStreak = getNumber("longestStreak");
     const focusSessions = getNumber("focusSessions");
     const concentrationSessions = getNumber("concentrationSessions");
@@ -2529,6 +2840,26 @@ if (weaknessBtn) {
     });
 }
 
+
+
+const smartSuggestionsBtn = document.getElementById("smartSuggestionsBtn");
+
+if (smartSuggestionsBtn) {
+    smartSuggestionsBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Smart Suggestions</h1>
+
+            ${getSmartSuggestionsHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+setTimeout(forceSmartSuggestionsRefresh, 700);
 </script>
 
 </body>
