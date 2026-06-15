@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=darkfix1">
+    <link rel="stylesheet" href="style.css?v=phase2review1">
 </head>
 <body>
 
@@ -23,6 +23,12 @@
     <div class="card quote-card">
         <h2>Daily Discipline Message</h2>
         <p id="dailyQuoteText">Loading today's message...</p>
+    </div>
+
+    <div class="card daily-review-card">
+        <h2>Daily Review Score</h2>
+        <h3 id="homeDailyScore">0%</h3>
+        <p id="homeDailyScoreText">Build your discipline score today.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -96,6 +102,7 @@
     <button id="timerBtn">Focus Timer</button>
     <button id="concentrationBtn">Concentration</button>
     <button id="progressBtn">Progress</button>
+    <button id="dailyReviewBtn">Daily Review</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
@@ -744,6 +751,226 @@ function updateDailyDisciplineMessage() {
     dailyQuoteText.textContent = getDailyDisciplineMessage();
 }
 
+
+function getLocalDateKey() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return year + "-" + month + "-" + day;
+}
+
+function getDailyActionData() {
+    const saved = localStorage.getItem("dailyActionData");
+
+    if (!saved) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(saved);
+    } catch (error) {
+        return {};
+    }
+}
+
+function saveDailyActionData(data) {
+    localStorage.setItem("dailyActionData", JSON.stringify(data));
+}
+
+function getTodayDailyActions() {
+    const data = getDailyActionData();
+    const todayKey = getLocalDateKey();
+
+    if (!data[todayKey]) {
+        data[todayKey] = {
+            focusSessions: 0,
+            concentrationSessions: 0
+        };
+
+        saveDailyActionData(data);
+    }
+
+    return data[todayKey];
+}
+
+function incrementDailyReviewAction(actionName) {
+    const data = getDailyActionData();
+    const todayKey = getLocalDateKey();
+
+    if (!data[todayKey]) {
+        data[todayKey] = {
+            focusSessions: 0,
+            concentrationSessions: 0
+        };
+    }
+
+    if (!data[todayKey][actionName]) {
+        data[todayKey][actionName] = 0;
+    }
+
+    data[todayKey][actionName] += 1;
+
+    saveDailyActionData(data);
+    updateHomeDailyReviewScore();
+}
+
+function isTodayReflectionWritten() {
+    const saved = localStorage.getItem("reflectionHistory");
+
+    if (!saved) {
+        return false;
+    }
+
+    try {
+        const history = JSON.parse(saved);
+        const todayKey = getLocalDateKey();
+        const reflection = history[todayKey];
+
+        if (!reflection) {
+            return false;
+        }
+
+        return (
+            String(reflection.happened || "").trim() !== "" ||
+            String(reflection.learned || "").trim() !== "" ||
+            String(reflection.improve || "").trim() !== ""
+        );
+    } catch (error) {
+        return false;
+    }
+}
+
+function getDailyReviewInfo() {
+    const listeningWins = getNumber("listeningCount");
+    const todayActions = getTodayDailyActions();
+
+    const missionComplete = listeningWins >= 3;
+    const reflectionWritten = isTodayReflectionWritten();
+    const focusDone = Number(todayActions.focusSessions || 0) >= 1;
+    const concentrationDone = Number(todayActions.concentrationSessions || 0) >= 1;
+    const startedDay = listeningWins >= 1;
+
+    let score = 0;
+
+    if (missionComplete) {
+        score += 30;
+    } else {
+        score += Math.min(listeningWins, 3) * 10;
+    }
+
+    if (reflectionWritten) {
+        score += 25;
+    }
+
+    if (focusDone) {
+        score += 20;
+    }
+
+    if (concentrationDone) {
+        score += 15;
+    }
+
+    if (startedDay) {
+        score += 10;
+    }
+
+    score = Math.min(score, 100);
+
+    let rating = "Start building momentum.";
+    let suggestion = "Add one listening win to start today strong.";
+
+    if (score >= 90) {
+        rating = "Elite discipline day.";
+        suggestion = "Maintain this standard tomorrow. Do not relax after a strong day.";
+    } else if (score >= 75) {
+        rating = "Strong discipline day.";
+        suggestion = "You are close to elite. Add one focus or concentration session.";
+    } else if (score >= 50) {
+        rating = "Good foundation day.";
+        suggestion = "Complete the missing discipline actions before the day ends.";
+    } else if (score >= 25) {
+        rating = "Weak but recoverable day.";
+        suggestion = "Do one small action now: one listening win, one focus session, or reflection.";
+    }
+
+    if (!missionComplete) {
+        const remaining = 3 - Math.min(listeningWins, 3);
+        suggestion = "Get " + remaining + " more listening win" + (remaining === 1 ? "" : "s") + " to complete today's mission.";
+    } else if (!reflectionWritten) {
+        suggestion = "Write today's reflection to lock in the lesson.";
+    } else if (!focusDone) {
+        suggestion = "Complete one focus session to strengthen your discipline score.";
+    } else if (!concentrationDone) {
+        suggestion = "Complete one concentration session to finish the day stronger.";
+    }
+
+    return {
+        score: score,
+        rating: rating,
+        suggestion: suggestion,
+        listeningWins: listeningWins,
+        missionComplete: missionComplete,
+        reflectionWritten: reflectionWritten,
+        focusSessionsToday: Number(todayActions.focusSessions || 0),
+        concentrationSessionsToday: Number(todayActions.concentrationSessions || 0),
+        focusDone: focusDone,
+        concentrationDone: concentrationDone,
+        startedDay: startedDay
+    };
+}
+
+function updateHomeDailyReviewScore() {
+    const scoreElement = document.getElementById("homeDailyScore");
+    const textElement = document.getElementById("homeDailyScoreText");
+
+    if (!scoreElement || !textElement) {
+        return;
+    }
+
+    const review = getDailyReviewInfo();
+
+    scoreElement.textContent = review.score + "%";
+    textElement.textContent = review.rating;
+}
+
+function getDailyReviewBreakdownHtml() {
+    const review = getDailyReviewInfo();
+
+    return `
+        <div class="card">
+            <h2>Score Breakdown</h2>
+            <p><strong>Today's Mission:</strong> ${review.missionComplete ? "Complete" : review.listeningWins + " / 3"} </p>
+            <p><strong>Reflection:</strong> ${review.reflectionWritten ? "Written" : "Not written"}</p>
+            <p><strong>Focus Session:</strong> ${review.focusSessionsToday >= 1 ? review.focusSessionsToday + " done today" : "0 done today"}</p>
+            <p><strong>Concentration Session:</strong> ${review.concentrationSessionsToday >= 1 ? review.concentrationSessionsToday + " done today" : "0 done today"}</p>
+            <p><strong>Started Day:</strong> ${review.startedDay ? "Yes" : "No"}</p>
+        </div>
+    `;
+}
+
+function getDailyReviewResultHtml() {
+    const review = getDailyReviewInfo();
+
+    return `
+        <div class="card daily-review-card">
+            <h2>Today's Discipline Score</h2>
+            <h3>${review.score}%</h3>
+            <p>${review.rating}</p>
+
+            <div class="daily-score-bar">
+                <div class="daily-score-fill" style="width: ${review.score}%"></div>
+            </div>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Coach Suggestion</h2>
+            <p>${review.suggestion}</p>
+        </div>
+    `;
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -859,6 +1086,8 @@ document.getElementById("timerBtn").addEventListener("click", function() {
         document.getElementById("focusMinutesCount").textContent = formatMinutes(focusMinutes);
         document.getElementById("focusTimer").textContent = "Session complete";
         document.getElementById("focusStatus").textContent = "Well done. You completed a focus session.";
+
+        incrementDailyReviewAction("focusSessions");
 
         const badgeUnlocked = checkBadgeUnlocks();
         const leveledUp = checkLevelUp();
@@ -1019,6 +1248,8 @@ document.getElementById("concentrationBtn").addEventListener("click", function()
                 document.getElementById("concentrationMinutes").textContent = formatMinutes(concentrationMinutes);
                 document.getElementById("concentrationTimer").textContent = "Session complete";
 
+                incrementDailyReviewAction("concentrationSessions");
+
                 const badgeUnlocked = checkBadgeUnlocks();
                 const leveledUp = checkLevelUp();
 
@@ -1138,6 +1369,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
         checkBadgeUnlocks();
         checkLevelUp();
+        updateHomeDailyReviewScore();
     });
 
     document.getElementById("resetListeningBtn").addEventListener("click", function() {
@@ -1341,6 +1573,7 @@ if (reflectionBtn) {
 
             const badgeUnlocked = checkBadgeUnlocks();
             const leveledUp = checkLevelUp();
+            updateHomeDailyReviewScore();
 
             if (!badgeUnlocked && !leveledUp) {
                 alert("Daily reflection saved.");
@@ -1499,6 +1732,35 @@ if (levelBtn) {
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js");
 }
+
+
+const dailyReviewBtn = document.getElementById("dailyReviewBtn");
+
+if (dailyReviewBtn) {
+    dailyReviewBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Daily Review</h1>
+
+            ${getDailyReviewResultHtml()}
+
+            ${getDailyReviewBreakdownHtml()}
+
+            <div class="card">
+                <h2>How The Score Works</h2>
+                <p><strong>Mission progress:</strong> Up to 30 points</p>
+                <p><strong>Reflection written:</strong> 25 points</p>
+                <p><strong>Focus session:</strong> 20 points</p>
+                <p><strong>Concentration session:</strong> 15 points</p>
+                <p><strong>Started the day:</strong> 10 points</p>
+            </div>
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
 </script>
 
 </body>
