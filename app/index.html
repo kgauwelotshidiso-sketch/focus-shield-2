@@ -59,6 +59,7 @@
     <button id="timerBtn">Focus Timer</button>
     <button id="concentrationBtn">Concentration</button>
     <button id="progressBtn">Progress</button>
+    <button id="settingsBtn">Settings</button>
 
 </div>
 
@@ -635,6 +636,85 @@ document.getElementById("progressBtn").addEventListener("click", function() {
 
     document.getElementById("backBtn").addEventListener("click", goHome);
 });
+
+
+const settingsBtn = document.getElementById("settingsBtn");
+
+if (settingsBtn) {
+    settingsBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Settings</h1>
+
+            <div class="card">
+                <h2>Reset Options</h2>
+                <p>Use these carefully. Reset actions cannot be undone.</p>
+            </div>
+
+            <button id="resetTodayBtn">Reset Today's Listening Count</button>
+            <button id="resetFocusStatsBtn">Reset Focus Stats</button>
+            <button id="resetConcentrationStatsBtn">Reset Concentration Stats</button>
+            <button id="resetAllStatsBtn">Reset All Stats</button>
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("resetTodayBtn").addEventListener("click", function() {
+            const today = getToday();
+            const todayKey = getTodayKey();
+            const history = getHistory();
+
+            localStorage.setItem("listeningCount", 0);
+            localStorage.setItem("listeningDate", today);
+
+            history[todayKey] = 0;
+            saveHistory(history);
+
+            alert("Today's listening count has been reset.");
+        });
+
+        document.getElementById("resetFocusStatsBtn").addEventListener("click", function() {
+            localStorage.setItem("focusSessions", 0);
+            localStorage.setItem("focusMinutes", 0);
+
+            alert("Focus stats have been reset.");
+        });
+
+        document.getElementById("resetConcentrationStatsBtn").addEventListener("click", function() {
+            localStorage.setItem("concentrationSessions", 0);
+            localStorage.setItem("concentrationMinutes", 0);
+
+            alert("Concentration stats have been reset.");
+        });
+
+        document.getElementById("resetAllStatsBtn").addEventListener("click", function() {
+            const confirmReset = confirm("Are you sure you want to reset all Focus Shield stats?");
+
+            if (!confirmReset) {
+                return;
+            }
+
+            localStorage.removeItem("listeningCount");
+            localStorage.removeItem("listeningDate");
+            localStorage.removeItem("listeningHistory");
+            localStorage.removeItem("totalListeningWins");
+
+            localStorage.removeItem("streakCount");
+            localStorage.removeItem("lastStreakDate");
+            localStorage.removeItem("longestStreakCount");
+
+            localStorage.removeItem("focusSessions");
+            localStorage.removeItem("focusMinutes");
+
+            localStorage.removeItem("concentrationSessions");
+            localStorage.removeItem("concentrationMinutes");
+
+            alert("All stats have been reset.");
+            location.reload();
+        });
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
 </script>
 
 </body>
