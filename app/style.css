@@ -787,3 +787,12 @@ textarea:focus {
 .danger-btn {
     background: linear-gradient(135deg, #ef4444, #b91c1c);
 }
+
+.auto-goal-card {
+    border: 1px solid rgba(45, 212, 191, 0.48);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(19, 78, 74, 0.32));
+}
+
+.auto-goal-card h2 {
+    color: #2dd4bf;
+}

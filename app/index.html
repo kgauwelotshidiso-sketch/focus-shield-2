@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=goalsystem1">
+    <link rel="stylesheet" href="style.css?v=autogoals1">
 </head>
 <body>
 
@@ -2549,6 +2549,7 @@ document.getElementById("timerBtn").addEventListener("click", function() {
         document.getElementById("focusStatus").textContent = "Well done. You completed a focus session.";
 
         incrementDailyReviewAction("focusSessions");
+        autoProgressFocusShieldGoals("Focus", 1);
 
         const badgeUnlocked = checkBadgeUnlocks();
         const leveledUp = checkLevelUp();
@@ -2710,6 +2711,7 @@ document.getElementById("concentrationBtn").addEventListener("click", function()
                 document.getElementById("concentrationTimer").textContent = "Session complete";
 
                 incrementDailyReviewAction("concentrationSessions");
+                autoProgressFocusShieldGoals("Concentration", 1);
 
                 const badgeUnlocked = checkBadgeUnlocks();
                 const leveledUp = checkLevelUp();
@@ -2828,6 +2830,8 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         document.getElementById("longestStreakCount").textContent = formatDays(updatedLongestStreak);
         document.getElementById("streakStatus").textContent = "Completed today.";
         document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
+        autoProgressFocusShieldGoals("Listening", 1);
+
         checkBadgeUnlocks();
         checkLevelUp();
         updateHomeDailyReviewScore();
@@ -3033,6 +3037,8 @@ if (reflectionBtn) {
             };
 
             saveReflectionHistory(updatedHistory);
+
+            autoProgressFocusShieldGoals("Reflection", 1);
 
             const badgeUnlocked = checkBadgeUnlocks();
             const leveledUp = checkLevelUp();
@@ -3516,6 +3522,73 @@ function saveFocusShieldGoals(goals) {
     localStorage.setItem("focusShieldGoals", JSON.stringify(goals));
 }
 
+
+function normalizeGoalCategory(value) {
+    return String(value || "").trim().toLowerCase();
+}
+
+function autoProgressFocusShieldGoals(category, amount) {
+    if (typeof getFocusShieldGoals !== "function" || typeof saveFocusShieldGoals !== "function") {
+        return;
+    }
+
+    const goals = getFocusShieldGoals();
+    const targetCategory = normalizeGoalCategory(category);
+    let updated = false;
+    let completedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (goal.completed) {
+            return;
+        }
+
+        const goalCategory = normalizeGoalCategory(goal.category);
+
+        if (goalCategory !== targetCategory) {
+            return;
+        }
+
+        goal.progress = Math.max(0, Number(goal.progress || 0) + Number(amount || 1));
+
+        const target = Math.max(1, Number(goal.target || 1));
+
+        if (goal.progress >= target) {
+            goal.progress = target;
+            goal.completed = true;
+            goal.completedAt = new Date().toISOString();
+            completedGoalNames.push(goal.title);
+        }
+
+        updated = true;
+    });
+
+    if (updated) {
+        saveFocusShieldGoals(goals);
+
+        if (typeof updateHomeGoalSystem === "function") {
+            updateHomeGoalSystem();
+        }
+    }
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            alert("Goal completed: " + completedGoalNames.join(", "));
+        }, 250);
+    }
+}
+
+function getAutoGoalProgressNoteHtml() {
+    return `
+        <div class="card auto-goal-card">
+            <h2>Auto Goal Tracking</h2>
+            <p><strong>Listening</strong> goals update when you add listening wins.</p>
+            <p><strong>Focus</strong> goals update when you complete focus sessions.</p>
+            <p><strong>Concentration</strong> goals update when you complete concentration sessions.</p>
+            <p><strong>Reflection</strong> goals update when you save daily reflections.</p>
+        </div>
+    `;
+}
+
 function createFocusShieldGoal(title, target, unit, category) {
     const goals = getFocusShieldGoals();
 
@@ -3699,7 +3772,7 @@ function getGoalManagerHtml() {
     });
 
     if (activeGoalsHtml === "") {
-        activeGoalsHtml = `<p>No active goals yet. Create one below.</p>`;
+        activeGoalsHtml = `<p>No active goals yet. Create one above.</p>`;
     }
 
     if (completedGoalsHtml === "") {
@@ -3713,6 +3786,8 @@ function getGoalManagerHtml() {
             <p><strong>Completed:</strong> ${stats.completedGoals}</p>
             <p><strong>Average active progress:</strong> ${stats.averageProgress}%</p>
         </div>
+
+        ${getAutoGoalProgressNoteHtml()}
 
         <div class="card goal-create-card">
             <h2>Create New Goal</h2>
