@@ -66,10 +66,17 @@
         <p>"I pause, I listen, and I follow my dreams."</p>
     </div>
 
+    <div class="card">
+        <h2>Daily Reflection</h2>
+        <h3 id="homeReflectionStatus">Not Written</h3>
+        <p id="homeReflectionText">Write what happened today and how you will improve tomorrow.</p>
+    </div>
+
     <button id="goalsBtn">Goals</button>
     <button id="timerBtn">Focus Timer</button>
     <button id="concentrationBtn">Concentration</button>
     <button id="progressBtn">Progress</button>
+    <button id="reflectionBtn">Reflection</button>
     <button id="settingsBtn">Settings</button>
 
 </div>
@@ -749,6 +756,125 @@ if (settingsBtn) {
         document.getElementById("backBtn").addEventListener("click", goHome);
     });
 }
+
+
+
+function getReflectionHistory() {
+    const savedReflectionHistory = localStorage.getItem("reflectionHistory");
+
+    if (savedReflectionHistory === null) {
+        return {};
+    }
+
+    return JSON.parse(savedReflectionHistory);
+}
+
+function saveReflectionHistory(reflectionHistory) {
+    localStorage.setItem("reflectionHistory", JSON.stringify(reflectionHistory));
+}
+
+function updateHomeReflectionStatus() {
+    const reflectionStatus = document.getElementById("homeReflectionStatus");
+    const reflectionText = document.getElementById("homeReflectionText");
+
+    if (!reflectionStatus || !reflectionText) {
+        return;
+    }
+
+    const reflectionHistory = getReflectionHistory();
+    const todayKey = getTodayKey();
+    const todayReflection = reflectionHistory[todayKey];
+
+    if (
+        todayReflection &&
+        (
+            todayReflection.happened.trim() !== "" ||
+            todayReflection.learned.trim() !== "" ||
+            todayReflection.improve.trim() !== ""
+        )
+    ) {
+        reflectionStatus.textContent = "Written";
+        reflectionText.textContent = "Today's reflection has been saved.";
+    } else {
+        reflectionStatus.textContent = "Not Written";
+        reflectionText.textContent = "Write what happened today and how you will improve tomorrow.";
+    }
+}
+
+const reflectionBtn = document.getElementById("reflectionBtn");
+
+if (reflectionBtn) {
+    reflectionBtn.addEventListener("click", function() {
+        const reflectionHistory = getReflectionHistory();
+        const todayKey = getTodayKey();
+
+        const savedReflection = reflectionHistory[todayKey] || {
+            happened: "",
+            learned: "",
+            improve: ""
+        };
+
+        showPage(`
+            <h1>Daily Reflection</h1>
+
+            <div class="card">
+                <h2>What happened today?</h2>
+                <textarea id="reflectionHappened" placeholder="Write what happened today...">${savedReflection.happened}</textarea>
+            </div>
+
+            <div class="card">
+                <h2>What did I learn?</h2>
+                <textarea id="reflectionLearned" placeholder="Write what you learned...">${savedReflection.learned}</textarea>
+            </div>
+
+            <div class="card">
+                <h2>How will I improve tomorrow?</h2>
+                <textarea id="reflectionImprove" placeholder="Write how you will improve tomorrow...">${savedReflection.improve}</textarea>
+            </div>
+
+            <button id="saveReflectionBtn">Save Reflection</button>
+            <button id="clearReflectionBtn">Clear Today</button>
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("saveReflectionBtn").addEventListener("click", function() {
+            const updatedHistory = getReflectionHistory();
+
+            updatedHistory[todayKey] = {
+                happened: document.getElementById("reflectionHappened").value,
+                learned: document.getElementById("reflectionLearned").value,
+                improve: document.getElementById("reflectionImprove").value
+            };
+
+            saveReflectionHistory(updatedHistory);
+
+            alert("Daily reflection saved.");
+        });
+
+        document.getElementById("clearReflectionBtn").addEventListener("click", function() {
+            const confirmClear = confirm("Clear today's reflection?");
+
+            if (!confirmClear) {
+                return;
+            }
+
+            const updatedHistory = getReflectionHistory();
+            delete updatedHistory[todayKey];
+
+            saveReflectionHistory(updatedHistory);
+
+            document.getElementById("reflectionHappened").value = "";
+            document.getElementById("reflectionLearned").value = "";
+            document.getElementById("reflectionImprove").value = "";
+
+            alert("Today's reflection has been cleared.");
+        });
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+updateHomeReflectionStatus();
 
 </script>
 
