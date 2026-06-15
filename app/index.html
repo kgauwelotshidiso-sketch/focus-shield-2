@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=smartsuggestionsfix1">
+    <link rel="stylesheet" href="style.css?v=disciplinecoach1">
 </head>
 <body>
 
@@ -47,6 +47,12 @@
         <h2>Smart Suggestions</h2>
         <h3 id="homeSmartSuggestionTitle">Next Action</h3>
         <p id="homeSmartSuggestionText">Focus Shield is choosing your next move.</p>
+    </div>
+
+    <div class="card discipline-coach-card">
+        <h2>Discipline Coach</h2>
+        <h3 id="homeCoachVerdict">Analyzing...</h3>
+        <p id="homeCoachText">Your coach dashboard is preparing your next instruction.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -124,6 +130,7 @@
     <button id="weeklyReportBtn">Weekly Report</button>
     <button id="weaknessBtn">Weakness Detection</button>
     <button id="smartSuggestionsBtn">Smart Suggestions</button>
+    <button id="disciplineCoachBtn">Discipline Coach</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
@@ -838,6 +845,7 @@ function incrementDailyReviewAction(actionName) {
 updateHomeWeeklyReport();
 updateHomeWeaknessDetection();
 updateHomeSmartSuggestions();
+updateHomeDisciplineCoach();
 }
 
 function isTodayReflectionWritten() {
@@ -1862,6 +1870,199 @@ function forceSmartSuggestionsRefresh() {
     }
 }
 
+
+function getSafeBadgeProgress() {
+    if (typeof getAdvancedAchievementBadges === "function") {
+        const badges = getAdvancedAchievementBadges();
+        const unlocked = badges.filter(function(badge) {
+            return badge.unlocked;
+        }).length;
+
+        return {
+            unlocked: unlocked,
+            total: badges.length
+        };
+    }
+
+    return {
+        unlocked: 0,
+        total: 8
+    };
+}
+
+function getDisciplineCoachInfo() {
+    const review = getDailyReviewInfo();
+    const weekly = getWeeklyReportInfo();
+    const weakness = getWeaknessDetectionInfo();
+    const smart = getSmartSuggestionsInfo();
+    const level = getLevelInfo();
+    const badges = getSafeBadgeProgress();
+
+    const currentStreak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    let verdict = "Rebuild";
+    let verdictText = "Your main job is to rebuild momentum with one simple action.";
+    let coachTone = "Recovery mode";
+    let focusInstruction = smart.primary.action;
+
+    if (review.score >= 90 && weekly.averageScore >= 75) {
+        verdict = "Elite";
+        verdictText = "You are operating at a strong standard. Protect the system and avoid overcomplicating it.";
+        coachTone = "Maintain and protect";
+    } else if (review.score >= 75) {
+        verdict = "Strong";
+        verdictText = "Today is strong. Your next job is to make this repeatable tomorrow.";
+        coachTone = "Consistency mode";
+    } else if (review.score >= 50) {
+        verdict = "Building";
+        verdictText = "You have a good foundation, but one or two missing actions are holding the day back.";
+        coachTone = "Correction mode";
+    } else if (review.score >= 25) {
+        verdict = "Recoverable";
+        verdictText = "The day is not lost. Complete one action now and regain control.";
+        coachTone = "Recovery mode";
+    }
+
+    let riskLevel = "Low";
+
+    if (weekly.averageScore < 25 || weakness.severity === "High") {
+        riskLevel = "High";
+    } else if (weekly.averageScore < 50 || review.score < 50) {
+        riskLevel = "Medium";
+    }
+
+    let finalInstruction = focusInstruction;
+
+    if (!review.missionComplete) {
+        finalInstruction = "Complete today's 3-listening-win mission first.";
+    } else if (!review.reflectionWritten) {
+        finalInstruction = "Write today's reflection before doing anything else.";
+    } else if (!review.focusDone) {
+        finalInstruction = "Complete one 5-minute focus session now.";
+    } else if (!review.concentrationDone) {
+        finalInstruction = "Complete one concentration session using your affirmation.";
+    }
+
+    return {
+        verdict: verdict,
+        verdictText: verdictText,
+        coachTone: coachTone,
+        riskLevel: riskLevel,
+        finalInstruction: finalInstruction,
+        dailyScore: review.score,
+        weeklyAverage: weekly.averageScore,
+        weaknessName: weakness.name,
+        weaknessAction: weakness.action,
+        smartTitle: smart.primary.title,
+        smartAction: smart.primary.action,
+        level: level.level,
+        currentLevelXp: level.currentLevelXp,
+        xpNeeded: level.xpNeeded,
+        totalXp: level.totalXp,
+        currentStreak: currentStreak,
+        badgesUnlocked: badges.unlocked,
+        badgesTotal: badges.total,
+        missionComplete: review.missionComplete,
+        reflectionWritten: review.reflectionWritten,
+        focusDone: review.focusDone,
+        concentrationDone: review.concentrationDone
+    };
+}
+
+function updateHomeDisciplineCoach() {
+    const verdictElement = document.getElementById("homeCoachVerdict");
+    const textElement = document.getElementById("homeCoachText");
+
+    if (!verdictElement || !textElement) {
+        return;
+    }
+
+    const coach = getDisciplineCoachInfo();
+
+    verdictElement.textContent = coach.verdict;
+    textElement.textContent = coach.finalInstruction;
+}
+
+function getCoachStatusItem(label, complete) {
+    const status = complete ? "Complete" : "Incomplete";
+    const symbol = complete ? "✅" : "⬜";
+
+    return `
+        <div class="coach-status-item">
+            <span>${symbol} ${label}</span>
+            <strong>${status}</strong>
+        </div>
+    `;
+}
+
+function getDisciplineCoachHtml() {
+    const coach = getDisciplineCoachInfo();
+
+    const xpPercent = Math.round((coach.currentLevelXp / coach.xpNeeded) * 100);
+    const badgePercent = Math.round((coach.badgesUnlocked / coach.badgesTotal) * 100);
+
+    return `
+        <div class="card discipline-coach-card">
+            <h2>Coach Verdict</h2>
+            <h3>${escapeHtml(coach.verdict)}</h3>
+            <p>${escapeHtml(coach.verdictText)}</p>
+        </div>
+
+        <div class="card coach-command-card">
+            <h2>Main Instruction</h2>
+            <h3>${escapeHtml(coach.finalInstruction)}</h3>
+            <p>Do this before adding anything else.</p>
+        </div>
+
+        <div class="card">
+            <h2>Discipline Snapshot</h2>
+            <p><strong>Today:</strong> ${coach.dailyScore}%</p>
+            <p><strong>Weekly Average:</strong> ${coach.weeklyAverage}%</p>
+            <p><strong>Main Weakness:</strong> ${escapeHtml(coach.weaknessName)}</p>
+            <p><strong>Risk Level:</strong> ${escapeHtml(coach.riskLevel)}</p>
+            <p><strong>Coach Mode:</strong> ${escapeHtml(coach.coachTone)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Today's Core Actions</h2>
+            ${getCoachStatusItem("Listening Mission", coach.missionComplete)}
+            ${getCoachStatusItem("Daily Reflection", coach.reflectionWritten)}
+            ${getCoachStatusItem("Focus Session", coach.focusDone)}
+            ${getCoachStatusItem("Concentration Session", coach.concentrationDone)}
+        </div>
+
+        <div class="card">
+            <h2>Growth Status</h2>
+            <p><strong>Level:</strong> ${coach.level}</p>
+            <p><strong>XP:</strong> ${coach.currentLevelXp} / ${coach.xpNeeded}</p>
+            <div class="coach-mini-bar">
+                <div class="coach-mini-fill" style="width: ${xpPercent}%"></div>
+            </div>
+
+            <p><strong>Badges:</strong> ${coach.badgesUnlocked} / ${coach.badgesTotal}</p>
+            <div class="coach-mini-bar">
+                <div class="coach-mini-fill badge-mini-fill" style="width: ${badgePercent}%"></div>
+            </div>
+
+            <p><strong>Current Streak:</strong> ${coach.currentStreak} day${coach.currentStreak === 1 ? "" : "s"}</p>
+        </div>
+
+        <div class="card smart-suggestions-card">
+            <h2>Smart Suggestion</h2>
+            <h3>${escapeHtml(coach.smartTitle)}</h3>
+            <p>${escapeHtml(coach.smartAction)}</p>
+        </div>
+
+        <div class="card weakness-card">
+            <h2>Weakness Action</h2>
+            <h3>${escapeHtml(coach.weaknessName)}</h3>
+            <p>${escapeHtml(coach.weaknessAction)}</p>
+        </div>
+    `;
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -2860,6 +3061,26 @@ if (smartSuggestionsBtn) {
 
 
 setTimeout(forceSmartSuggestionsRefresh, 700);
+
+
+const disciplineCoachBtn = document.getElementById("disciplineCoachBtn");
+
+if (disciplineCoachBtn) {
+    disciplineCoachBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Discipline Coach</h1>
+
+            ${getDisciplineCoachHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+setTimeout(updateHomeDisciplineCoach, 900);
 </script>
 
 </body>

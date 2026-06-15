@@ -567,3 +567,59 @@ textarea:focus {
     font-size: 13px;
     font-weight: 700;
 }
+
+.discipline-coach-card {
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(49, 46, 129, 0.36));
+}
+
+.discipline-coach-card h3 {
+    color: #818cf8;
+}
+
+.coach-command-card {
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(20, 83, 45, 0.34));
+}
+
+.coach-command-card h3 {
+    color: #4ade80;
+    font-size: 24px;
+}
+
+.coach-status-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    color: #e2e8f0;
+}
+
+.coach-status-item:last-child {
+    border-bottom: none;
+}
+
+.coach-status-item strong {
+    color: #f8fafc;
+}
+
+.coach-mini-bar {
+    width: 100%;
+    height: 14px;
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 8px 0 16px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.coach-mini-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #818cf8, #2563eb);
+    border-radius: 999px;
+}
+
+.badge-mini-fill {
+    background: linear-gradient(135deg, #facc15, #f97316);
+}

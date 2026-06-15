@@ -1,9 +1,9 @@
-const CACHE_NAME = "focus-shield-v106";
+const CACHE_NAME = "focus-shield-v107";
 
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css?v=smartsuggestionsfix1",
+  "./style.css?v=disciplinecoach1",
   "./manifest.json",
   "./icon.svg"
 ];
