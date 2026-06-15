@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=streaklongestfix1">
+    <link rel="stylesheet" href="style.css?v=backupdata1">
 </head>
 <body>
 
@@ -59,6 +59,12 @@
         <h2>Streak Protection</h2>
         <h3 id="homeStreakProtectionTitle">Checking...</h3>
         <p id="homeStreakProtectionText">Focus Shield is checking your streak risk.</p>
+    </div>
+
+    <div class="card backup-card">
+        <h2>Backup / Export Data</h2>
+        <h3 id="homeBackupStatus">Ready</h3>
+        <p>Export your Focus Shield progress so you can restore it later.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -138,6 +144,7 @@
     <button id="smartSuggestionsBtn">Smart Suggestions</button>
     <button id="disciplineCoachBtn">Discipline Coach</button>
     <button id="streakProtectionBtn">Streak Protection</button>
+    <button id="backupDataBtn">Backup Data</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
@@ -2249,6 +2256,174 @@ function getStreakProtectionHtml() {
     `;
 }
 
+
+function getFocusShieldBackupObject() {
+    const storageData = {};
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        storageData[key] = localStorage.getItem(key);
+    }
+
+    return {
+        appName: "Focus Shield",
+        backupVersion: 1,
+        exportedAt: new Date().toISOString(),
+        localDate: getLocalDateKey(),
+        localStorage: storageData
+    };
+}
+
+function getFocusShieldBackupText() {
+    return JSON.stringify(getFocusShieldBackupObject(), null, 2);
+}
+
+function downloadFocusShieldBackup() {
+    const backupText = getFocusShieldBackupText();
+    const todayKey = getLocalDateKey();
+    const fileName = "focus-shield-backup-" + todayKey + ".json";
+
+    const blob = new Blob([backupText], {
+        type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = fileName;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+
+    alert("Backup downloaded: " + fileName);
+}
+
+function copyFocusShieldBackup() {
+    const backupBox = document.getElementById("backupOutput");
+
+    if (!backupBox) {
+        return;
+    }
+
+    backupBox.value = getFocusShieldBackupText();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(backupBox.value).then(function() {
+            alert("Backup copied.");
+        }).catch(function() {
+            backupBox.focus();
+            backupBox.select();
+            alert("Copy failed. Select and copy the backup text manually.");
+        });
+    } else {
+        backupBox.focus();
+        backupBox.select();
+        alert("Select and copy the backup text manually.");
+    }
+}
+
+function showBackupText() {
+    const backupBox = document.getElementById("backupOutput");
+
+    if (!backupBox) {
+        return;
+    }
+
+    backupBox.value = getFocusShieldBackupText();
+}
+
+function restoreFocusShieldBackup() {
+    const restoreBox = document.getElementById("restoreInput");
+
+    if (!restoreBox) {
+        alert("Restore box not found.");
+        return;
+    }
+
+    const restoreText = restoreBox.value.trim();
+
+    if (restoreText === "") {
+        alert("Paste your backup text first.");
+        return;
+    }
+
+    let backupData;
+
+    try {
+        backupData = JSON.parse(restoreText);
+    } catch (error) {
+        alert("Invalid backup text. Make sure you pasted the full JSON backup.");
+        return;
+    }
+
+    if (
+        !backupData ||
+        backupData.appName !== "Focus Shield" ||
+        !backupData.localStorage ||
+        typeof backupData.localStorage !== "object"
+    ) {
+        alert("This does not look like a valid Focus Shield backup.");
+        return;
+    }
+
+    const confirmRestore = confirm(
+        "Restore this backup? This will replace the current Focus Shield data on this device."
+    );
+
+    if (!confirmRestore) {
+        return;
+    }
+
+    localStorage.clear();
+
+    Object.keys(backupData.localStorage).forEach(function(key) {
+        localStorage.setItem(key, String(backupData.localStorage[key]));
+    });
+
+    alert("Backup restored. Focus Shield will reload now.");
+    location.reload();
+}
+
+function getBackupDataHtml() {
+    const backup = getFocusShieldBackupObject();
+    const keyCount = Object.keys(backup.localStorage).length;
+
+    return `
+        <div class="card backup-card">
+            <h2>Backup Status</h2>
+            <h3>Ready</h3>
+            <p><strong>Saved data items:</strong> ${keyCount}</p>
+            <p><strong>Backup date:</strong> ${escapeHtml(backup.localDate)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Export Data</h2>
+            <p>Download your Focus Shield progress as a backup file.</p>
+            <button id="downloadBackupBtn">Download Backup File</button>
+            <button id="showBackupBtn">Show Backup Text</button>
+            <button id="copyBackupBtn">Copy Backup Text</button>
+
+            <textarea id="backupOutput" class="backup-textarea" readonly placeholder="Your backup text will appear here."></textarea>
+        </div>
+
+        <div class="card restore-card">
+            <h2>Restore Data</h2>
+            <p>Paste a previous Focus Shield backup below, then restore it.</p>
+            <textarea id="restoreInput" class="backup-textarea" placeholder="Paste backup JSON here."></textarea>
+            <button id="restoreBackupBtn">Restore Backup</button>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Important</h2>
+            <p>Keep your backup file safe. Restoring a backup replaces the current data on this device.</p>
+        </div>
+    `;
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -3287,6 +3462,28 @@ if (streakProtectionBtn) {
 
 
 setTimeout(updateHomeStreakProtection, 1000);
+
+
+const backupDataBtn = document.getElementById("backupDataBtn");
+
+if (backupDataBtn) {
+    backupDataBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Backup Data</h1>
+
+            ${getBackupDataHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("downloadBackupBtn").addEventListener("click", downloadFocusShieldBackup);
+        document.getElementById("showBackupBtn").addEventListener("click", showBackupText);
+        document.getElementById("copyBackupBtn").addEventListener("click", copyFocusShieldBackup);
+        document.getElementById("restoreBackupBtn").addEventListener("click", restoreFocusShieldBackup);
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
 </script>
 
 </body>

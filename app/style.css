@@ -648,3 +648,38 @@ textarea:focus {
     background: linear-gradient(135deg, #fbbf24, #f97316);
     border-radius: 999px;
 }
+
+.backup-card {
+    border: 1px solid rgba(20, 184, 166, 0.5);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(19, 78, 74, 0.34));
+}
+
+.backup-card h3 {
+    color: #2dd4bf;
+}
+
+.restore-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.28));
+}
+
+.backup-textarea {
+    width: 100%;
+    min-height: 180px;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(2, 6, 23, 0.82);
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.45;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.backup-textarea:focus {
+    outline: none;
+    border-color: rgba(45, 212, 191, 0.75);
+    box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.18);
+}
