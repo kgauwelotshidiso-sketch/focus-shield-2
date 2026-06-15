@@ -215,3 +215,49 @@ textarea:focus {
 .badge-locked h3 {
     color: #94a3b8;
 }
+
+#badgePopupOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.badge-popup {
+    width: 100%;
+    max-width: 380px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    border-radius: 24px;
+    padding: 26px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.badge-popup-icon {
+    font-size: 52px;
+    margin-bottom: 10px;
+}
+
+.badge-popup h2 {
+    color: #facc15;
+    font-size: 24px;
+    margin-bottom: 14px;
+}
+
+.badge-popup-name {
+    color: #f8fafc;
+    font-size: 18px;
+    font-weight: bold;
+    margin: 10px 0 18px;
+}
+
+.badge-popup button {
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: #111827;
+    margin-top: 12px;
+}

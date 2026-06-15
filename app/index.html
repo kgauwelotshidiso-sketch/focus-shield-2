@@ -461,6 +461,38 @@ function initializeBadgeMemory() {
     saveUnlockedBadges(currentlyUnlocked);
 }
 
+
+function showBadgePopup(badgeNames) {
+    const oldPopup = document.getElementById("badgePopupOverlay");
+
+    if (oldPopup) {
+        oldPopup.remove();
+    }
+
+    let badgeList = "";
+
+    badgeNames.forEach(function(badgeName) {
+        badgeList += `<p class="badge-popup-name">${escapeHtml(badgeName)}</p>`;
+    });
+
+    const popup = document.createElement("div");
+    popup.id = "badgePopupOverlay";
+    popup.innerHTML = `
+        <div class="badge-popup">
+            <div class="badge-popup-icon">&#127942;</div>
+            <h2>Badge Unlocked!</h2>
+            ${badgeList}
+            <button id="closeBadgePopupBtn">Continue</button>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById("closeBadgePopupBtn").addEventListener("click", function() {
+        popup.remove();
+    });
+}
+
 function checkBadgeUnlocks() {
     const savedUnlockedBadges = getSavedUnlockedBadges();
 
@@ -478,15 +510,11 @@ function checkBadgeUnlocks() {
 
     if (newlyUnlockedBadges.length > 0) {
         saveUnlockedBadges(currentlyUnlockedBadges);
-
-        let message = "🏆 Badge Unlocked!";
-
-        newlyUnlockedBadges.forEach(function(badgeName) {
-            message += "\n" + badgeName;
-        });
-
-        alert(message);
+        showBadgePopup(newlyUnlockedBadges);
+        return true;
     }
+
+    return false;
 }
 
 function showPage(content) {
@@ -602,8 +630,11 @@ document.getElementById("timerBtn").addEventListener("click", function() {
         document.getElementById("focusTimer").textContent = "Session complete";
         document.getElementById("focusStatus").textContent = "Well done. You completed a focus session.";
 
-        checkBadgeUnlocks();
-        alert("Focus Session Complete!");
+        const badgeUnlocked = checkBadgeUnlocks();
+
+        if (!badgeUnlocked) {
+            alert("Focus Session Complete!");
+        }
     }
 
     document.getElementById("tenSecondFocusBtn").addEventListener("click", function() {
@@ -757,9 +788,11 @@ document.getElementById("concentrationBtn").addEventListener("click", function()
                 document.getElementById("concentrationMinutes").textContent = formatMinutes(concentrationMinutes);
                 document.getElementById("concentrationTimer").textContent = "Session complete";
 
-                checkBadgeUnlocks();
+                const badgeUnlocked = checkBadgeUnlocks();
 
-                alert("Concentration Session Complete!");
+                if (!badgeUnlocked) {
+                    alert("Concentration Session Complete!");
+                }
             }
         }, 1000);
     }
@@ -1067,9 +1100,11 @@ if (reflectionBtn) {
 
             saveReflectionHistory(updatedHistory);
 
-            checkBadgeUnlocks();
+            const badgeUnlocked = checkBadgeUnlocks();
 
-            alert("Daily reflection saved.");
+            if (!badgeUnlocked) {
+                alert("Daily reflection saved.");
+            }
         });
 
         document.getElementById("clearReflectionBtn").addEventListener("click", function() {
