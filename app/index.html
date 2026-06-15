@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase2review1">
+    <link rel="stylesheet" href="style.css?v=weeklyhomefix1">
 </head>
 <body>
 
@@ -29,6 +29,12 @@
         <h2>Daily Review Score</h2>
         <h3 id="homeDailyScore">0%</h3>
         <p id="homeDailyScoreText">Build your discipline score today.</p>
+    </div>
+
+    <div class="card weekly-report-card">
+        <h2>Weekly Report</h2>
+        <h3 id="homeWeeklyAverage">0%</h3>
+        <p id="homeWeeklyText">Build your 7-day discipline record.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -103,6 +109,7 @@
     <button id="concentrationBtn">Concentration</button>
     <button id="progressBtn">Progress</button>
     <button id="dailyReviewBtn">Daily Review</button>
+    <button id="weeklyReportBtn">Weekly Report</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
     <button id="reflectionBtn">Reflection</button>
@@ -814,6 +821,7 @@ function incrementDailyReviewAction(actionName) {
 
     saveDailyActionData(data);
     updateHomeDailyReviewScore();
+updateHomeWeeklyReport();
 }
 
 function isTodayReflectionWritten() {
@@ -971,6 +979,392 @@ function getDailyReviewResultHtml() {
     `;
 }
 
+
+function getDateKeyDaysAgo(daysAgo) {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return year + "-" + month + "-" + day;
+}
+
+function getShortDayName(dateKey) {
+    const parts = dateKey.split("-");
+    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+
+    return date.toLocaleDateString(undefined, {
+        weekday: "short"
+    });
+}
+
+function getFriendlyDateLabel(dateKey) {
+    const parts = dateKey.split("-");
+    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+
+    return date.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+function getObjectFromStorage(key) {
+    const saved = localStorage.getItem(key);
+
+    if (!saved) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(saved);
+    } catch (error) {
+        return null;
+    }
+}
+
+function getListeningWinsForDate(dateKey) {
+    const todayKey = getLocalDateKey();
+
+    if (dateKey === todayKey) {
+        return getNumber("listeningCount");
+    }
+
+    const dailyData = getDailyActionData();
+
+    if (dailyData[dateKey] && dailyData[dateKey].listeningWins !== undefined) {
+        return Number(dailyData[dateKey].listeningWins || 0);
+    }
+
+    const possibleKeys = [
+        "listeningHistory",
+        "weeklyHistory",
+        "last7DaysHistory",
+        "dailyListeningHistory"
+    ];
+
+    for (let i = 0; i < possibleKeys.length; i++) {
+        const history = getObjectFromStorage(possibleKeys[i]);
+
+        if (!history) {
+            continue;
+        }
+
+        if (Array.isArray(history)) {
+            for (let j = 0; j < history.length; j++) {
+                const entry = history[j];
+
+                if (!entry) {
+                    continue;
+                }
+
+                const entryDate = entry.date || entry.dateKey || entry.day || entry.key;
+
+                if (entryDate === dateKey) {
+                    return Number(entry.wins || entry.count || entry.listeningWins || entry.value || 0);
+                }
+            }
+        } else if (typeof history === "object") {
+            const value = history[dateKey];
+
+            if (typeof value === "number") {
+                return Number(value || 0);
+            }
+
+            if (value && typeof value === "object") {
+                return Number(value.wins || value.count || value.listeningWins || value.value || 0);
+            }
+        }
+    }
+
+    return 0;
+}
+
+function isReflectionWrittenForDate(dateKey) {
+    const history = getObjectFromStorage("reflectionHistory");
+
+    if (!history || !history[dateKey]) {
+        return false;
+    }
+
+    const reflection = history[dateKey];
+
+    return (
+        String(reflection.happened || "").trim() !== "" ||
+        String(reflection.learned || "").trim() !== "" ||
+        String(reflection.improve || "").trim() !== ""
+    );
+}
+
+function getDailyActionsForDate(dateKey) {
+    const dailyData = getDailyActionData();
+
+    if (!dailyData[dateKey]) {
+        return {
+            focusSessions: 0,
+            concentrationSessions: 0,
+            listeningWins: 0
+        };
+    }
+
+    return dailyData[dateKey];
+}
+
+function syncTodayDataForWeeklyReport() {
+    const data = getDailyActionData();
+    const todayKey = getLocalDateKey();
+
+    if (!data[todayKey]) {
+        data[todayKey] = {
+            focusSessions: 0,
+            concentrationSessions: 0
+        };
+    }
+
+    data[todayKey].listeningWins = getNumber("listeningCount");
+
+    saveDailyActionData(data);
+}
+
+function getDailyScoreForDate(dateKey) {
+    const listeningWins = getListeningWinsForDate(dateKey);
+    const actions = getDailyActionsForDate(dateKey);
+
+    const missionComplete = listeningWins >= 3;
+    const reflectionWritten = isReflectionWrittenForDate(dateKey);
+    const focusDone = Number(actions.focusSessions || 0) >= 1;
+    const concentrationDone = Number(actions.concentrationSessions || 0) >= 1;
+    const startedDay = listeningWins >= 1;
+
+    let score = 0;
+
+    if (missionComplete) {
+        score += 30;
+    } else {
+        score += Math.min(listeningWins, 3) * 10;
+    }
+
+    if (reflectionWritten) {
+        score += 25;
+    }
+
+    if (focusDone) {
+        score += 20;
+    }
+
+    if (concentrationDone) {
+        score += 15;
+    }
+
+    if (startedDay) {
+        score += 10;
+    }
+
+    score = Math.min(score, 100);
+
+    return {
+        dateKey: dateKey,
+        label: getFriendlyDateLabel(dateKey),
+        shortLabel: getShortDayName(dateKey),
+        score: score,
+        listeningWins: listeningWins,
+        missionComplete: missionComplete,
+        reflectionWritten: reflectionWritten,
+        focusSessions: Number(actions.focusSessions || 0),
+        concentrationSessions: Number(actions.concentrationSessions || 0),
+        focusDone: focusDone,
+        concentrationDone: concentrationDone,
+        startedDay: startedDay
+    };
+}
+
+function getWeeklyReportInfo() {
+    syncTodayDataForWeeklyReport();
+
+    const days = [];
+
+    for (let i = 6; i >= 0; i--) {
+        days.push(getDailyScoreForDate(getDateKeyDaysAgo(i)));
+    }
+
+    const totalScore = days.reduce(function(sum, day) {
+        return sum + day.score;
+    }, 0);
+
+    const averageScore = Math.round(totalScore / days.length);
+
+    let bestDay = days[0];
+    let weakestDay = days[0];
+
+    days.forEach(function(day) {
+        if (day.score > bestDay.score) {
+            bestDay = day;
+        }
+
+        if (day.score < weakestDay.score) {
+            weakestDay = day;
+        }
+    });
+
+    const missionDays = days.filter(function(day) {
+        return day.missionComplete;
+    }).length;
+
+    const reflectionDays = days.filter(function(day) {
+        return day.reflectionWritten;
+    }).length;
+
+    const focusDays = days.filter(function(day) {
+        return day.focusDone;
+    }).length;
+
+    const concentrationDays = days.filter(function(day) {
+        return day.concentrationDone;
+    }).length;
+
+    const totalListeningWins = days.reduce(function(sum, day) {
+        return sum + day.listeningWins;
+    }, 0);
+
+    let rating = "Build weekly consistency.";
+    let suggestion = "Start by completing today's mission and reflection.";
+
+    if (averageScore >= 90) {
+        rating = "Elite discipline week.";
+        suggestion = "Your system is working. Protect it next week by staying consistent, not by chasing perfection.";
+    } else if (averageScore >= 75) {
+        rating = "Strong discipline week.";
+        suggestion = "You are close to elite. Improve the weakest action category next week.";
+    } else if (averageScore >= 50) {
+        rating = "Good but inconsistent week.";
+        suggestion = "Your base is forming. Focus on completing more mission days and reflections.";
+    } else if (averageScore >= 25) {
+        rating = "Weak but recoverable week.";
+        suggestion = "Do not restart emotionally. Rebuild with one small daily win.";
+    }
+
+    if (missionDays < 5) {
+        suggestion = "Main target next week: complete the 3-listening-win mission at least 5 days.";
+    } else if (reflectionDays < 5) {
+        suggestion = "Main target next week: write your reflection at least 5 days.";
+    } else if (focusDays < 3) {
+        suggestion = "Main target next week: complete at least 3 focus sessions.";
+    } else if (concentrationDays < 3) {
+        suggestion = "Main target next week: complete at least 3 concentration sessions.";
+    }
+
+    return {
+        days: days,
+        averageScore: averageScore,
+        bestDay: bestDay,
+        weakestDay: weakestDay,
+        missionDays: missionDays,
+        reflectionDays: reflectionDays,
+        focusDays: focusDays,
+        concentrationDays: concentrationDays,
+        totalListeningWins: totalListeningWins,
+        rating: rating,
+        suggestion: suggestion
+    };
+}
+
+function updateHomeWeeklyReport() {
+    const averageElement = document.getElementById("homeWeeklyAverage");
+    const textElement = document.getElementById("homeWeeklyText");
+
+    if (!averageElement || !textElement) {
+        return;
+    }
+
+    const report = getWeeklyReportInfo();
+
+    averageElement.textContent = report.averageScore + "%";
+    textElement.textContent = report.rating;
+}
+
+function getWeeklyBarsHtml() {
+    const report = getWeeklyReportInfo();
+
+    let html = '<div class="card"><h2>Last 7 Days</h2>';
+
+    report.days.forEach(function(day) {
+        html += `
+            <div class="weekly-day-row">
+                <div class="weekly-day-top">
+                    <span>${day.shortLabel}</span>
+                    <strong>${day.score}%</strong>
+                </div>
+                <div class="weekly-score-bar">
+                    <div class="weekly-score-fill" style="width: ${day.score}%"></div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    return html;
+}
+
+function getWeeklyReportHtml() {
+    const report = getWeeklyReportInfo();
+
+    return `
+        <div class="card weekly-report-card">
+            <h2>Weekly Average</h2>
+            <h3>${report.averageScore}%</h3>
+            <p>${report.rating}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Next Week Coach Suggestion</h2>
+            <p>${report.suggestion}</p>
+        </div>
+
+        <div class="card">
+            <h2>Weekly Summary</h2>
+            <p><strong>Best Day:</strong> ${report.bestDay.label} — ${report.bestDay.score}%</p>
+            <p><strong>Weakest Day:</strong> ${report.weakestDay.label} — ${report.weakestDay.score}%</p>
+            <p><strong>Total Listening Wins:</strong> ${report.totalListeningWins}</p>
+            <p><strong>Mission Days:</strong> ${report.missionDays} / 7</p>
+            <p><strong>Reflection Days:</strong> ${report.reflectionDays} / 7</p>
+            <p><strong>Focus Days:</strong> ${report.focusDays} / 7</p>
+            <p><strong>Concentration Days:</strong> ${report.concentrationDays} / 7</p>
+        </div>
+
+        ${getWeeklyBarsHtml()}
+    `;
+}
+
+
+function refreshPhase2DashboardCards() {
+    if (typeof updateHomeDailyReviewScore === "function") {
+        updateHomeDailyReviewScore();
+    }
+
+    if (typeof updateHomeWeeklyReport === "function") {
+        updateHomeWeeklyReport();
+    }
+
+    if (typeof updateHomeStats === "function") {
+        updateHomeStats();
+    }
+
+    if (typeof updateHomeBadges === "function") {
+        updateHomeBadges();
+    }
+
+    if (typeof updateHomeLevel === "function") {
+        updateHomeLevel();
+    }
+
+    if (typeof updateDailyDisciplineMessage === "function") {
+        updateDailyDisciplineMessage();
+    }
+}
+
 function showPage(content) {
     document.body.innerHTML = `
         <div class="container">
@@ -980,6 +1374,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshPhase2DashboardCards, 80);
     location.reload();
 }
 
@@ -1370,6 +1765,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         checkBadgeUnlocks();
         checkLevelUp();
         updateHomeDailyReviewScore();
+updateHomeWeeklyReport();
     });
 
     document.getElementById("resetListeningBtn").addEventListener("click", function() {
@@ -1574,6 +1970,7 @@ if (reflectionBtn) {
             const badgeUnlocked = checkBadgeUnlocks();
             const leveledUp = checkLevelUp();
             updateHomeDailyReviewScore();
+updateHomeWeeklyReport();
 
             if (!badgeUnlocked && !leveledUp) {
                 alert("Daily reflection saved.");
@@ -1761,6 +2158,26 @@ if (dailyReviewBtn) {
     });
 }
 
+
+
+const weeklyReportBtn = document.getElementById("weeklyReportBtn");
+
+if (weeklyReportBtn) {
+    weeklyReportBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Weekly Report</h1>
+
+            ${getWeeklyReportHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+setTimeout(refreshPhase2DashboardCards, 300);
 </script>
 
 </body>
