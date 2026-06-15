@@ -31,6 +31,16 @@
     </div>
 
     <div class="card">
+        <h2>Concentration Sessions</h2>
+        <h3 id="homeConcentrationSessions">0</h3>
+    </div>
+
+    <div class="card">
+        <h2>Total Concentration Time</h2>
+        <h3 id="homeConcentrationTime">0 Minutes</h3>
+    </div>
+
+    <div class="card">
         <h2>Today's Affirmation</h2>
         <p>"I pause, I listen, and I follow my dreams."</p>
     </div>
@@ -70,6 +80,14 @@ function formatDays(number) {
     }
 
     return number + " Days";
+}
+
+function formatMinutes(number) {
+    if (number === 1) {
+        return "1 Minute";
+    }
+
+    return number + " Minutes";
 }
 
 function getNumber(key) {
@@ -170,11 +188,15 @@ function updateHomeStats() {
     const longestStreak = updateLongestStreak(currentStreak);
     const totalWins = getNumber("totalListeningWins");
     const weeklyWins = getWeeklyWins();
+    const concentrationSessions = getNumber("concentrationSessions");
+    const concentrationMinutes = getNumber("concentrationMinutes");
 
     document.getElementById("homeStreak").textContent = formatDays(currentStreak);
     document.getElementById("homeLongestStreak").textContent = formatDays(longestStreak);
     document.getElementById("homeTotalWins").textContent = totalWins;
     document.getElementById("homeWeeklyWins").textContent = weeklyWins;
+    document.getElementById("homeConcentrationSessions").textContent = concentrationSessions;
+    document.getElementById("homeConcentrationTime").textContent = formatMinutes(concentrationMinutes);
 }
 
 function updateStreakForToday() {
@@ -211,6 +233,17 @@ function showPage(content) {
 
 function goHome() {
     location.reload();
+}
+
+function formatTimer(seconds) {
+    let minutes = Math.floor(seconds / 60);
+    let remainingSeconds = seconds % 60;
+
+    if (remainingSeconds < 10) {
+        remainingSeconds = "0" + remainingSeconds;
+    }
+
+    return minutes + ":" + remainingSeconds;
 }
 
 updateHomeStats();
@@ -258,14 +291,7 @@ document.getElementById("timerBtn").addEventListener("click", function() {
         const interval = setInterval(function() {
             timeLeft--;
 
-            let minutes = Math.floor(timeLeft / 60);
-            let seconds = timeLeft % 60;
-
-            if (seconds < 10) {
-                seconds = "0" + seconds;
-            }
-
-            document.getElementById("timer").textContent = minutes + ":" + seconds;
+            document.getElementById("timer").textContent = formatTimer(timeLeft);
 
             if (timeLeft <= 0) {
                 clearInterval(interval);
@@ -278,6 +304,9 @@ document.getElementById("timerBtn").addEventListener("click", function() {
 });
 
 document.getElementById("concentrationBtn").addEventListener("click", function() {
+    let concentrationSessions = getNumber("concentrationSessions");
+    let concentrationMinutes = getNumber("concentrationMinutes");
+
     showPage(`
         <h1>Concentration Trainer</h1>
 
@@ -286,8 +315,78 @@ document.getElementById("concentrationBtn").addEventListener("click", function()
             <p>"I pause, I listen, and I follow my dreams."</p>
         </div>
 
+        <div class="card">
+            <h2>Session Timer</h2>
+            <h3 id="concentrationTimer">Choose a session</h3>
+            <p>Focus only on the affirmation until the timer ends.</p>
+        </div>
+
+        <div class="card">
+            <h2>Completed Sessions</h2>
+            <h3 id="concentrationSessions">${concentrationSessions}</h3>
+        </div>
+
+        <div class="card">
+            <h2>Total Concentration Time</h2>
+            <h3 id="concentrationMinutes">${formatMinutes(concentrationMinutes)}</h3>
+        </div>
+
+        <button id="oneMinuteBtn">Start 1 Minute</button>
+        <button id="twoMinuteBtn">Start 2 Minutes</button>
+        <button id="fiveMinuteBtn">Start 5 Minutes</button>
+        <button id="tenMinuteBtn">Start 10 Minutes</button>
         <button id="backBtn">Back</button>
     `);
+
+    let running = false;
+
+    function startConcentrationSession(minutes) {
+        if (running) return;
+
+        running = true;
+
+        let timeLeft = minutes * 60;
+        document.getElementById("concentrationTimer").textContent = formatTimer(timeLeft);
+
+        const interval = setInterval(function() {
+            timeLeft--;
+
+            document.getElementById("concentrationTimer").textContent = formatTimer(timeLeft);
+
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                running = false;
+
+                concentrationSessions++;
+                concentrationMinutes += minutes;
+
+                saveValue("concentrationSessions", concentrationSessions);
+                saveValue("concentrationMinutes", concentrationMinutes);
+
+                document.getElementById("concentrationSessions").textContent = concentrationSessions;
+                document.getElementById("concentrationMinutes").textContent = formatMinutes(concentrationMinutes);
+                document.getElementById("concentrationTimer").textContent = "Session complete";
+
+                alert("Concentration Session Complete!");
+            }
+        }, 1000);
+    }
+
+    document.getElementById("oneMinuteBtn").addEventListener("click", function() {
+        startConcentrationSession(1);
+    });
+
+    document.getElementById("twoMinuteBtn").addEventListener("click", function() {
+        startConcentrationSession(2);
+    });
+
+    document.getElementById("fiveMinuteBtn").addEventListener("click", function() {
+        startConcentrationSession(5);
+    });
+
+    document.getElementById("tenMinuteBtn").addEventListener("click", function() {
+        startConcentrationSession(10);
+    });
 
     document.getElementById("backBtn").addEventListener("click", goHome);
 });
