@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=weeklyhomefix1">
+    <link rel="stylesheet" href="style.css?v=advancedachievements1">
 </head>
 <body>
 
@@ -2178,6 +2178,151 @@ if (weeklyReportBtn) {
 
 
 setTimeout(refreshPhase2DashboardCards, 300);
+
+function getAdvancedAchievementBadges() {
+    const listeningCount = getNumber("listeningCount");
+    const totalListeningWins = getNumber("totalListeningWins");
+    const weeklyWins = getNumber("weeklyWins");
+    const currentStreak = getNumber("currentStreak");
+    const longestStreak = getNumber("longestStreak");
+    const focusSessions = getNumber("focusSessions");
+    const concentrationSessions = getNumber("concentrationSessions");
+    const reflectionCount = getReflectionCount();
+
+    return [
+        {
+            name: "First Listening Win",
+            description: "Get your first listening win.",
+            progress: Math.min(totalListeningWins, 1),
+            target: 1,
+            unlocked: totalListeningWins >= 1
+        },
+        {
+            name: "3 Wins Today",
+            description: "Complete today’s mission with 3 listening wins.",
+            progress: Math.min(listeningCount, 3),
+            target: 3,
+            unlocked: listeningCount >= 3
+        },
+        {
+            name: "7 Total Listening Wins",
+            description: "Build your listening habit across multiple days.",
+            progress: Math.min(totalListeningWins, 7),
+            target: 7,
+            unlocked: totalListeningWins >= 7
+        },
+        {
+            name: "Weekly Warrior",
+            description: "Reach 7 listening wins in one week.",
+            progress: Math.min(weeklyWins, 7),
+            target: 7,
+            unlocked: weeklyWins >= 7
+        },
+        {
+            name: "7 Day Streak",
+            description: "Keep your discipline active for 7 days.",
+            progress: Math.min(Math.max(currentStreak, longestStreak), 7),
+            target: 7,
+            unlocked: currentStreak >= 7 || longestStreak >= 7
+        },
+        {
+            name: "First Reflection",
+            description: "Write your first daily reflection.",
+            progress: Math.min(reflectionCount, 1),
+            target: 1,
+            unlocked: reflectionCount >= 1
+        },
+        {
+            name: "First Focus Session",
+            description: "Complete your first focus timer session.",
+            progress: Math.min(focusSessions, 1),
+            target: 1,
+            unlocked: focusSessions >= 1
+        },
+        {
+            name: "First Concentration Session",
+            description: "Complete your first concentration training session.",
+            progress: Math.min(concentrationSessions, 1),
+            target: 1,
+            unlocked: concentrationSessions >= 1
+        }
+    ];
+}
+
+function getAchievementCardHtml(badge) {
+    const progressPercent = Math.round((badge.progress / badge.target) * 100);
+    const statusText = badge.unlocked ? "Unlocked" : "Locked";
+    const icon = badge.unlocked ? "🏆" : "🔒";
+    const cardClass = badge.unlocked ? "achievement-card unlocked-achievement" : "achievement-card locked-achievement";
+
+    return `
+        <div class="${cardClass}">
+            <div class="achievement-top">
+                <div class="achievement-icon">${icon}</div>
+                <div>
+                    <h2>${escapeHtml(badge.name)}</h2>
+                    <p>${escapeHtml(badge.description)}</p>
+                </div>
+            </div>
+
+            <div class="achievement-status-row">
+                <strong>${statusText}</strong>
+                <span>${badge.progress} / ${badge.target}</span>
+            </div>
+
+            <div class="achievement-progress-bar">
+                <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
+            </div>
+        </div>
+    `;
+}
+
+function openAdvancedAchievementsPage() {
+    const badges = getAdvancedAchievementBadges();
+    const unlockedCount = badges.filter(function(badge) {
+        return badge.unlocked;
+    }).length;
+
+    const totalCount = badges.length;
+    const overallPercent = Math.round((unlockedCount / totalCount) * 100);
+
+    let badgeHtml = "";
+
+    badges.forEach(function(badge) {
+        badgeHtml += getAchievementCardHtml(badge);
+    });
+
+    showPage(`
+        <h1>Achievements</h1>
+
+        <div class="card achievement-summary-card">
+            <h2>Badge Progress</h2>
+            <h3>${unlockedCount} / ${totalCount}</h3>
+            <p>${overallPercent}% unlocked</p>
+
+            <div class="achievement-progress-bar">
+                <div class="achievement-progress-fill" style="width: ${overallPercent}%"></div>
+            </div>
+        </div>
+
+        ${badgeHtml}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+const advancedAchievementsBtn = document.getElementById("achievementsBtn");
+
+if (advancedAchievementsBtn) {
+    advancedAchievementsBtn.addEventListener("click", function(event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openAdvancedAchievementsPage();
+    }, true);
+}
+
 </script>
 
 </body>
