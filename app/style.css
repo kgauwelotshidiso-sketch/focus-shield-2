@@ -842,3 +842,55 @@ textarea:focus {
     color: #ffffff;
     margin-top: 12px;
 }
+
+#goalXpPopupOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    padding: 20px;
+}
+
+.goal-xp-popup {
+    width: 100%;
+    max-width: 380px;
+    background: linear-gradient(135deg, #0f172a, #422006);
+    border: 1px solid rgba(250, 204, 21, 0.58);
+    border-radius: 24px;
+    padding: 26px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.goal-xp-popup-icon {
+    font-size: 52px;
+    margin-bottom: 10px;
+}
+
+.goal-xp-popup h2 {
+    color: #facc15;
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+
+.goal-xp-popup h3 {
+    color: #f8fafc;
+    font-size: 34px;
+    margin: 10px 0 16px;
+}
+
+.goal-xp-popup-name {
+    color: #e2e8f0;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+.goal-xp-popup button {
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: #111827;
+    margin-top: 14px;
+}

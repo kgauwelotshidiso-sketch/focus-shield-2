@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=goalpopupfix1">
+    <link rel="stylesheet" href="style.css?v=goalxpfix1">
 </head>
 <body>
 
@@ -4070,6 +4070,305 @@ function autoProgressFocusShieldGoals(category, amount) {
         }, 300);
     }
 }
+
+
+/* Goal XP Rewards System */
+function getGoalXpTotal() {
+    return Number(localStorage.getItem("goalXpTotal") || 0);
+}
+
+function saveGoalXpTotal(amount) {
+    localStorage.setItem("goalXpTotal", Number(amount || 0));
+}
+
+function calculateGoalXpReward(goal) {
+    const target = Math.max(1, Number(goal.target || 1));
+    const reward = 10 + (target * 5);
+
+    return Math.min(reward, 50);
+}
+
+function awardGoalXpForCompletedGoals(goals) {
+    let totalNewXp = 0;
+    let rewardedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (!goal.completed) {
+            return;
+        }
+
+        if (goal.xpRewarded === true) {
+            return;
+        }
+
+        const reward = calculateGoalXpReward(goal);
+
+        goal.xpRewarded = true;
+        goal.xpReward = reward;
+
+        totalNewXp += reward;
+        rewardedGoalNames.push(goal.title + " +" + reward + " XP");
+    });
+
+    if (totalNewXp > 0) {
+        saveGoalXpTotal(getGoalXpTotal() + totalNewXp);
+    }
+
+    return {
+        xp: totalNewXp,
+        names: rewardedGoalNames
+    };
+}
+
+function showGoalXpRewardPopup(rewardInfo) {
+    if (!rewardInfo || rewardInfo.xp <= 0) {
+        return;
+    }
+
+    const oldPopup = document.getElementById("goalXpPopupOverlay");
+
+    if (oldPopup) {
+        oldPopup.remove();
+    }
+
+    let rewardList = "";
+
+    rewardInfo.names.forEach(function(name) {
+        rewardList += `<p class="goal-xp-popup-name">${escapeHtml(name)}</p>`;
+    });
+
+    const popup = document.createElement("div");
+    popup.id = "goalXpPopupOverlay";
+    popup.innerHTML = `
+        <div class="goal-xp-popup">
+            <div class="goal-xp-popup-icon">&#11088;</div>
+            <h2>Goal XP Earned!</h2>
+            <h3>+${rewardInfo.xp} XP</h3>
+            ${rewardList}
+            <button id="closeGoalXpPopupBtn">Continue</button>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById("closeGoalXpPopupBtn").addEventListener("click", function() {
+        popup.remove();
+    });
+}
+
+/* Override XP calculation to include goal rewards */
+function getTotalXp() {
+    const listeningXp = getNumber("totalListeningWins") * 5;
+    const focusXp = getNumber("focusSessions") * 10;
+    const concentrationXp = getNumber("concentrationSessions") * 10;
+    const reflectionXp = getReflectionCount() * 10;
+    const goalXp = getGoalXpTotal();
+
+    return listeningXp + focusXp + concentrationXp + reflectionXp + goalXp;
+}
+
+/* Override XP breakdown to include goal rewards */
+function getXpBreakdownHtml() {
+    const listeningWins = getNumber("totalListeningWins");
+    const focusSessions = getNumber("focusSessions");
+    const concentrationSessions = getNumber("concentrationSessions");
+    const reflectionCount = getReflectionCount();
+    const goalXp = getGoalXpTotal();
+
+    const listeningXp = listeningWins * 5;
+    const focusXp = focusSessions * 10;
+    const concentrationXp = concentrationSessions * 10;
+    const reflectionXp = reflectionCount * 10;
+
+    return `
+        <div class="card">
+            <h2>XP Breakdown</h2>
+            <p><strong>Listening Wins:</strong> ${listeningWins} × 5 XP = ${listeningXp} XP</p>
+            <p><strong>Focus Sessions:</strong> ${focusSessions} × 10 XP = ${focusXp} XP</p>
+            <p><strong>Concentration Sessions:</strong> ${concentrationSessions} × 10 XP = ${concentrationXp} XP</p>
+            <p><strong>Daily Reflections:</strong> ${reflectionCount} × 10 XP = ${reflectionXp} XP</p>
+            <p><strong>Completed Goals:</strong> ${goalXp} XP</p>
+        </div>
+    `;
+}
+
+/* Override manual +1 goal progress with XP rewards */
+function updateFocusShieldGoalProgress(goalId, changeAmount) {
+    const goals = getFocusShieldGoals();
+    let completedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (goal.id === goalId && !goal.completed) {
+            const target = Math.max(1, Number(goal.target || 1));
+            goal.progress = Math.max(0, Number(goal.progress || 0) + Number(changeAmount || 1));
+
+            if (goal.progress >= target) {
+                goal.progress = target;
+                goal.completed = true;
+                goal.completedAt = new Date().toISOString();
+                completedGoalNames.push(goal.title);
+            }
+        }
+    });
+
+    const rewardInfo = awardGoalXpForCompletedGoals(goals);
+
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+
+    if (typeof updateHomeLevel === "function") {
+        updateHomeLevel();
+    }
+
+    if (typeof checkLevelUp === "function") {
+        checkLevelUp();
+    }
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 250);
+
+        setTimeout(function() {
+            showGoalXpRewardPopup(rewardInfo);
+        }, 900);
+    }
+}
+
+/* Override manual Complete button with XP rewards */
+function completeFocusShieldGoal(goalId) {
+    const goals = getFocusShieldGoals();
+    let completedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (goal.id === goalId && !goal.completed) {
+            goal.progress = Math.max(1, Number(goal.target || 1));
+            goal.completed = true;
+            goal.completedAt = new Date().toISOString();
+            completedGoalNames.push(goal.title);
+        }
+    });
+
+    const rewardInfo = awardGoalXpForCompletedGoals(goals);
+
+    saveFocusShieldGoals(goals);
+    openGoalManagerPage();
+
+    if (typeof updateHomeLevel === "function") {
+        updateHomeLevel();
+    }
+
+    if (typeof checkLevelUp === "function") {
+        checkLevelUp();
+    }
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 250);
+
+        setTimeout(function() {
+            showGoalXpRewardPopup(rewardInfo);
+        }, 900);
+    }
+}
+
+/* Override auto goal progress with XP rewards */
+function autoProgressFocusShieldGoals(category, amount) {
+    if (typeof getFocusShieldGoals !== "function" || typeof saveFocusShieldGoals !== "function") {
+        return;
+    }
+
+    const goals = getFocusShieldGoals();
+    const targetCategory = normalizeGoalCategory(category);
+    let updated = false;
+    let completedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (goal.completed) {
+            return;
+        }
+
+        const goalCategory = normalizeGoalCategory(goal.category);
+
+        if (goalCategory !== targetCategory) {
+            return;
+        }
+
+        const target = Math.max(1, Number(goal.target || 1));
+        goal.progress = Math.max(0, Number(goal.progress || 0) + Number(amount || 1));
+
+        if (goal.progress >= target) {
+            goal.progress = target;
+            goal.completed = true;
+            goal.completedAt = new Date().toISOString();
+            completedGoalNames.push(goal.title);
+        }
+
+        updated = true;
+    });
+
+    const rewardInfo = awardGoalXpForCompletedGoals(goals);
+
+    if (updated) {
+        saveFocusShieldGoals(goals);
+
+        if (typeof updateHomeGoalSystem === "function") {
+            updateHomeGoalSystem();
+        }
+
+        if (typeof updateHomeLevel === "function") {
+            updateHomeLevel();
+        }
+
+        if (typeof checkLevelUp === "function") {
+            checkLevelUp();
+        }
+    }
+
+    if (completedGoalNames.length > 0) {
+        setTimeout(function() {
+            showGoalCompletionPopup(completedGoalNames);
+        }, 250);
+
+        setTimeout(function() {
+            showGoalXpRewardPopup(rewardInfo);
+        }, 900);
+    }
+}
+
+
+/* Goal XP Anti-Duplicate Fix */
+function migrateOldCompletedGoalsAsRewarded() {
+    if (typeof getFocusShieldGoals !== "function" || typeof saveFocusShieldGoals !== "function") {
+        return;
+    }
+
+    const migrationKey = "oldCompletedGoalsMigratedForXp";
+
+    if (localStorage.getItem(migrationKey) === "true") {
+        return;
+    }
+
+    const goals = getFocusShieldGoals();
+    let changed = false;
+
+    goals.forEach(function(goal) {
+        if (goal.completed && goal.xpRewarded !== true) {
+            goal.xpRewarded = true;
+            goal.xpReward = Number(goal.xpReward || 0);
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        saveFocusShieldGoals(goals);
+    }
+
+    localStorage.setItem(migrationKey, "true");
+}
+
+migrateOldCompletedGoalsAsRewarded();
 
 </script>
 
