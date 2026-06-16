@@ -1527,3 +1527,18 @@ textarea:focus {
 .daily-start-plan-card button {
     background: linear-gradient(135deg, #22c55e, #16a34a);
 }
+
+.daily-end-review-card {
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.32));
+}
+
+.daily-end-review-card h3 {
+    color: #c084fc;
+}
+
+.daily-end-review-card button {
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+}

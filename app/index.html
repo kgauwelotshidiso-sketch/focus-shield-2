@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=dailystartplan1">
+    <link rel="stylesheet" href="style.css?v=dailyendreview1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    refreshDailyEndReviewHomeCard();
     refreshDailyStartPlanHomeCard();
     refreshPremiumQuickActions();
     refreshQuickActionMenuDirect();
@@ -8039,6 +8040,311 @@ function refreshDailyStartPlanHomeCard() {
 }
 
 refreshDailyStartPlanHomeCard();
+
+
+/* Daily End Review System */
+function safeEndReviewEscape(value) {
+    if (typeof escapeHtml === "function") {
+        return escapeHtml(String(value || ""));
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getEndReviewTodayKey() {
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const today = new Date();
+
+    return today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+}
+
+function getEndReviewHistory() {
+    const saved = localStorage.getItem("dailyEndReviewHistory");
+
+    if (!saved) {
+        return {};
+    }
+
+    try {
+        const data = JSON.parse(saved);
+
+        if (data && typeof data === "object") {
+            return data;
+        }
+
+        return {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function saveEndReviewHistory(data) {
+    localStorage.setItem("dailyEndReviewHistory", JSON.stringify(data));
+}
+
+function getDailyEndReviewInfo() {
+    const listeningWins = typeof forceGetTodayListeningCountFinal === "function"
+        ? forceGetTodayListeningCountFinal()
+        : getNumber("listeningCount");
+
+    const review = typeof getDailyReviewInfo === "function"
+        ? getDailyReviewInfo()
+        : {
+            score: 0,
+            missionComplete: listeningWins >= 3,
+            reflectionWritten: false,
+            focusDone: false,
+            concentrationDone: false
+        };
+
+    const missionComplete = listeningWins >= 3 || review.missionComplete === true;
+    const reflectionWritten = review.reflectionWritten === true;
+    const focusDone = review.focusDone === true;
+    const concentrationDone = review.concentrationDone === true;
+
+    let completed = [];
+    let missed = [];
+
+    if (missionComplete) {
+        completed.push("Listening mission");
+    } else {
+        missed.push("Listening mission");
+    }
+
+    if (reflectionWritten) {
+        completed.push("Daily reflection");
+    } else {
+        missed.push("Daily reflection");
+    }
+
+    if (focusDone) {
+        completed.push("Focus session");
+    } else {
+        missed.push("Focus session");
+    }
+
+    if (concentrationDone) {
+        completed.push("Concentration session");
+    } else {
+        missed.push("Concentration session");
+    }
+
+    const score = Number(review.score || 0);
+
+    let verdict = "Weak";
+    let verdictMessage = "The day needs a reset. Do not carry the weakness into tomorrow.";
+
+    if (score >= 85) {
+        verdict = "Strong";
+        verdictMessage = "Excellent discipline day. Maintain the standard tomorrow.";
+    } else if (score >= 65) {
+        verdict = "Protected";
+        verdictMessage = "The day was protected. One or two actions can still improve it.";
+    } else if (score >= 35) {
+        verdict = "Recoverable";
+        verdictMessage = "The day is not lost. Use the review to correct tomorrow.";
+    }
+
+    let tomorrowCorrection = "Start with 1 listening win before anything else.";
+
+    if (!missionComplete) {
+        tomorrowCorrection = "Complete the 3-listening-win mission earlier in the day.";
+    } else if (!reflectionWritten) {
+        tomorrowCorrection = "Write your daily reflection before the day ends.";
+    } else if (!focusDone) {
+        tomorrowCorrection = "Complete one 5-minute focus session before distractions.";
+    } else if (!concentrationDone) {
+        tomorrowCorrection = "Complete one concentration session using your affirmation.";
+    } else {
+        tomorrowCorrection = "Repeat this structure tomorrow. Do not lower the standard.";
+    }
+
+    let strongestAction = completed.length > 0
+        ? completed[0]
+        : "You still opened the system. Restart tomorrow.";
+
+    let mainWeakness = missed.length > 0
+        ? missed[0]
+        : "No major weakness detected today.";
+
+    const history = getEndReviewHistory();
+    const todayKey = getEndReviewTodayKey();
+    const savedReview = history[todayKey] || {};
+
+    return {
+        todayKey: todayKey,
+        listeningWins: listeningWins,
+        score: score,
+        verdict: verdict,
+        verdictMessage: verdictMessage,
+        completed: completed,
+        missed: missed,
+        tomorrowCorrection: tomorrowCorrection,
+        strongestAction: strongestAction,
+        mainWeakness: mainWeakness,
+        savedWin: savedReview.win || "",
+        savedLesson: savedReview.lesson || "",
+        savedCorrection: savedReview.correction || ""
+    };
+}
+
+function getDailyEndReviewHtml() {
+    const info = getDailyEndReviewInfo();
+
+    const completedHtml = info.completed.length > 0
+        ? info.completed.map(function(item) {
+            return `<p>✅ ${safeEndReviewEscape(item)}</p>`;
+        }).join("")
+        : `<p>None completed yet.</p>`;
+
+    const missedHtml = info.missed.length > 0
+        ? info.missed.map(function(item) {
+            return `<p>⬜ ${safeEndReviewEscape(item)}</p>`;
+        }).join("")
+        : `<p>✅ No major actions missed.</p>`;
+
+    return `
+        <div class="card daily-end-review-card">
+            <h2>Day Verdict</h2>
+            <h3>${safeEndReviewEscape(info.verdict)}</h3>
+            <p>${safeEndReviewEscape(info.verdictMessage)}</p>
+            <p><strong>Daily Score:</strong> ${info.score}%</p>
+        </div>
+
+        <div class="card">
+            <h2>Completed Today</h2>
+            ${completedHtml}
+        </div>
+
+        <div class="card coach-card">
+            <h2>Missed Actions</h2>
+            ${missedHtml}
+        </div>
+
+        <div class="card smart-suggestions-card">
+            <h2>Tomorrow’s Correction</h2>
+            <h3>${safeEndReviewEscape(info.tomorrowCorrection)}</h3>
+            <p><strong>Main weakness:</strong> ${safeEndReviewEscape(info.mainWeakness)}</p>
+        </div>
+
+        <div class="card goal-system-card">
+            <h2>Strongest Action</h2>
+            <p>${safeEndReviewEscape(info.strongestAction)}</p>
+        </div>
+
+        <div class="card">
+            <h2>End Reflection</h2>
+
+            <label>What was my biggest win today?</label>
+            <textarea id="endReviewWinInput" class="backup-textarea" placeholder="Write your biggest win today.">${safeEndReviewEscape(info.savedWin)}</textarea>
+
+            <label>What did I learn?</label>
+            <textarea id="endReviewLessonInput" class="backup-textarea" placeholder="Write what you learned today.">${safeEndReviewEscape(info.savedLesson)}</textarea>
+
+            <label>What must I correct tomorrow?</label>
+            <textarea id="endReviewCorrectionInput" class="backup-textarea" placeholder="Write tomorrow's correction.">${safeEndReviewEscape(info.savedCorrection || info.tomorrowCorrection)}</textarea>
+
+            <button id="saveDailyEndReviewBtn">Save End Review</button>
+        </div>
+    `;
+}
+
+function saveDailyEndReview() {
+    const todayKey = getEndReviewTodayKey();
+    const history = getEndReviewHistory();
+    const info = getDailyEndReviewInfo();
+
+    history[todayKey] = {
+        dateKey: todayKey,
+        score: info.score,
+        verdict: info.verdict,
+        completed: info.completed,
+        missed: info.missed,
+        tomorrowCorrection: info.tomorrowCorrection,
+        win: document.getElementById("endReviewWinInput").value.trim(),
+        lesson: document.getElementById("endReviewLessonInput").value.trim(),
+        correction: document.getElementById("endReviewCorrectionInput").value.trim(),
+        savedAt: new Date().toISOString()
+    };
+
+    saveEndReviewHistory(history);
+
+    alert("Daily End Review saved.");
+}
+
+function openDailyEndReviewPage() {
+    showPage(`
+        <h1>Daily End Review</h1>
+
+        ${getDailyEndReviewHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("saveDailyEndReviewBtn").addEventListener("click", saveDailyEndReview);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertDailyEndReviewHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("dailyEndReviewHomeCard")) {
+        return;
+    }
+
+    const startPlanCard = document.getElementById("dailyStartPlanHomeCard");
+    const coachCard = document.getElementById("homeCoachVerdict")
+        ? document.getElementById("homeCoachVerdict").closest(".card")
+        : null;
+
+    const insertAfter = startPlanCard || coachCard;
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const info = getDailyEndReviewInfo();
+
+    const card = document.createElement("div");
+    card.id = "dailyEndReviewHomeCard";
+    card.className = "card daily-end-review-card";
+    card.innerHTML = `
+        <h2>Daily End Review</h2>
+        <h3>${safeEndReviewEscape(info.verdict)}</h3>
+        <p>${safeEndReviewEscape(info.tomorrowCorrection)}</p>
+        <button id="openDailyEndReviewBtn">Open End Review</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openDailyEndReviewBtn").addEventListener("click", openDailyEndReviewPage);
+}
+
+function refreshDailyEndReviewHomeCard() {
+    const oldCard = document.getElementById("dailyEndReviewHomeCard");
+
+    if (oldCard) {
+        oldCard.remove();
+    }
+
+    setTimeout(insertDailyEndReviewHomeCard, 350);
+    setTimeout(insertDailyEndReviewHomeCard, 1000);
+    setTimeout(insertDailyEndReviewHomeCard, 1800);
+}
+
+refreshDailyEndReviewHomeCard();
 
 </script>
 
