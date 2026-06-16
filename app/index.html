@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=endreviewhistory1">
+    <link rel="stylesheet" href="style.css?v=dailytimeline1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    refreshDailyTimelineHomeCard();
     refreshEndReviewHistoryHomeCard();
     refreshDailyEndReviewHomeCard();
     refreshDailyStartPlanHomeCard();
@@ -8582,6 +8583,347 @@ function refreshEndReviewHistoryHomeCard() {
 }
 
 refreshEndReviewHistoryHomeCard();
+
+
+/* Daily Timeline System */
+function safeTimelineEscape(value) {
+    if (typeof escapeHtml === "function") {
+        return escapeHtml(String(value || ""));
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getTimelineTodayKey() {
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const today = new Date();
+
+    return today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+}
+
+function getTimelineStorageObject(key) {
+    const saved = localStorage.getItem(key);
+
+    if (!saved) {
+        return {};
+    }
+
+    try {
+        const data = JSON.parse(saved);
+
+        if (data && typeof data === "object" && !Array.isArray(data)) {
+            return data;
+        }
+
+        return {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function getTimelineStorageArray(key) {
+    const saved = localStorage.getItem(key);
+
+    if (!saved) {
+        return [];
+    }
+
+    try {
+        const data = JSON.parse(saved);
+
+        if (Array.isArray(data)) {
+            return data;
+        }
+
+        return [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function getTimelineTimeText(isoText) {
+    if (!isoText) {
+        return "Today";
+    }
+
+    try {
+        const date = new Date(isoText);
+
+        return date.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    } catch (error) {
+        return "Today";
+    }
+}
+
+function getDailyTimelineEvents() {
+    const todayKey = getTimelineTodayKey();
+    let events = [];
+
+    const xpHistory = getTimelineStorageArray("xpHistoryLog");
+
+    xpHistory.forEach(function(item) {
+        if (item.dateKey !== todayKey) {
+            return;
+        }
+
+        events.push({
+            type: "XP",
+            title: item.source || "XP Gained",
+            detail: (item.detail || item.category || "XP event") + " +" + Number(item.amount || 0) + " XP",
+            time: item.createdAt || "",
+            badge: "+" + Number(item.amount || 0) + " XP"
+        });
+    });
+
+    const reflectionHistory = getTimelineStorageObject("reflectionHistory");
+    const todayReflection = reflectionHistory[todayKey];
+
+    if (todayReflection) {
+        events.push({
+            type: "Reflection",
+            title: "Daily Reflection Saved",
+            detail: "You wrote today’s reflection.",
+            time: todayReflection.savedAt || todayReflection.createdAt || "",
+            badge: "Reflection"
+        });
+    }
+
+    const endReviewHistory = getTimelineStorageObject("dailyEndReviewHistory");
+    const todayEndReview = endReviewHistory[todayKey];
+
+    if (todayEndReview) {
+        events.push({
+            type: "End Review",
+            title: "Daily End Review Saved",
+            detail: "Verdict: " + (todayEndReview.verdict || "Saved") + " • Score: " + Number(todayEndReview.score || 0) + "%",
+            time: todayEndReview.savedAt || "",
+            badge: "Review"
+        });
+    }
+
+    if (typeof getFocusShieldGoals === "function") {
+        const goals = getFocusShieldGoals();
+
+        goals.forEach(function(goal) {
+            if (!goal.completedAt) {
+                return;
+            }
+
+            const completedDate = String(goal.completedAt).slice(0, 10);
+
+            if (completedDate !== todayKey) {
+                return;
+            }
+
+            events.push({
+                type: "Goal",
+                title: "Goal Completed",
+                detail: goal.title || "Completed goal",
+                time: goal.completedAt,
+                badge: "Goal"
+            });
+        });
+    }
+
+    if (typeof getDailyActionData === "function") {
+        const actionData = getDailyActionData();
+        const todayData = actionData[todayKey] || {};
+
+        if (Number(todayData.focusSessions || 0) > 0) {
+            events.push({
+                type: "Focus",
+                title: "Focus Sessions",
+                detail: Number(todayData.focusSessions || 0) + " focus session(s) completed today.",
+                time: "",
+                badge: "Focus"
+            });
+        }
+
+        if (Number(todayData.concentrationSessions || 0) > 0) {
+            events.push({
+                type: "Concentration",
+                title: "Concentration Sessions",
+                detail: Number(todayData.concentrationSessions || 0) + " concentration session(s) completed today.",
+                time: "",
+                badge: "Train"
+            });
+        }
+
+        if (Number(todayData.listeningWins || 0) > 0) {
+            events.push({
+                type: "Listening",
+                title: "Listening Mission Progress",
+                detail: Number(todayData.listeningWins || 0) + " / 3 listening wins recorded.",
+                time: "",
+                badge: "Listen"
+            });
+        }
+    }
+
+    events.sort(function(a, b) {
+        const aTime = a.time ? new Date(a.time).getTime() : 0;
+        const bTime = b.time ? new Date(b.time).getTime() : 0;
+
+        return bTime - aTime;
+    });
+
+    return events;
+}
+
+function getDailyTimelineSummary() {
+    const events = getDailyTimelineEvents();
+
+    const xpTotal = events
+        .filter(function(event) {
+            return event.type === "XP";
+        })
+        .reduce(function(sum, event) {
+            const match = String(event.badge || "").match(/\d+/);
+            return sum + (match ? Number(match[0]) : 0);
+        }, 0);
+
+    const listeningWins = typeof forceGetTodayListeningCountFinal === "function"
+        ? forceGetTodayListeningCountFinal()
+        : getNumber("listeningCount");
+
+    return {
+        eventCount: events.length,
+        xpTotal: xpTotal,
+        listeningWins: listeningWins,
+        missionComplete: listeningWins >= 3
+    };
+}
+
+function getDailyTimelineItemsHtml() {
+    const events = getDailyTimelineEvents();
+
+    if (events.length === 0) {
+        return `
+            <div class="card">
+                <h2>No Timeline Events Yet</h2>
+                <p>Log a listening win, complete a focus session, save a reflection, or finish a goal. It will appear here.</p>
+            </div>
+        `;
+    }
+
+    let html = "";
+
+    events.forEach(function(event) {
+        html += `
+            <div class="timeline-event">
+                <div class="timeline-dot"></div>
+                <div class="timeline-event-card">
+                    <div class="timeline-event-top">
+                        <div>
+                            <h2>${safeTimelineEscape(event.title)}</h2>
+                            <p>${safeTimelineEscape(getTimelineTimeText(event.time))}</p>
+                        </div>
+                        <strong>${safeTimelineEscape(event.badge)}</strong>
+                    </div>
+                    <p>${safeTimelineEscape(event.detail)}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function getDailyTimelineHtml() {
+    const summary = getDailyTimelineSummary();
+
+    return `
+        <div class="card daily-timeline-card">
+            <h2>Timeline Summary</h2>
+            <h3>${summary.eventCount} Event${summary.eventCount === 1 ? "" : "s"} Today</h3>
+            <p><strong>XP logged today:</strong> +${summary.xpTotal} XP</p>
+            <p><strong>Listening mission:</strong> ${summary.listeningWins} / 3</p>
+            <p><strong>Status:</strong> ${summary.missionComplete ? "Mission complete" : "Mission still open"}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Purpose</h2>
+            <p>This timeline shows what happened today in order, so you can see your discipline pattern clearly.</p>
+        </div>
+
+        <div class="timeline-list">
+            ${getDailyTimelineItemsHtml()}
+        </div>
+    `;
+}
+
+function openDailyTimelinePage() {
+    showPage(`
+        <h1>Daily Timeline</h1>
+
+        ${getDailyTimelineHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertDailyTimelineHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("dailyTimelineHomeCard")) {
+        return;
+    }
+
+    const historyCard = document.getElementById("endReviewHistoryHomeCard");
+    const endReviewCard = document.getElementById("dailyEndReviewHomeCard");
+    const insertAfter = historyCard || endReviewCard;
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const summary = getDailyTimelineSummary();
+
+    const card = document.createElement("div");
+    card.id = "dailyTimelineHomeCard";
+    card.className = "card daily-timeline-card secondary-dashboard-card";
+    card.innerHTML = `
+        <h2>Daily Timeline</h2>
+        <h3>${summary.eventCount} Event${summary.eventCount === 1 ? "" : "s"} Today</h3>
+        <p>XP today: +${summary.xpTotal} • Listening: ${summary.listeningWins} / 3</p>
+        <button id="openDailyTimelineBtn">Open Timeline</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openDailyTimelineBtn").addEventListener("click", openDailyTimelinePage);
+}
+
+function refreshDailyTimelineHomeCard() {
+    const oldCard = document.getElementById("dailyTimelineHomeCard");
+
+    if (oldCard) {
+        oldCard.remove();
+    }
+
+    setTimeout(insertDailyTimelineHomeCard, 450);
+    setTimeout(insertDailyTimelineHomeCard, 1200);
+    setTimeout(insertDailyTimelineHomeCard, 2000);
+}
+
+refreshDailyTimelineHomeCard();
 
 </script>
 
