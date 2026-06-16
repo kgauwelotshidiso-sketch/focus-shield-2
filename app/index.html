@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=dailymemorydedupe1">
+    <link rel="stylesheet" href="style.css?v=weeklyconfidence1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshSmartCoachWeeklyIntelligenceSystems, 1200);
     setTimeout(refreshSmartCoachMemorySystems, 1100);
     setTimeout(p3RefreshActionRouterSystem, 1000);
     setTimeout(refreshPhase3SmartCoachSystems, 900);
@@ -14722,6 +14723,599 @@ document.addEventListener("click", function(event) {
 }, true);
 
 p3CleanDailyMemoryBucketsHard();
+
+
+/* Phase 3 Smart Coach Weekly Intelligence */
+function p3WeeklyTodayKey() {
+    if (typeof p3MemoryTodayKey === "function") return p3MemoryTodayKey();
+    if (typeof p3TodayKey === "function") return p3TodayKey();
+    if (typeof masterTodayKey === "function") return masterTodayKey();
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function p3WeeklyEscape(value) {
+    if (typeof p3MemoryEscape === "function") {
+        return p3MemoryEscape(value);
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function p3WeeklyGetDailyMemory() {
+    if (typeof p3MemoryGetDaily === "function") {
+        return p3MemoryGetDaily();
+    }
+
+    try {
+        const data = JSON.parse(localStorage.getItem("p3SmartCoachDailyMemory") || "{}");
+        return data && typeof data === "object" ? data : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function p3WeeklyGetLog() {
+    if (typeof p3MemoryGetLog === "function") {
+        return p3MemoryGetLog();
+    }
+
+    try {
+        const log = JSON.parse(localStorage.getItem("p3SmartCoachMemoryLog") || "[]");
+        return Array.isArray(log) ? log : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function p3WeeklyLast7Keys() {
+    const keys = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+
+        keys.push(
+            d.getFullYear() + "-" +
+            String(d.getMonth() + 1).padStart(2, "0") + "-" +
+            String(d.getDate()).padStart(2, "0")
+        );
+    }
+
+    return keys;
+}
+
+function p3WeeklyCountLabels(items) {
+    const counts = {};
+
+    (items || []).forEach(function(item) {
+        const label = String(item.label || "Unknown").trim();
+
+        if (!label) return;
+
+        counts[label] = (counts[label] || 0) + 1;
+    });
+
+    return Object.entries(counts).sort(function(a, b) {
+        return b[1] - a[1];
+    });
+}
+
+function p3WeeklyBuildRows() {
+    const keys = p3WeeklyLast7Keys();
+    const daily = p3WeeklyGetDailyMemory();
+
+    return keys.map(function(key) {
+        const day = daily[key] || {};
+        const recommendations = day.recommendations || [];
+        const actions = day.actionsTaken || [];
+        const followThrough = day.followThrough || [];
+
+        return {
+            key: key,
+            recommendations: recommendations,
+            actions: actions,
+            followThrough: followThrough,
+            recommendationCount: recommendations.length,
+            actionCount: actions.length,
+            followThroughCount: followThrough.length,
+            mainRecommendation: recommendations.length ? recommendations[recommendations.length - 1].label : "",
+            mainAction: actions.length ? actions[actions.length - 1].label : "",
+            mainFollowThrough: followThrough.length ? followThrough[followThrough.length - 1].label : ""
+        };
+    });
+}
+
+function p3WeeklyGetIntelligence() {
+    const rows = p3WeeklyBuildRows();
+    const log = p3WeeklyGetLog();
+
+    const recommendationDays = rows.filter(function(row) {
+        return row.recommendationCount > 0;
+    }).length;
+
+    const actionDays = rows.filter(function(row) {
+        return row.actionCount > 0;
+    }).length;
+
+    const followThroughDays = rows.filter(function(row) {
+        return row.followThroughCount > 0;
+    }).length;
+
+    const followThroughRate = recommendationDays
+        ? Math.round((followThroughDays / recommendationDays) * 100)
+        : 0;
+
+    const actionRate = recommendationDays
+        ? Math.round((actionDays / recommendationDays) * 100)
+        : 0;
+
+    const recommendationItems = [];
+    const actionItems = [];
+    const followThroughItems = [];
+
+    rows.forEach(function(row) {
+        recommendationItems.push.apply(recommendationItems, row.recommendations);
+        actionItems.push.apply(actionItems, row.actions);
+        followThroughItems.push.apply(followThroughItems, row.followThrough);
+    });
+
+    const priorityPatterns = p3WeeklyCountLabels(recommendationItems);
+    const actionPatterns = p3WeeklyCountLabels(actionItems);
+    const followPatterns = p3WeeklyCountLabels(followThroughItems);
+
+    const mostRepeatedPriority = priorityPatterns.length
+        ? priorityPatterns[0][0]
+        : "No repeated priority yet";
+
+    const bestPattern = followPatterns.length
+        ? followPatterns[0][0]
+        : actionPatterns.length
+            ? actionPatterns[0][0]
+            : "No strong pattern yet";
+
+    let weakestPoint = "Not enough weekly data yet";
+
+    if (recommendationDays > 0 && actionDays === 0) {
+        weakestPoint = "You are receiving recommendations but not taking action.";
+    } else if (actionDays > 0 && followThroughDays === 0) {
+        weakestPoint = "You are starting actions but not completing follow-through.";
+    } else if (followThroughRate < 50 && recommendationDays >= 2) {
+        weakestPoint = "Follow-through is below 50%. Focus on completing one action after routing.";
+    } else if (actionRate < 60 && recommendationDays >= 2) {
+        weakestPoint = "Action-taking is inconsistent. Use Do Next Action more often.";
+    } else if (recommendationDays < 3) {
+        weakestPoint = "Smart Coach has too few logged days. Open it daily.";
+    } else {
+        weakestPoint = "No major weakness detected. Protect the routine.";
+    }
+
+    let correction = "Open Smart Coach once per day and complete the first routed action.";
+
+    if (followThroughRate < 50 && recommendationDays >= 2) {
+        correction = "For the next 7 days, do not stop at pressing Do Next Action. Save or complete the routed action before leaving the page.";
+    } else if (mostRepeatedPriority.includes("Morning")) {
+        correction = "Set Morning Command earlier. Your day needs direction before distractions start.";
+    } else if (mostRepeatedPriority.includes("Midday")) {
+        correction = "Schedule a midday reset trigger. Your weak point is returning to control during the day.";
+    } else if (mostRepeatedPriority.includes("Goal")) {
+        correction = "Reduce goals to one next step. Execution must be smaller and clearer.";
+    } else if (mostRepeatedPriority.includes("Listening")) {
+        correction = "Complete listening wins before late afternoon. Do not wait for the day to get busy.";
+    }
+
+    const weeklyScore = Math.round(
+        (actionRate * 0.4) +
+        (followThroughRate * 0.5) +
+        (Math.min(recommendationDays, 7) / 7 * 100 * 0.1)
+    );
+
+    let weeklyStatus = "Building";
+
+    if (weeklyScore >= 85) {
+        weeklyStatus = "Elite Weekly Discipline";
+    } else if (weeklyScore >= 70) {
+        weeklyStatus = "Strong Weekly Discipline";
+    } else if (weeklyScore >= 50) {
+        weeklyStatus = "Stable With Gaps";
+    } else {
+        weeklyStatus = "Needs Execution Repair";
+    }
+
+    return {
+        rows: rows,
+        log: log,
+        recommendationDays: recommendationDays,
+        actionDays: actionDays,
+        followThroughDays: followThroughDays,
+        actionRate: actionRate,
+        followThroughRate: followThroughRate,
+        priorityPatterns: priorityPatterns,
+        actionPatterns: actionPatterns,
+        followPatterns: followPatterns,
+        mostRepeatedPriority: mostRepeatedPriority,
+        bestPattern: bestPattern,
+        weakestPoint: weakestPoint,
+        correction: correction,
+        weeklyScore: weeklyScore,
+        weeklyStatus: weeklyStatus
+    };
+}
+
+function p3WeeklyPatternHtml(title, patterns, emptyText) {
+    const body = patterns.length
+        ? patterns.slice(0, 5).map(function(item) {
+            return `<p><strong>${p3WeeklyEscape(item[0])}:</strong> ${item[1]} time${item[1] === 1 ? "" : "s"}</p>`;
+        }).join("")
+        : `<p>${p3WeeklyEscape(emptyText)}</p>`;
+
+    return `
+        <div class="card">
+            <h2>${p3WeeklyEscape(title)}</h2>
+            ${body}
+        </div>
+    `;
+}
+
+function p3WeeklyRowsHtml(rows) {
+    return rows.map(function(row) {
+        return `
+            <div class="card p3-weekly-row-card">
+                <h2>${p3WeeklyEscape(row.key)}</h2>
+                <p><strong>Recommendation:</strong> ${row.mainRecommendation ? p3WeeklyEscape(row.mainRecommendation) : "—"}</p>
+                <p><strong>Action Taken:</strong> ${row.mainAction ? p3WeeklyEscape(row.mainAction) : "—"}</p>
+                <p><strong>Follow-Through:</strong> ${row.mainFollowThrough ? p3WeeklyEscape(row.mainFollowThrough) : "—"}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+function p3WeeklyGetHtml() {
+    const intel = p3WeeklyGetIntelligence();
+
+    return `
+        <div class="card p3-weekly-intelligence-card">
+            <h2>Weekly Coach Intelligence</h2>
+            <h3>${p3WeeklyEscape(intel.weeklyStatus)} — ${intel.weeklyScore}%</h3>
+            <p>This report uses your Smart Coach Memory Log from the last 7 days.</p>
+        </div>
+
+        <div class="card">
+            <h2>7-Day Execution Numbers</h2>
+            <p><strong>Recommendation Days:</strong> ${intel.recommendationDays} / 7</p>
+            <p><strong>Action Days:</strong> ${intel.actionDays} / 7</p>
+            <p><strong>Follow-Through Days:</strong> ${intel.followThroughDays} / 7</p>
+            <p><strong>Action Rate:</strong> ${intel.actionRate}%</p>
+            <p><strong>Follow-Through Rate:</strong> ${intel.followThroughRate}%</p>
+        </div>
+
+        <div class="card p3-weekly-diagnosis-card">
+            <h2>Coach Diagnosis</h2>
+            <p><strong>Most Repeated Priority:</strong> ${p3WeeklyEscape(intel.mostRepeatedPriority)}</p>
+            <p><strong>Best Discipline Pattern:</strong> ${p3WeeklyEscape(intel.bestPattern)}</p>
+            <p><strong>Weakest Execution Point:</strong> ${p3WeeklyEscape(intel.weakestPoint)}</p>
+        </div>
+
+        <div class="card p3-weekly-correction-card">
+            <h2>Correction for Next Week</h2>
+            <p>${p3WeeklyEscape(intel.correction)}</p>
+        </div>
+
+        ${p3WeeklyPatternHtml("Repeated Coach Priorities", intel.priorityPatterns, "No repeated priorities yet.")}
+        ${p3WeeklyPatternHtml("Actions You Actually Took", intel.actionPatterns, "No action patterns yet.")}
+        ${p3WeeklyPatternHtml("Completed Follow-Through", intel.followPatterns, "No follow-through patterns yet.")}
+
+        <div class="card">
+            <h2>Daily Breakdown</h2>
+            <p>Each day shows the last logged recommendation, action, and follow-through.</p>
+        </div>
+
+        ${p3WeeklyRowsHtml(intel.rows)}
+    `;
+}
+
+function openSmartCoachWeeklyIntelligencePage() {
+    if (typeof p3CleanDailyMemoryBucketsHard === "function") {
+        p3CleanDailyMemoryBucketsHard();
+    }
+
+    if (typeof p3MemoryStrongCleanAll === "function") {
+        p3MemoryStrongCleanAll();
+    }
+
+    showPage(`
+        <h1>Smart Coach Weekly Intelligence</h1>
+
+        <div id="p3WeeklyIntelligenceRoot">
+            ${p3WeeklyGetHtml()}
+        </div>
+
+        <div class="card p3-action-card">
+            <h2>Weekly Intelligence Actions</h2>
+            <button id="p3WeeklyOpenMemoryBtn">Open Memory Log</button>
+            <button id="p3WeeklyOpenCoachBtn">Open Smart Coach</button>
+            <button id="p3WeeklyOpenDailyOSBtn">Open Daily OS</button>
+            <button id="p3WeeklyRefreshBtn">Refresh Weekly Intelligence</button>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("p3WeeklyOpenMemoryBtn").addEventListener("click", function() {
+        if (typeof openSmartCoachMemoryLogPage === "function") {
+            openSmartCoachMemoryLogPage();
+        }
+    });
+
+    document.getElementById("p3WeeklyOpenCoachBtn").addEventListener("click", function() {
+        if (typeof openSmartDailyCoachPage === "function") {
+            openSmartDailyCoachPage();
+        }
+    });
+
+    document.getElementById("p3WeeklyOpenDailyOSBtn").addEventListener("click", function() {
+        if (typeof openDailyOperatingSystemPage === "function") {
+            openDailyOperatingSystemPage();
+        }
+    });
+
+    document.getElementById("p3WeeklyRefreshBtn").addEventListener("click", function() {
+        const root = document.getElementById("p3WeeklyIntelligenceRoot");
+
+        if (root) {
+            root.innerHTML = p3WeeklyGetHtml();
+        }
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertWeeklyIntelligenceHomeButton() {
+    const card = document.getElementById("smartDailyCoachHomeCard");
+
+    if (!card) {
+        return;
+    }
+
+    if (document.getElementById("p3HomeWeeklyIntelligenceBtn")) {
+        return;
+    }
+
+    const btn = document.createElement("button");
+    btn.id = "p3HomeWeeklyIntelligenceBtn";
+    btn.type = "button";
+    btn.textContent = "Weekly Intelligence";
+    btn.className = "p3-weekly-btn";
+    btn.addEventListener("click", openSmartCoachWeeklyIntelligencePage);
+
+    card.appendChild(btn);
+}
+
+function addWeeklyIntelligenceQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) {
+        return;
+    }
+
+    if (document.getElementById("quickWeeklyIntelligenceBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickWeeklyIntelligenceBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">WK</span>
+        <span class="premium-quick-label">Weekly Intel</span>
+        <span class="premium-quick-sub">Coach diagnosis</span>
+    `;
+
+    button.addEventListener("click", openSmartCoachWeeklyIntelligencePage);
+
+    grid.appendChild(button);
+}
+
+function addWeeklyIntelligenceToMemoryLog() {
+    const memoryActions = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Memory Actions";
+        });
+
+    if (!memoryActions) {
+        return;
+    }
+
+    if (document.getElementById("p3OpenWeeklyIntelligenceBtn")) {
+        return;
+    }
+
+    const btn = document.createElement("button");
+    btn.id = "p3OpenWeeklyIntelligenceBtn";
+    btn.type = "button";
+    btn.textContent = "Open Weekly Intelligence";
+    btn.className = "p3-weekly-btn";
+    btn.addEventListener("click", openSmartCoachWeeklyIntelligencePage);
+
+    memoryActions.appendChild(btn);
+}
+
+/* Add Weekly Intelligence to System Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.p3WeeklyHealthWrapped) {
+    window.p3WeeklyHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksWeekly = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksWeekly();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Smart Coach Weekly Intelligence";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Smart Coach Weekly Intelligence",
+                "PASS",
+                "Weekly coach diagnosis can read recommendations, actions, and follow-through.",
+                "Use Weekly Intelligence to correct next week’s execution pattern."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshSmartCoachWeeklyIntelligenceSystems() {
+    setTimeout(insertWeeklyIntelligenceHomeButton, 700);
+    setTimeout(insertWeeklyIntelligenceHomeButton, 1600);
+    setTimeout(insertWeeklyIntelligenceHomeButton, 2800);
+
+    setTimeout(addWeeklyIntelligenceQuickButton, 800);
+    setTimeout(addWeeklyIntelligenceQuickButton, 1800);
+    setTimeout(addWeeklyIntelligenceQuickButton, 3000);
+
+    setTimeout(addWeeklyIntelligenceToMemoryLog, 700);
+    setTimeout(addWeeklyIntelligenceToMemoryLog, 1600);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof refreshSmartCoachHomeCard === "function" && !window.p3WeeklyHomeRefreshWrapped) {
+    window.p3WeeklyHomeRefreshWrapped = true;
+
+    const oldRefreshSmartCoachHomeCardWeekly = refreshSmartCoachHomeCard;
+
+    refreshSmartCoachHomeCard = function() {
+        oldRefreshSmartCoachHomeCardWeekly();
+        refreshSmartCoachWeeklyIntelligenceSystems();
+    };
+}
+
+if (typeof openSmartCoachMemoryLogPage === "function" && !window.p3WeeklyMemoryOpenWrapped) {
+    window.p3WeeklyMemoryOpenWrapped = true;
+
+    const oldOpenSmartCoachMemoryLogPageWeekly = openSmartCoachMemoryLogPage;
+
+    openSmartCoachMemoryLogPage = function() {
+        oldOpenSmartCoachMemoryLogPageWeekly();
+        setTimeout(addWeeklyIntelligenceToMemoryLog, 500);
+        setTimeout(addWeeklyIntelligenceToMemoryLog, 1200);
+    };
+}
+
+refreshSmartCoachWeeklyIntelligenceSystems();
+
+
+/* Phase 3 Weekly Intelligence Confidence Scoring Fix */
+if (typeof p3WeeklyGetIntelligence === "function" && !window.p3WeeklyConfidenceScoringWrapped) {
+    window.p3WeeklyConfidenceScoringWrapped = true;
+
+    const oldP3WeeklyGetIntelligenceConfidence = p3WeeklyGetIntelligence;
+
+    p3WeeklyGetIntelligence = function() {
+        const intel = oldP3WeeklyGetIntelligenceConfidence();
+
+        const dataConfidence = Math.round((intel.recommendationDays / 7) * 100);
+        const executionQuality = Math.round((intel.actionRate * 0.45) + (intel.followThroughRate * 0.55));
+        const confidenceAdjustedScore = Math.round(
+            (executionQuality * 0.7) * (intel.recommendationDays / 7) +
+            (dataConfidence * 0.3)
+        );
+
+        intel.dataConfidence = dataConfidence;
+        intel.executionQuality = executionQuality;
+        intel.weeklyScore = Math.max(0, Math.min(100, confidenceAdjustedScore));
+
+        if (intel.recommendationDays < 3) {
+            intel.weeklyStatus = "Early Weekly Data";
+            intel.weakestPoint = "Smart Coach has too few logged days. Open it daily before judging the full week.";
+            intel.correction = "For the next 7 days, open Smart Coach once per day and complete the first routed action. The report becomes more accurate after 3+ logged days.";
+        } else if (intel.weeklyScore >= 85) {
+            intel.weeklyStatus = "Elite Weekly Discipline";
+        } else if (intel.weeklyScore >= 70) {
+            intel.weeklyStatus = "Strong Weekly Discipline";
+        } else if (intel.weeklyScore >= 50) {
+            intel.weeklyStatus = "Stable With Gaps";
+        } else {
+            intel.weeklyStatus = "Needs Execution Repair";
+        }
+
+        return intel;
+    };
+}
+
+if (typeof p3WeeklyGetHtml === "function" && !window.p3WeeklyHtmlConfidenceWrapped) {
+    window.p3WeeklyHtmlConfidenceWrapped = true;
+
+    p3WeeklyGetHtml = function() {
+        const intel = p3WeeklyGetIntelligence();
+
+        return `
+            <div class="card p3-weekly-intelligence-card">
+                <h2>Weekly Coach Intelligence</h2>
+                <h3>${p3WeeklyEscape(intel.weeklyStatus)} — ${intel.weeklyScore}%</h3>
+                <p>This report uses your Smart Coach Memory Log from the last 7 days.</p>
+            </div>
+
+            <div class="card p3-weekly-confidence-card">
+                <h2>Report Confidence</h2>
+                <p><strong>Data Confidence:</strong> ${intel.dataConfidence}%</p>
+                <p><strong>Execution Quality:</strong> ${intel.executionQuality}%</p>
+                <p><strong>Logged Days:</strong> ${intel.recommendationDays} / 7</p>
+                <p>The weekly score is now adjusted by how many days were actually logged.</p>
+            </div>
+
+            <div class="card">
+                <h2>7-Day Execution Numbers</h2>
+                <p><strong>Recommendation Days:</strong> ${intel.recommendationDays} / 7</p>
+                <p><strong>Action Days:</strong> ${intel.actionDays} / 7</p>
+                <p><strong>Follow-Through Days:</strong> ${intel.followThroughDays} / 7</p>
+                <p><strong>Action Rate:</strong> ${intel.actionRate}%</p>
+                <p><strong>Follow-Through Rate:</strong> ${intel.followThroughRate}%</p>
+            </div>
+
+            <div class="card p3-weekly-diagnosis-card">
+                <h2>Coach Diagnosis</h2>
+                <p><strong>Most Repeated Priority:</strong> ${p3WeeklyEscape(intel.mostRepeatedPriority)}</p>
+                <p><strong>Best Discipline Pattern:</strong> ${p3WeeklyEscape(intel.bestPattern)}</p>
+                <p><strong>Weakest Execution Point:</strong> ${p3WeeklyEscape(intel.weakestPoint)}</p>
+            </div>
+
+            <div class="card p3-weekly-correction-card">
+                <h2>Correction for Next Week</h2>
+                <p>${p3WeeklyEscape(intel.correction)}</p>
+            </div>
+
+            ${p3WeeklyPatternHtml("Repeated Coach Priorities", intel.priorityPatterns, "No repeated priorities yet.")}
+            ${p3WeeklyPatternHtml("Actions You Actually Took", intel.actionPatterns, "No action patterns yet.")}
+            ${p3WeeklyPatternHtml("Completed Follow-Through", intel.followPatterns, "No follow-through patterns yet.")}
+
+            <div class="card">
+                <h2>Daily Breakdown</h2>
+                <p>Each day shows the last logged recommendation, action, and follow-through.</p>
+            </div>
+
+            ${p3WeeklyRowsHtml(intel.rows)}
+        `;
+    };
+}
 
 </script>
 

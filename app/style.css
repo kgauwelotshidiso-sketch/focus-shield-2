@@ -2027,3 +2027,44 @@ textarea:focus {
         radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 35%),
         linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.22));
 }
+
+.p3-weekly-intelligence-card {
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(20, 83, 45, 0.32));
+}
+
+.p3-weekly-intelligence-card h3 {
+    color: #4ade80;
+}
+
+.p3-weekly-diagnosis-card {
+    border: 1px solid rgba(14, 165, 233, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.28));
+}
+
+.p3-weekly-correction-card {
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.25));
+}
+
+.p3-weekly-row-card {
+    border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.p3-weekly-btn {
+    background: linear-gradient(135deg, #22c55e, #2563eb) !important;
+    border: 1px solid rgba(125, 211, 252, 0.45);
+}
+
+.p3-weekly-confidence-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.26));
+}
