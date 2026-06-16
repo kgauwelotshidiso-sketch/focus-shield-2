@@ -1101,3 +1101,106 @@ textarea:focus {
     background: linear-gradient(135deg, #22c55e, #16a34a);
     border-radius: 999px;
 }
+
+.charts-dashboard-card {
+    border: 1px solid rgba(236, 72, 153, 0.5);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(131, 24, 67, 0.34));
+}
+
+.charts-dashboard-card h3 {
+    color: #f472b6;
+}
+
+.chart-group-card {
+    border: 1px solid rgba(14, 165, 233, 0.35);
+}
+
+.chart-row {
+    margin: 16px 0;
+}
+
+.chart-row-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+    color: #e2e8f0;
+}
+
+.chart-row-top span {
+    font-weight: 700;
+}
+
+.chart-row-top strong {
+    color: #f8fafc;
+    white-space: nowrap;
+}
+
+.chart-bar {
+    width: 100%;
+    height: 16px;
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.chart-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    border-radius: 999px;
+}
+
+.streak-chart-fill {
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+}
+
+.chart-row p {
+    margin: 6px 0 0;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.mini-pie-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mini-pie-card {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 18px;
+    padding: 16px;
+    text-align: center;
+}
+
+.mini-pie-card h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.mini-pie {
+    width: 118px;
+    height: 118px;
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    background:
+        conic-gradient(#f472b6 var(--pie-percent), rgba(30, 41, 59, 0.9) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 0 14px rgba(15, 23, 42, 0.95);
+}
+
+.mini-pie span {
+    color: #f8fafc;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.mini-pie-card p {
+    margin: 6px 0;
+    color: #cbd5e1;
+}

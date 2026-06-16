@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=statistics1">
+    <link rel="stylesheet" href="style.css?v=chartsdashboard1">
 </head>
 <body>
 
@@ -97,6 +97,12 @@
         <p id="homeStatisticsText">View your full Focus Shield progress in one place.</p>
     </div>
 
+    <div class="card charts-dashboard-card">
+        <h2>Charts Dashboard</h2>
+        <h3 id="homeChartsTitle">Visual Progress</h3>
+        <p id="homeChartsText">View XP, habits, goals, and weekly consistency as charts.</p>
+    </div>
+
     <div class="dashboard-grid">
 
     <div class="card">
@@ -178,6 +184,7 @@
     <button id="streakBonusBtn">Streak Bonus</button>
     <button id="xpBalanceBtn">XP Balance</button>
     <button id="statisticsBtn">Statistics</button>
+    <button id="chartsDashboardBtn">Charts</button>
     <button id="backupDataBtn">Backup Data</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
@@ -5181,6 +5188,7 @@ function runXpBalanceRepair() {
     if (typeof updateHomeXpBalance === "function") {
         updateHomeXpBalance();
 updateHomeStatistics();
+updateHomeChartsDashboard();
     }
 
     alert("XP Balance Repair complete. Legacy duplicate goal XP was removed from balance.");
@@ -5746,6 +5754,229 @@ if (statisticsBtn) {
 
 
 setTimeout(updateHomeStatistics, 1500);
+
+/* Charts Dashboard System */
+function clampChartPercent(value) {
+    const numberValue = Number(value || 0);
+
+    if (numberValue < 0) {
+        return 0;
+    }
+
+    if (numberValue > 100) {
+        return 100;
+    }
+
+    return numberValue;
+}
+
+function getChartPercent(value, max) {
+    const safeMax = Math.max(1, Number(max || 1));
+    return clampChartPercent(Math.round((Number(value || 0) / safeMax) * 100));
+}
+
+function getChartsDashboardInfo() {
+    const stats = typeof getStatisticsDashboardInfo === "function"
+        ? getStatisticsDashboardInfo()
+        : {
+            todayWins: getNumber("listeningCount"),
+            totalListeningWins: getNumber("totalListeningWins"),
+            currentStreak: getNumber("currentStreak"),
+            longestStreak: getNumber("longestStreak"),
+            focusSessions: getNumber("focusSessions"),
+            concentrationSessions: getNumber("concentrationSessions"),
+            level: 1,
+            currentLevelXp: 0,
+            xpNeeded: 25,
+            totalXp: 0,
+            badgesUnlocked: 0,
+            badgesTotal: 8,
+            totalGoals: 0,
+            completedGoals: 0,
+            activeGoals: 0,
+            dailyScore: 0,
+            weeklyScore: 0,
+            weeklyMissionDays: 0,
+            weeklyReflectionDays: 0,
+            weeklyFocusDays: 0,
+            weeklyConcentrationDays: 0,
+            goalXp: 0,
+            streakBonusXp: 0
+        };
+
+    const listeningXp = getNumber("totalListeningWins") * 5;
+    const focusXp = getNumber("focusSessions") * 10;
+    const concentrationXp = getNumber("concentrationSessions") * 10;
+    const reflectionXp = typeof getReflectionCount === "function" ? getReflectionCount() * 10 : 0;
+    const goalXp = stats.goalXp || 0;
+    const streakBonusXp = stats.streakBonusXp || 0;
+
+    const totalXp = Math.max(
+        1,
+        listeningXp + focusXp + concentrationXp + reflectionXp + goalXp + streakBonusXp
+    );
+
+    return {
+        stats: stats,
+        xpParts: [
+            { label: "Listening", value: listeningXp, max: totalXp },
+            { label: "Focus", value: focusXp, max: totalXp },
+            { label: "Concentration", value: concentrationXp, max: totalXp },
+            { label: "Reflection", value: reflectionXp, max: totalXp },
+            { label: "Goals", value: goalXp, max: totalXp },
+            { label: "Streak Bonus", value: streakBonusXp, max: totalXp }
+        ],
+        weeklyParts: [
+            { label: "Mission Days", value: stats.weeklyMissionDays, max: 7 },
+            { label: "Reflection Days", value: stats.weeklyReflectionDays, max: 7 },
+            { label: "Focus Days", value: stats.weeklyFocusDays, max: 7 },
+            { label: "Concentration Days", value: stats.weeklyConcentrationDays, max: 7 }
+        ],
+        scoreParts: [
+            { label: "Daily Score", value: stats.dailyScore, max: 100 },
+            { label: "Weekly Score", value: stats.weeklyScore, max: 100 },
+            { label: "Today’s Mission", value: stats.todayWins, max: 3 },
+            { label: "Current Level", value: stats.currentLevelXp, max: stats.xpNeeded }
+        ],
+        growthParts: [
+            { label: "Badges", value: stats.badgesUnlocked, max: stats.badgesTotal },
+            { label: "Goals Completed", value: stats.completedGoals, max: Math.max(1, stats.totalGoals) },
+            { label: "Focus Sessions", value: stats.focusSessions, max: Math.max(1, stats.focusSessions + stats.concentrationSessions) },
+            { label: "Concentration Sessions", value: stats.concentrationSessions, max: Math.max(1, stats.focusSessions + stats.concentrationSessions) }
+        ]
+    };
+}
+
+function getChartBarHtml(label, value, max, suffix) {
+    const percent = getChartPercent(value, max);
+    const valueText = suffix ? String(value) + suffix : String(value);
+
+    return `
+        <div class="chart-row">
+            <div class="chart-row-top">
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(valueText)} / ${escapeHtml(String(max))}</strong>
+            </div>
+            <div class="chart-bar">
+                <div class="chart-fill" style="width: ${percent}%"></div>
+            </div>
+            <p>${percent}%</p>
+        </div>
+    `;
+}
+
+function getChartGroupHtml(title, items, suffix) {
+    let html = `
+        <div class="card chart-group-card">
+            <h2>${escapeHtml(title)}</h2>
+    `;
+
+    items.forEach(function(item) {
+        html += getChartBarHtml(item.label, item.value, item.max, suffix || "");
+    });
+
+    html += `</div>`;
+
+    return html;
+}
+
+function getMiniPieHtml(title, completed, total, completedLabel, remainingLabel) {
+    const safeTotal = Math.max(1, Number(total || 1));
+    const safeCompleted = Math.min(Number(completed || 0), safeTotal);
+    const percent = getChartPercent(safeCompleted, safeTotal);
+    const remaining = Math.max(0, safeTotal - safeCompleted);
+
+    return `
+        <div class="mini-pie-card">
+            <h2>${escapeHtml(title)}</h2>
+            <div class="mini-pie" style="--pie-percent: ${percent}%">
+                <span>${percent}%</span>
+            </div>
+            <p><strong>${escapeHtml(completedLabel)}:</strong> ${safeCompleted}</p>
+            <p><strong>${escapeHtml(remainingLabel)}:</strong> ${remaining}</p>
+        </div>
+    `;
+}
+
+function getChartsDashboardHtml() {
+    const info = getChartsDashboardInfo();
+    const stats = info.stats;
+
+    return `
+        <div class="card charts-dashboard-card">
+            <h2>Charts Overview</h2>
+            <h3>Level ${stats.level} • ${stats.totalXp} XP</h3>
+            <p>Visual summary of your discipline system.</p>
+        </div>
+
+        ${getChartGroupHtml("XP Composition", info.xpParts, " XP")}
+
+        ${getChartGroupHtml("Weekly Consistency", info.weeklyParts, "")}
+
+        ${getChartGroupHtml("Scores & Mission", info.scoreParts, "")}
+
+        <div class="card">
+            <h2>Goal & Badge Completion</h2>
+            <div class="mini-pie-grid">
+                ${getMiniPieHtml("Badges", stats.badgesUnlocked, stats.badgesTotal, "Unlocked", "Locked")}
+                ${getMiniPieHtml("Goals", stats.completedGoals, Math.max(1, stats.totalGoals), "Completed", "Remaining")}
+            </div>
+        </div>
+
+        ${getChartGroupHtml("Training Activity", info.growthParts, "")}
+
+        <div class="card streak-protection-card">
+            <h2>Protection Chart</h2>
+            <h3>${escapeHtml(stats.streakProtectionStatus || "Unknown")}</h3>
+            <p><strong>Current Streak:</strong> ${stats.currentStreak} day${stats.currentStreak === 1 ? "" : "s"}</p>
+            <p><strong>Longest Streak:</strong> ${stats.longestStreak} day${stats.longestStreak === 1 ? "" : "s"}</p>
+            <div class="chart-bar">
+                <div class="chart-fill streak-chart-fill" style="width: ${getChartPercent(stats.todayWins, 3)}%"></div>
+            </div>
+            <p>Mission protection: ${stats.todayWins} / 3</p>
+        </div>
+    `;
+}
+
+function updateHomeChartsDashboard() {
+    const titleElement = document.getElementById("homeChartsTitle");
+    const textElement = document.getElementById("homeChartsText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const info = getChartsDashboardInfo();
+    const stats = info.stats;
+
+    titleElement.textContent = "Level " + stats.level + " Charts";
+    textElement.textContent = "Daily " + stats.dailyScore + "% • Weekly " + stats.weeklyScore + "%";
+}
+
+function openChartsDashboardPage() {
+    showPage(`
+        <h1>Charts</h1>
+
+        ${getChartsDashboardHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+
+
+const chartsDashboardBtn = document.getElementById("chartsDashboardBtn");
+
+if (chartsDashboardBtn) {
+    chartsDashboardBtn.addEventListener("click", function() {
+        openChartsDashboardPage();
+    });
+}
+
+
+setTimeout(updateHomeChartsDashboard, 1600);
 </script>
 
 </body>
