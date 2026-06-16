@@ -1030,3 +1030,74 @@ textarea:focus {
 .xp-balance-card h3 {
     color: #a5b4fc;
 }
+
+.statistics-card {
+    border: 1px solid rgba(14, 165, 233, 0.52);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.34));
+}
+
+.statistics-card h3 {
+    color: #38bdf8;
+}
+
+.statistics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+}
+
+.stat-box {
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.72);
+    border-radius: 18px;
+    padding: 14px;
+}
+
+.stat-box span {
+    display: block;
+    color: #94a3b8;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.stat-box strong {
+    display: block;
+    color: #f8fafc;
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.stat-box p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 12px;
+}
+
+.statistics-progress-bar {
+    width: 100%;
+    height: 16px;
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 10px 0 16px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.statistics-progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    border-radius: 999px;
+}
+
+.statistics-badge-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #facc15, #f97316);
+    border-radius: 999px;
+}
+
+.statistics-goal-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-radius: 999px;
+}

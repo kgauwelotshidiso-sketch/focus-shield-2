@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=xpbalance1">
+    <link rel="stylesheet" href="style.css?v=statistics1">
 </head>
 <body>
 
@@ -91,6 +91,12 @@
         <p id="homeXpBalanceText">XP duplicate protection is active.</p>
     </div>
 
+    <div class="card statistics-card">
+        <h2>Statistics Dashboard</h2>
+        <h3 id="homeStatisticsTitle">Overview Ready</h3>
+        <p id="homeStatisticsText">View your full Focus Shield progress in one place.</p>
+    </div>
+
     <div class="dashboard-grid">
 
     <div class="card">
@@ -171,6 +177,7 @@
     <button id="xpHistoryBtn">XP History</button>
     <button id="streakBonusBtn">Streak Bonus</button>
     <button id="xpBalanceBtn">XP Balance</button>
+    <button id="statisticsBtn">Statistics</button>
     <button id="backupDataBtn">Backup Data</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
@@ -5173,6 +5180,7 @@ function runXpBalanceRepair() {
 
     if (typeof updateHomeXpBalance === "function") {
         updateHomeXpBalance();
+updateHomeStatistics();
     }
 
     alert("XP Balance Repair complete. Legacy duplicate goal XP was removed from balance.");
@@ -5463,6 +5471,281 @@ if (xpBalanceBtn) {
 
 
 setTimeout(updateHomeXpBalance, 1400);
+
+/* Statistics Dashboard System */
+function getSmartNumberFromPossibleKeys(keys) {
+    for (let i = 0; i < keys.length; i++) {
+        const rawValue = localStorage.getItem(keys[i]);
+
+        if (rawValue !== null) {
+            const numberValue = Number(rawValue);
+
+            if (!Number.isNaN(numberValue)) {
+                return numberValue;
+            }
+        }
+    }
+
+    return 0;
+}
+
+function formatSmartTime(value) {
+    const numberValue = Number(value || 0);
+
+    if (numberValue <= 0) {
+        return "0 min";
+    }
+
+    let seconds = numberValue;
+
+    if (numberValue > 10000) {
+        seconds = Math.round(numberValue / 1000);
+    }
+
+    if (seconds < 60) {
+        return seconds + " sec";
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (minutes < 60) {
+        return minutes + " min " + remainingSeconds + " sec";
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    return hours + " hr " + remainingMinutes + " min";
+}
+
+function getStatisticsDashboardInfo() {
+    const levelInfo = typeof getLevelInfo === "function"
+        ? getLevelInfo()
+        : { level: 1, currentLevelXp: 0, xpNeeded: 25, totalXp: 0 };
+
+    const badgeProgress = typeof getSafeBadgeProgress === "function"
+        ? getSafeBadgeProgress()
+        : { unlocked: 0, total: 8 };
+
+    const goalStats = typeof getGoalSystemStats === "function"
+        ? getGoalSystemStats()
+        : { totalGoals: 0, activeGoals: 0, completedGoals: 0, averageProgress: 0 };
+
+    const dailyReview = typeof getDailyReviewInfo === "function"
+        ? getDailyReviewInfo()
+        : { score: 0 };
+
+    const weeklyReport = typeof getWeeklyReportInfo === "function"
+        ? getWeeklyReportInfo()
+        : { averageScore: 0, totalListeningWins: 0, missionDays: 0, reflectionDays: 0, focusDays: 0, concentrationDays: 0 };
+
+    const xpHistoryStats = typeof getXpHistoryStats === "function"
+        ? getXpHistoryStats()
+        : { totalLoggedXp: 0, todayXp: 0, eventCount: 0 };
+
+    const streakProtection = typeof getStreakProtectionInfo === "function"
+        ? getStreakProtectionInfo()
+        : { status: "Unknown", riskLevel: "Unknown" };
+
+    const totalFocusTime = getSmartNumberFromPossibleKeys([
+        "totalFocusTime",
+        "focusTotalTime",
+        "focusTimeTotal",
+        "totalFocusSeconds",
+        "focusSeconds",
+        "focusTime"
+    ]);
+
+    const totalConcentrationTime = getSmartNumberFromPossibleKeys([
+        "totalConcentrationTime",
+        "concentrationTotalTime",
+        "concentrationTimeTotal",
+        "totalConcentrationSeconds",
+        "concentrationSeconds",
+        "concentrationTime"
+    ]);
+
+    return {
+        todayWins: getNumber("listeningCount"),
+        totalListeningWins: getNumber("totalListeningWins"),
+        weeklyWins: getNumber("weeklyWins"),
+        currentStreak: typeof getSmartCurrentStreakValue === "function" ? getSmartCurrentStreakValue() : getNumber("currentStreak"),
+        longestStreak: typeof getSmartLongestStreakValue === "function" ? getSmartLongestStreakValue() : getNumber("longestStreak"),
+
+        focusSessions: getNumber("focusSessions"),
+        concentrationSessions: getNumber("concentrationSessions"),
+        totalFocusTime: totalFocusTime,
+        totalConcentrationTime: totalConcentrationTime,
+
+        level: levelInfo.level,
+        currentLevelXp: levelInfo.currentLevelXp,
+        xpNeeded: levelInfo.xpNeeded,
+        totalXp: levelInfo.totalXp,
+
+        badgesUnlocked: badgeProgress.unlocked,
+        badgesTotal: badgeProgress.total,
+
+        totalGoals: goalStats.totalGoals,
+        activeGoals: goalStats.activeGoals,
+        completedGoals: goalStats.completedGoals,
+        averageGoalProgress: goalStats.averageProgress,
+
+        dailyScore: dailyReview.score,
+        weeklyScore: weeklyReport.averageScore,
+        weeklyMissionDays: weeklyReport.missionDays || 0,
+        weeklyReflectionDays: weeklyReport.reflectionDays || 0,
+        weeklyFocusDays: weeklyReport.focusDays || 0,
+        weeklyConcentrationDays: weeklyReport.concentrationDays || 0,
+
+        totalLoggedXp: xpHistoryStats.totalLoggedXp,
+        todayLoggedXp: xpHistoryStats.todayXp,
+        xpEvents: xpHistoryStats.eventCount,
+
+        goalXp: typeof getBalancedGoalXpTotal === "function"
+            ? getBalancedGoalXpTotal()
+            : (typeof getGoalXpTotal === "function" ? getGoalXpTotal() : 0),
+
+        streakBonusXp: typeof getBalancedMissionStreakBonusXpTotal === "function"
+            ? getBalancedMissionStreakBonusXpTotal()
+            : (typeof getMissionStreakBonusXpTotal === "function" ? getMissionStreakBonusXpTotal() : 0),
+
+        streakProtectionStatus: streakProtection.status,
+        streakRiskLevel: streakProtection.riskLevel
+    };
+}
+
+function updateHomeStatistics() {
+    const titleElement = document.getElementById("homeStatisticsTitle");
+    const textElement = document.getElementById("homeStatisticsText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const stats = getStatisticsDashboardInfo();
+
+    titleElement.textContent = "Level " + stats.level + " • " + stats.totalXp + " XP";
+    textElement.textContent = stats.totalListeningWins + " total wins • " + stats.badgesUnlocked + " / " + stats.badgesTotal + " badges";
+}
+
+function getStatBoxHtml(label, value, note) {
+    return `
+        <div class="stat-box">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(String(value))}</strong>
+            <p>${escapeHtml(note || "")}</p>
+        </div>
+    `;
+}
+
+function getStatisticsDashboardHtml() {
+    const stats = getStatisticsDashboardInfo();
+
+    const xpPercent = Math.round((stats.currentLevelXp / stats.xpNeeded) * 100);
+    const badgePercent = stats.badgesTotal > 0 ? Math.round((stats.badgesUnlocked / stats.badgesTotal) * 100) : 0;
+    const goalPercent = stats.totalGoals > 0 ? Math.round((stats.completedGoals / stats.totalGoals) * 100) : 0;
+
+    return `
+        <div class="card statistics-card">
+            <h2>Overall Progress</h2>
+            <h3>Level ${stats.level}</h3>
+            <p><strong>Total XP:</strong> ${stats.totalXp}</p>
+            <p><strong>Current Level XP:</strong> ${stats.currentLevelXp} / ${stats.xpNeeded}</p>
+
+            <div class="statistics-progress-bar">
+                <div class="statistics-progress-fill" style="width: ${xpPercent}%"></div>
+            </div>
+        </div>
+
+        <div class="statistics-grid">
+            ${getStatBoxHtml("Today’s Wins", stats.todayWins + " / 3", "Daily mission progress")}
+            ${getStatBoxHtml("Total Wins", stats.totalListeningWins, "All listening wins")}
+            ${getStatBoxHtml("Current Streak", stats.currentStreak + " day" + (stats.currentStreak === 1 ? "" : "s"), "Active streak")}
+            ${getStatBoxHtml("Longest Streak", stats.longestStreak + " day" + (stats.longestStreak === 1 ? "" : "s"), "Best streak")}
+            ${getStatBoxHtml("Daily Score", stats.dailyScore + "%", "Today’s discipline score")}
+            ${getStatBoxHtml("Weekly Score", stats.weeklyScore + "%", "7-day average")}
+        </div>
+
+        <div class="card">
+            <h2>Training Stats</h2>
+            <div class="statistics-grid">
+                ${getStatBoxHtml("Focus Sessions", stats.focusSessions, "Completed focus sessions")}
+                ${getStatBoxHtml("Focus Time", formatSmartTime(stats.totalFocusTime), "Total focus timer time")}
+                ${getStatBoxHtml("Concentration Sessions", stats.concentrationSessions, "Completed concentration sessions")}
+                ${getStatBoxHtml("Concentration Time", formatSmartTime(stats.totalConcentrationTime), "Total concentration time")}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Goals & Badges</h2>
+
+            <p><strong>Badges:</strong> ${stats.badgesUnlocked} / ${stats.badgesTotal}</p>
+            <div class="statistics-progress-bar">
+                <div class="statistics-badge-fill" style="width: ${badgePercent}%"></div>
+            </div>
+
+            <p><strong>Goals Completed:</strong> ${stats.completedGoals} / ${stats.totalGoals}</p>
+            <div class="statistics-progress-bar">
+                <div class="statistics-goal-fill" style="width: ${goalPercent}%"></div>
+            </div>
+
+            <p><strong>Active Goals:</strong> ${stats.activeGoals}</p>
+            <p><strong>Average Active Goal Progress:</strong> ${stats.averageGoalProgress}%</p>
+        </div>
+
+        <div class="card">
+            <h2>XP Stats</h2>
+            <div class="statistics-grid">
+                ${getStatBoxHtml("XP Logged", stats.totalLoggedXp, "From XP history")}
+                ${getStatBoxHtml("XP Today", "+" + stats.todayLoggedXp, "Logged today")}
+                ${getStatBoxHtml("XP Events", stats.xpEvents, "Recorded XP actions")}
+                ${getStatBoxHtml("Goal XP", stats.goalXp, "From completed goals")}
+                ${getStatBoxHtml("Streak Bonus XP", stats.streakBonusXp, "Mission streak rewards")}
+                ${getStatBoxHtml("Level XP", stats.totalXp, "Balanced total")}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Weekly Consistency</h2>
+            <p><strong>Mission Days:</strong> ${stats.weeklyMissionDays} / 7</p>
+            <p><strong>Reflection Days:</strong> ${stats.weeklyReflectionDays} / 7</p>
+            <p><strong>Focus Days:</strong> ${stats.weeklyFocusDays} / 7</p>
+            <p><strong>Concentration Days:</strong> ${stats.weeklyConcentrationDays} / 7</p>
+        </div>
+
+        <div class="card streak-protection-card">
+            <h2>Protection Status</h2>
+            <h3>${escapeHtml(stats.streakProtectionStatus)}</h3>
+            <p><strong>Risk Level:</strong> ${escapeHtml(stats.streakRiskLevel)}</p>
+        </div>
+    `;
+}
+
+function openStatisticsDashboardPage() {
+    showPage(`
+        <h1>Statistics</h1>
+
+        ${getStatisticsDashboardHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+
+
+const statisticsBtn = document.getElementById("statisticsBtn");
+
+if (statisticsBtn) {
+    statisticsBtn.addEventListener("click", function() {
+        openStatisticsDashboardPage();
+    });
+}
+
+
+setTimeout(updateHomeStatistics, 1500);
 </script>
 
 </body>
