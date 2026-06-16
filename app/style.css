@@ -1762,3 +1762,79 @@ textarea:focus {
 .timeline-detail-card h3 {
     color: #38bdf8;
 }
+
+.system-health-card {
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(20, 83, 45, 0.3));
+}
+
+.system-health-card h3 {
+    color: #4ade80;
+}
+
+.system-health-card button {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.health-check-item {
+    border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.health-check-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.health-check-top h2 {
+    margin: 0 0 6px;
+}
+
+.health-check-top p {
+    margin: 0;
+    color: #cbd5e1;
+}
+
+.health-check-top strong {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.health-pass {
+    border-color: rgba(34, 197, 94, 0.42);
+}
+
+.health-pass .health-check-top strong {
+    color: #4ade80;
+}
+
+.health-warn {
+    border-color: rgba(250, 204, 21, 0.42);
+}
+
+.health-warn .health-check-top strong {
+    color: #facc15;
+}
+
+.health-fail {
+    border-color: rgba(248, 113, 113, 0.48);
+}
+
+.health-fail .health-check-top strong {
+    color: #f87171;
+}
+
+.xp-balance-page-card {
+    border: 1px solid rgba(129, 140, 248, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(129, 140, 248, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(49, 46, 129, 0.34));
+}
+
+.xp-balance-page-card h3 {
+    color: #a5b4fc;
+}

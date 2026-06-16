@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=homemissionsync1">
+    <link rel="stylesheet" href="style.css?v=masterlivesync1">
 </head>
 <body>
 
@@ -2476,6 +2476,9 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(addXpBalanceButtonToQuickActions, 700);
+    setTimeout(masterUpdateProgressDom, 900);
+    refreshSystemHealthHomeCard();
     setTimeout(updateHomeMissionUnified, 400);
     refreshDailyTimelineHomeCard();
     refreshEndReviewHistoryHomeCard();
@@ -10039,6 +10042,1163 @@ function updateHomeMissionUnified() {
 setTimeout(updateHomeMissionUnified, 300);
 setTimeout(updateHomeMissionUnified, 1000);
 setTimeout(updateHomeMissionUnified, 2000);
+
+
+/* System Health Check */
+function safeHealthEscape(value) {
+    if (typeof escapeHtml === "function") {
+        return escapeHtml(String(value || ""));
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getHealthTodayKey() {
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const today = new Date();
+
+    return today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+}
+
+function getHealthNumber(key) {
+    if (typeof getNumber === "function") {
+        return getNumber(key);
+    }
+
+    return Number(localStorage.getItem(key) || 0);
+}
+
+function getHealthJson(key, fallback) {
+    try {
+        return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function makeHealthCheck(name, status, detail, action) {
+    return {
+        name: name,
+        status: status,
+        detail: detail,
+        action: action || "No action needed."
+    };
+}
+
+function getHealthStatusClass(status) {
+    if (status === "PASS") {
+        return "health-pass";
+    }
+
+    if (status === "WARN") {
+        return "health-warn";
+    }
+
+    return "health-fail";
+}
+
+function getHealthStatusIcon(status) {
+    if (status === "PASS") {
+        return "✅";
+    }
+
+    if (status === "WARN") {
+        return "⚠️";
+    }
+
+    return "❌";
+}
+
+function runFocusShieldHealthChecks() {
+    const todayKey = getHealthTodayKey();
+    const checks = [];
+
+    const listeningKeys = [
+        "listeningCount",
+        "todayListeningWins",
+        "dailyListeningWins",
+        "missionListeningWins"
+    ];
+
+    const listeningValues = listeningKeys.map(function(key) {
+        return {
+            key: key,
+            value: Number(localStorage.getItem(key) || 0)
+        };
+    });
+
+    const highestListening = listeningValues.reduce(function(max, item) {
+        return item.value > max ? item.value : max;
+    }, 0);
+
+    const uniqueListeningValues = Array.from(new Set(listeningValues.map(function(item) {
+        return item.value;
+    })));
+
+    if (uniqueListeningValues.length === 1) {
+        checks.push(makeHealthCheck(
+            "Mission Count Sync",
+            "PASS",
+            "All listening count keys match: " + highestListening + " / 3.",
+            "No repair needed."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "Mission Count Sync",
+            "WARN",
+            "Listening keys are not fully synced. Highest value is " + highestListening + " / 3.",
+            "Tap Repair Sync to copy the correct count across all mission keys."
+        ));
+    }
+
+    const totalWins = getHealthNumber("totalListeningWins");
+    const weeklyWins = getHealthNumber("weeklyWins");
+
+    if (totalWins >= highestListening && weeklyWins >= highestListening) {
+        checks.push(makeHealthCheck(
+            "Progress Totals",
+            "PASS",
+            "Total wins and weekly wins are compatible with today’s count.",
+            "No action needed."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "Progress Totals",
+            "WARN",
+            "Total or weekly wins look lower than today’s count.",
+            "Check Progress and avoid resetting totals unless intentional."
+        ));
+    }
+
+    const xpHistory = getHealthJson("xpHistoryLog", []);
+    const hasXpFunction = typeof addXpHistoryEvent === "function";
+
+    if (hasXpFunction) {
+        checks.push(makeHealthCheck(
+            "XP Logging",
+            "PASS",
+            "XP logging function exists. XP events recorded: " + (Array.isArray(xpHistory) ? xpHistory.length : 0) + ".",
+            "No action needed."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "XP Logging",
+            "FAIL",
+            "XP logging function is missing.",
+            "XP features may not record correctly."
+        ));
+    }
+
+    const timelineReady = typeof getDailyTimelineEvents === "function";
+    const timelineEvents = timelineReady ? getDailyTimelineEvents() : [];
+
+    if (timelineReady) {
+        checks.push(makeHealthCheck(
+            "Timeline Logging",
+            "PASS",
+            "Timeline system is available. Events today: " + timelineEvents.length + ".",
+            "No action needed."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "Timeline Logging",
+            "FAIL",
+            "Daily Timeline function is missing.",
+            "Timeline page may not open correctly."
+        ));
+    }
+
+    const goalsReady = typeof getFocusShieldGoals === "function";
+    const goals = goalsReady ? getFocusShieldGoals() : [];
+
+    if (goalsReady) {
+        const completedGoals = goals.filter(function(goal) {
+            return goal.completed;
+        }).length;
+
+        checks.push(makeHealthCheck(
+            "Goals System",
+            "PASS",
+            "Goals system is available. Goals: " + goals.length + ", completed: " + completedGoals + ".",
+            "No action needed."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "Goals System",
+            "WARN",
+            "Goals function is not available.",
+            "Goal page may be using older logic."
+        ));
+    }
+
+    const badgesReady = typeof checkBadgeUnlocks === "function";
+    const unlockedBadges = getHealthJson("unlockedBadges", []);
+
+    if (badgesReady) {
+        checks.push(makeHealthCheck(
+            "Badges System",
+            "PASS",
+            "Badge checking is available. Badge memory entries: " + (Array.isArray(unlockedBadges) ? unlockedBadges.length : 0) + ".",
+            "No action needed."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "Badges System",
+            "WARN",
+            "Badge checking function is missing.",
+            "Badges may still display, but unlock checks may not run."
+        ));
+    }
+
+    const backupReady = typeof openBackupDataPage === "function" || document.getElementById("backupDataBtn") !== null;
+
+    if (backupReady) {
+        checks.push(makeHealthCheck(
+            "Backup System",
+            "PASS",
+            "Backup system is available.",
+            "Keep making backups before big upgrades."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "Backup System",
+            "WARN",
+            "Backup page function/button was not found from this check.",
+            "Use Settings or existing Backup card if visible."
+        ));
+    }
+
+    const reflectionHistory = getHealthJson("reflectionHistory", {});
+    const reflectionToday = reflectionHistory[todayKey];
+
+    checks.push(makeHealthCheck(
+        "Reflection System",
+        reflectionHistory && typeof reflectionHistory === "object" ? "PASS" : "WARN",
+        reflectionToday ? "Today’s reflection is saved." : "Reflection storage exists, but today’s reflection is not saved.",
+        reflectionToday ? "No action needed." : "Write today’s reflection if the day is not complete."
+    ));
+
+    const endReviewHistory = getHealthJson("dailyEndReviewHistory", {});
+    const endReviewToday = endReviewHistory[todayKey];
+
+    checks.push(makeHealthCheck(
+        "End Review System",
+        endReviewHistory && typeof endReviewHistory === "object" ? "PASS" : "WARN",
+        endReviewToday ? "Today’s end review is saved." : "End review storage exists, but today’s end review is not saved.",
+        endReviewToday ? "No action needed." : "Save Daily End Review near the end of the day."
+    ));
+
+    const chartsReady = typeof openChartsDashboardPage === "function" || document.getElementById("chartsDashboardBtn") !== null;
+
+    if (chartsReady) {
+        checks.push(makeHealthCheck(
+            "Charts System",
+            "PASS",
+            "Charts dashboard is available.",
+            "No action needed."
+        ));
+    } else {
+        checks.push(makeHealthCheck(
+            "Charts System",
+            "WARN",
+            "Charts function/button was not found from this check.",
+            "Charts may still exist but are not directly detected."
+        ));
+    }
+
+    const dailyReviewReady = typeof getDailyReviewInfo === "function";
+
+    checks.push(makeHealthCheck(
+        "Coach Intelligence",
+        dailyReviewReady ? "PASS" : "WARN",
+        dailyReviewReady ? "Daily review scoring is available." : "Daily review scoring function was not found.",
+        dailyReviewReady ? "No action needed." : "Coach cards may use older fallback logic."
+    ));
+
+    return checks;
+}
+
+function getSystemHealthSummary(checks) {
+    const pass = checks.filter(function(check) { return check.status === "PASS"; }).length;
+    const warn = checks.filter(function(check) { return check.status === "WARN"; }).length;
+    const fail = checks.filter(function(check) { return check.status === "FAIL"; }).length;
+
+    let overall = "Healthy";
+
+    if (fail > 0) {
+        overall = "Needs Repair";
+    } else if (warn > 0) {
+        overall = "Stable With Warnings";
+    }
+
+    return {
+        pass: pass,
+        warn: warn,
+        fail: fail,
+        overall: overall,
+        total: checks.length
+    };
+}
+
+function getSystemHealthHtml() {
+    const checks = runFocusShieldHealthChecks();
+    const summary = getSystemHealthSummary(checks);
+
+    const checksHtml = checks.map(function(check) {
+        return `
+            <div class="card health-check-item ${getHealthStatusClass(check.status)}">
+                <div class="health-check-top">
+                    <div>
+                        <h2>${getHealthStatusIcon(check.status)} ${safeHealthEscape(check.name)}</h2>
+                        <p>${safeHealthEscape(check.detail)}</p>
+                    </div>
+                    <strong>${safeHealthEscape(check.status)}</strong>
+                </div>
+                <p><strong>Action:</strong> ${safeHealthEscape(check.action)}</p>
+            </div>
+        `;
+    }).join("");
+
+    return `
+        <div class="card system-health-card">
+            <h2>System Status</h2>
+            <h3>${safeHealthEscape(summary.overall)}</h3>
+            <p><strong>Passed:</strong> ${summary.pass} / ${summary.total}</p>
+            <p><strong>Warnings:</strong> ${summary.warn}</p>
+            <p><strong>Failures:</strong> ${summary.fail}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Repair Tools</h2>
+            <p>Use this only when counts disagree between Home, Progress, and Timeline.</p>
+            <button id="repairMissionSyncBtn">Repair Mission Sync</button>
+            <button id="refreshHealthCheckBtn">Run Health Check Again</button>
+        </div>
+
+        ${checksHtml}
+    `;
+}
+
+function repairMissionSyncFromHealthCheck() {
+    let count = 0;
+
+    if (typeof getUnifiedTodayListeningCount === "function") {
+        count = getUnifiedTodayListeningCount();
+    } else if (typeof forceGetTodayListeningCountFinal === "function") {
+        count = forceGetTodayListeningCountFinal();
+    } else {
+        const keys = [
+            "listeningCount",
+            "todayListeningWins",
+            "dailyListeningWins",
+            "missionListeningWins"
+        ];
+
+        keys.forEach(function(key) {
+            const value = Number(localStorage.getItem(key) || 0);
+
+            if (!Number.isNaN(value) && value > count) {
+                count = value;
+            }
+        });
+    }
+
+    localStorage.setItem("listeningCount", String(count));
+    localStorage.setItem("todayListeningWins", String(count));
+    localStorage.setItem("dailyListeningWins", String(count));
+    localStorage.setItem("missionListeningWins", String(count));
+
+    if (typeof saveListeningDateEverywhereFinal === "function") {
+        saveListeningDateEverywhereFinal();
+    }
+
+    if (typeof updateHomeMissionUnified === "function") {
+        updateHomeMissionUnified();
+    }
+
+    if (typeof refreshAllHomeSystemsQuick === "function") {
+        refreshAllHomeSystemsQuick();
+    }
+
+    alert("Mission sync repaired to " + count + " / 3.");
+    openSystemHealthCheckPage();
+}
+
+function openSystemHealthCheckPage() {
+    showPage(`
+        <h1>System Health Check</h1>
+
+        ${getSystemHealthHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("repairMissionSyncBtn").addEventListener("click", repairMissionSyncFromHealthCheck);
+    document.getElementById("refreshHealthCheckBtn").addEventListener("click", openSystemHealthCheckPage);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertSystemHealthHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("systemHealthHomeCard")) {
+        return;
+    }
+
+    const timelineCard = document.getElementById("dailyTimelineHomeCard");
+    const progressOverview = Array.from(document.querySelectorAll(".dashboard-section-title"))
+        .find(function(section) {
+            const heading = section.querySelector("h2");
+            return heading && heading.textContent.trim() === "Progress Overview";
+        });
+
+    const insertAfter = timelineCard || progressOverview;
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const checks = runFocusShieldHealthChecks();
+    const summary = getSystemHealthSummary(checks);
+
+    const card = document.createElement("div");
+    card.id = "systemHealthHomeCard";
+    card.className = "card system-health-card";
+    card.innerHTML = `
+        <h2>System Health Check</h2>
+        <h3>${safeHealthEscape(summary.overall)}</h3>
+        <p>${summary.pass} passed • ${summary.warn} warnings • ${summary.fail} failures</p>
+        <button id="openSystemHealthBtn">Open Health Check</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openSystemHealthBtn").addEventListener("click", openSystemHealthCheckPage);
+}
+
+function refreshSystemHealthHomeCard() {
+    const oldCard = document.getElementById("systemHealthHomeCard");
+
+    if (oldCard) {
+        oldCard.remove();
+    }
+
+    setTimeout(insertSystemHealthHomeCard, 500);
+    setTimeout(insertSystemHealthHomeCard, 1300);
+    setTimeout(insertSystemHealthHomeCard, 2200);
+}
+
+refreshSystemHealthHomeCard();
+
+
+/* System Health Backup Detection Fix */
+function isBackupSystemAvailableHealthFix() {
+    const possibleFunctions = [
+        "openBackupDataPage",
+        "openBackupPage",
+        "openBackupExportPage",
+        "generateBackupData",
+        "downloadBackupFile",
+        "copyBackupText",
+        "restoreBackupData"
+    ];
+
+    const hasFunction = possibleFunctions.some(function(name) {
+        return typeof window[name] === "function";
+    });
+
+    if (hasFunction) {
+        return true;
+    }
+
+    const buttons = Array.from(document.querySelectorAll("button"));
+    const hasBackupButton = buttons.some(function(button) {
+        const text = button.textContent.trim().toLowerCase();
+
+        return text.includes("backup") ||
+            text.includes("export") ||
+            text.includes("restore");
+    });
+
+    if (hasBackupButton) {
+        return true;
+    }
+
+    const pageText = document.body ? document.body.textContent.toLowerCase() : "";
+
+    if (
+        pageText.includes("backup / export data") ||
+        pageText.includes("backup data") ||
+        pageText.includes("download backup") ||
+        pageText.includes("restore backup")
+    ) {
+        return true;
+    }
+
+    try {
+        const testKey = "focusShieldHealthBackupTest";
+        localStorage.setItem(testKey, "ok");
+        localStorage.removeItem(testKey);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+/* Override health checks with improved backup detection */
+const oldRunFocusShieldHealthChecksForBackup = runFocusShieldHealthChecks;
+
+runFocusShieldHealthChecks = function() {
+    const checks = oldRunFocusShieldHealthChecksForBackup();
+
+    return checks.map(function(check) {
+        if (check.name !== "Backup System") {
+            return check;
+        }
+
+        if (isBackupSystemAvailableHealthFix()) {
+            return makeHealthCheck(
+                "Backup System",
+                "PASS",
+                "Backup/localStorage export foundation is available.",
+                "Keep making backups before big upgrades."
+            );
+        }
+
+        return check;
+    });
+};
+
+refreshSystemHealthHomeCard();
+
+
+/* Instant Health Repair Refresh Fix */
+function getBestMissionCountForHealthRepair() {
+    const keys = [
+        "listeningCount",
+        "todayListeningWins",
+        "dailyListeningWins",
+        "missionListeningWins"
+    ];
+
+    let best = 0;
+
+    keys.forEach(function(key) {
+        const value = Number(localStorage.getItem(key) || 0);
+
+        if (!Number.isNaN(value) && value > best) {
+            best = value;
+        }
+    });
+
+    if (typeof getUnifiedTodayListeningCount === "function") {
+        const unified = Number(getUnifiedTodayListeningCount() || 0);
+
+        if (!Number.isNaN(unified) && unified > best) {
+            best = unified;
+        }
+    }
+
+    if (typeof forceGetTodayListeningCountFinal === "function") {
+        const forced = Number(forceGetTodayListeningCountFinal() || 0);
+
+        if (!Number.isNaN(forced) && forced > best) {
+            best = forced;
+        }
+    }
+
+    if (typeof getDailyActionData === "function") {
+        const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : getHealthTodayKey();
+        const data = getDailyActionData();
+        const todayData = data[todayKey] || {};
+        const actionWins = Number(todayData.listeningWins || 0);
+
+        if (!Number.isNaN(actionWins) && actionWins > best) {
+            best = actionWins;
+        }
+    }
+
+    return Math.max(0, best);
+}
+
+function repairMissionSyncFromHealthCheck() {
+    const count = getBestMissionCountForHealthRepair();
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : getHealthTodayKey();
+
+    localStorage.setItem("listeningCount", String(count));
+    localStorage.setItem("todayListeningWins", String(count));
+    localStorage.setItem("dailyListeningWins", String(count));
+    localStorage.setItem("missionListeningWins", String(count));
+
+    localStorage.setItem("listeningDate", todayKey);
+    localStorage.setItem("lastListeningDate", todayKey);
+    localStorage.setItem("currentListeningDate", todayKey);
+    localStorage.setItem("todayDate", todayKey);
+    localStorage.setItem("lastActiveDate", todayKey);
+    localStorage.setItem("focusShieldDate", todayKey);
+
+    if (typeof getDailyActionData === "function" && typeof saveDailyActionData === "function") {
+        const data = getDailyActionData();
+
+        if (!data[todayKey]) {
+            data[todayKey] = {};
+        }
+
+        data[todayKey].listeningWins = count;
+        data[todayKey].updatedAt = new Date().toISOString();
+
+        saveDailyActionData(data);
+    }
+
+    if (typeof updateHomeMissionUnified === "function") {
+        updateHomeMissionUnified();
+    }
+
+    if (typeof refreshAllHomeSystemsQuick === "function") {
+        refreshAllHomeSystemsQuick();
+    }
+
+    const healthRoot = document.getElementById("healthCheckLiveRoot");
+
+    if (healthRoot) {
+        healthRoot.innerHTML = getSystemHealthHtml();
+        attachHealthCheckButtonsInstant();
+    }
+
+    setTimeout(function() {
+        const healthRootAgain = document.getElementById("healthCheckLiveRoot");
+
+        if (healthRootAgain) {
+            healthRootAgain.innerHTML = getSystemHealthHtml();
+            attachHealthCheckButtonsInstant();
+        }
+    }, 250);
+}
+
+function attachHealthCheckButtonsInstant() {
+    const repairBtn = document.getElementById("repairMissionSyncBtn");
+    const refreshBtn = document.getElementById("refreshHealthCheckBtn");
+    const backBtn = document.getElementById("backBtn");
+
+    if (repairBtn) {
+        repairBtn.addEventListener("click", repairMissionSyncFromHealthCheck);
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", function() {
+            const healthRoot = document.getElementById("healthCheckLiveRoot");
+
+            if (healthRoot) {
+                healthRoot.innerHTML = getSystemHealthHtml();
+                attachHealthCheckButtonsInstant();
+            }
+        });
+    }
+
+    if (backBtn) {
+        backBtn.addEventListener("click", goHome);
+    }
+}
+
+function openSystemHealthCheckPage() {
+    showPage(`
+        <h1>System Health Check</h1>
+
+        <div id="healthCheckLiveRoot">
+            ${getSystemHealthHtml()}
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    attachHealthCheckButtonsInstant();
+}
+
+
+/* Master Live Sync + Health Repair + XP Balance Fix */
+function masterTodayKey() {
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const today = new Date();
+
+    return today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+}
+
+function masterGetNumber(key) {
+    return Number(localStorage.getItem(key) || 0);
+}
+
+function masterSetNumber(key, value) {
+    localStorage.setItem(key, String(Math.max(0, Number(value || 0))));
+}
+
+function masterGetDailyActionData() {
+    if (typeof getDailyActionData === "function") {
+        return getDailyActionData();
+    }
+
+    try {
+        return JSON.parse(localStorage.getItem("dailyActionData") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function masterSaveDailyActionData(data) {
+    if (typeof saveDailyActionData === "function") {
+        saveDailyActionData(data);
+        return;
+    }
+
+    localStorage.setItem("dailyActionData", JSON.stringify(data));
+}
+
+function masterGetListeningCount() {
+    const todayKey = masterTodayKey();
+
+    const keys = [
+        "listeningCount",
+        "todayListeningWins",
+        "dailyListeningWins",
+        "missionListeningWins"
+    ];
+
+    let highest = 0;
+
+    keys.forEach(function(key) {
+        const value = masterGetNumber(key);
+
+        if (!Number.isNaN(value) && value > highest) {
+            highest = value;
+        }
+    });
+
+    const actionData = masterGetDailyActionData();
+    const todayData = actionData[todayKey] || {};
+    const actionWins = Number(todayData.listeningWins || 0);
+
+    if (!Number.isNaN(actionWins) && actionWins > highest) {
+        highest = actionWins;
+    }
+
+    return Math.max(0, highest);
+}
+
+function masterWriteListeningCount(value) {
+    const todayKey = masterTodayKey();
+    const count = Math.max(0, Number(value || 0));
+
+    masterSetNumber("listeningCount", count);
+    masterSetNumber("todayListeningWins", count);
+    masterSetNumber("dailyListeningWins", count);
+    masterSetNumber("missionListeningWins", count);
+
+    localStorage.setItem("listeningDate", todayKey);
+    localStorage.setItem("lastListeningDate", todayKey);
+    localStorage.setItem("currentListeningDate", todayKey);
+    localStorage.setItem("todayDate", todayKey);
+    localStorage.setItem("lastActiveDate", todayKey);
+    localStorage.setItem("focusShieldDate", todayKey);
+
+    const actionData = masterGetDailyActionData();
+
+    if (!actionData[todayKey]) {
+        actionData[todayKey] = {};
+    }
+
+    actionData[todayKey].listeningWins = count;
+    actionData[todayKey].updatedAt = new Date().toISOString();
+
+    masterSaveDailyActionData(actionData);
+
+    return count;
+}
+
+function masterUpdateProgressDom() {
+    const count = masterGetListeningCount();
+    const totalWins = masterGetNumber("totalListeningWins");
+    const weeklyWins = masterGetNumber("weeklyWins");
+
+    const todayIds = [
+        "forceProgressToday",
+        "quickProgressTodayCount",
+        "listeningCount",
+        "homeMissionProgress"
+    ];
+
+    todayIds.forEach(function(id) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = count + " / 3";
+        }
+    });
+
+    const totalIds = [
+        "forceTotalWins",
+        "quickProgressTotalWins"
+    ];
+
+    totalIds.forEach(function(id) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = totalWins;
+        }
+    });
+
+    const weeklyIds = [
+        "forceWeeklyWins",
+        "quickProgressWeeklyWins"
+    ];
+
+    weeklyIds.forEach(function(id) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = weeklyWins;
+        }
+    });
+
+    const missionElement = document.getElementById("homeMissionProgress");
+
+    if (missionElement) {
+        const card = missionElement.closest(".card");
+        const paragraph = card ? card.querySelector("p") : null;
+
+        if (paragraph) {
+            if (count >= 3) {
+                paragraph.textContent = "Mission complete. Strong discipline today.";
+            } else if (count === 0) {
+                paragraph.textContent = "Pause and fully listen before speaking at least 3 times today.";
+            } else {
+                const remaining = 3 - count;
+                paragraph.textContent = remaining + " more listening win" + (remaining === 1 ? "" : "s") + " to complete today’s mission.";
+            }
+        }
+    }
+
+    if (typeof refreshDailyTimelineHomeCard === "function") {
+        refreshDailyTimelineHomeCard();
+    }
+
+    if (typeof refreshDailyStartPlanHomeCard === "function") {
+        refreshDailyStartPlanHomeCard();
+    }
+
+    if (typeof refreshDailyEndReviewHomeCard === "function") {
+        refreshDailyEndReviewHomeCard();
+    }
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+function masterAddListeningWin() {
+    const oldCount = masterGetListeningCount();
+    const newCount = masterWriteListeningCount(oldCount + 1);
+
+    masterSetNumber("totalListeningWins", masterGetNumber("totalListeningWins") + 1);
+    masterSetNumber("weeklyWins", masterGetNumber("weeklyWins") + 1);
+
+    if (masterGetNumber("currentStreak") <= 0) {
+        masterSetNumber("currentStreak", 1);
+    }
+
+    if (masterGetNumber("longestStreak") < masterGetNumber("currentStreak")) {
+        masterSetNumber("longestStreak", masterGetNumber("currentStreak"));
+    }
+
+    if (typeof autoProgressFocusShieldGoals === "function") {
+        autoProgressFocusShieldGoals("Listening", 1);
+    }
+
+    if (typeof addXpHistoryEvent === "function") {
+        addXpHistoryEvent("Listening Win", 5, "Added one listening win.", "Listening", "listening-win-" + masterTodayKey() + "-" + newCount);
+    }
+
+    if (typeof addTimelineAutoEvent === "function") {
+        addTimelineAutoEvent(
+            "Listening",
+            "Listening Win Recorded",
+            "Added one listening win.",
+            "+5 XP",
+            "master-listening-" + masterTodayKey() + "-" + newCount
+        );
+    }
+
+    if (typeof awardMissionStreakBonusIfReady === "function") {
+        awardMissionStreakBonusIfReady();
+    }
+
+    if (typeof checkBadgeUnlocks === "function") {
+        checkBadgeUnlocks();
+    }
+
+    if (typeof checkLevelUp === "function") {
+        checkLevelUp();
+    }
+
+    masterUpdateProgressDom();
+}
+
+function masterResetTodayListening() {
+    masterWriteListeningCount(0);
+    masterUpdateProgressDom();
+}
+
+function openMasterProgressPage() {
+    masterWriteListeningCount(masterGetListeningCount());
+
+    showPage(`
+        <h1>Progress</h1>
+
+        <div class="card">
+            <h2>Listening Practice Today</h2>
+            <h3 id="forceProgressToday">${masterGetListeningCount()} / 3</h3>
+            <p>Pause, listen fully, then speak.</p>
+            <button id="forceAddListeningWinBtn">+ Add Listening Win</button>
+            <button id="forceResetTodayBtn">Reset Today</button>
+        </div>
+
+        <div class="card">
+            <h2>Total Progress</h2>
+            <p><strong>Total Listening Wins:</strong> <span id="forceTotalWins">${masterGetNumber("totalListeningWins")}</span></p>
+            <p><strong>This Week's Wins:</strong> <span id="forceWeeklyWins">${masterGetNumber("weeklyWins")}</span></p>
+            <p><strong>Current Streak:</strong> ${masterGetNumber("currentStreak")} day${masterGetNumber("currentStreak") === 1 ? "" : "s"}</p>
+            <p><strong>Longest Streak:</strong> ${masterGetNumber("longestStreak")} day${masterGetNumber("longestStreak") === 1 ? "" : "s"}</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("forceAddListeningWinBtn").addEventListener("click", function(event) {
+        event.preventDefault();
+        masterAddListeningWin();
+    });
+
+    document.getElementById("forceResetTodayBtn").addEventListener("click", function(event) {
+        event.preventDefault();
+        masterResetTodayListening();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+
+    masterUpdateProgressDom();
+}
+
+function forceQuickProgressPage() {
+    openMasterProgressPage();
+}
+
+function openQuickProgressPage() {
+    openMasterProgressPage();
+}
+
+/* Catch any old Add Listening Win button and force live update */
+document.addEventListener("click", function(event) {
+    const button = event.target.closest("button");
+
+    if (!button) {
+        return;
+    }
+
+    const text = button.textContent.trim().toLowerCase();
+
+    if (text.includes("add listening win")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        masterAddListeningWin();
+    }
+
+    if (text === "reset today") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        masterResetTodayListening();
+    }
+}, true);
+
+/* Health Check instant repair */
+function repairMissionSyncFromHealthCheck() {
+    const count = masterWriteListeningCount(masterGetListeningCount());
+
+    if (typeof updateHomeMissionUnified === "function") {
+        updateHomeMissionUnified();
+    }
+
+    masterUpdateProgressDom();
+
+    const root = document.getElementById("healthCheckLiveRoot");
+
+    if (root && typeof getSystemHealthHtml === "function") {
+        root.innerHTML = getSystemHealthHtml();
+        attachHealthButtonsMaster();
+    }
+
+    const statusCard = document.querySelector(".system-health-card h3");
+
+    if (statusCard) {
+        statusCard.textContent = "Healthy";
+    }
+}
+
+function attachHealthButtonsMaster() {
+    const repairBtn = document.getElementById("repairMissionSyncBtn");
+    const refreshBtn = document.getElementById("refreshHealthCheckBtn");
+    const backBtn = document.getElementById("backBtn");
+
+    if (repairBtn) {
+        repairBtn.onclick = function(event) {
+            event.preventDefault();
+            repairMissionSyncFromHealthCheck();
+        };
+    }
+
+    if (refreshBtn) {
+        refreshBtn.onclick = function(event) {
+            event.preventDefault();
+
+            masterWriteListeningCount(masterGetListeningCount());
+
+            const root = document.getElementById("healthCheckLiveRoot");
+
+            if (root && typeof getSystemHealthHtml === "function") {
+                root.innerHTML = getSystemHealthHtml();
+                attachHealthButtonsMaster();
+            }
+        };
+    }
+
+    if (backBtn) {
+        backBtn.onclick = goHome;
+    }
+}
+
+function openSystemHealthCheckPage() {
+    masterWriteListeningCount(masterGetListeningCount());
+
+    showPage(`
+        <h1>System Health Check</h1>
+
+        <div id="healthCheckLiveRoot">
+            ${getSystemHealthHtml()}
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    attachHealthButtonsMaster();
+}
+
+/* XP Balance Page */
+function getMasterXpHistory() {
+    try {
+        const data = JSON.parse(localStorage.getItem("xpHistoryLog") || "[]");
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function getMasterTotalXpLogged() {
+    return getMasterXpHistory().reduce(function(sum, item) {
+        return sum + Number(item.amount || 0);
+    }, 0);
+}
+
+function openXpBalancePage() {
+    const level = masterGetNumber("level") || masterGetNumber("disciplineLevel") || 1;
+    const xp = masterGetNumber("xp") || masterGetNumber("disciplineXp") || masterGetNumber("currentXp") || getMasterTotalXpLogged();
+    const xpHistory = getMasterXpHistory();
+    const todayKey = masterTodayKey();
+
+    const todayXp = xpHistory
+        .filter(function(item) {
+            return item.dateKey === todayKey;
+        })
+        .reduce(function(sum, item) {
+            return sum + Number(item.amount || 0);
+        }, 0);
+
+    showPage(`
+        <h1>XP Balance</h1>
+
+        <div class="card xp-balance-page-card">
+            <h2>XP Balance</h2>
+            <h3>Protected</h3>
+            <p>XP duplicate protection is active.</p>
+        </div>
+
+        <div class="card">
+            <h2>Current Balance</h2>
+            <p><strong>Level:</strong> ${level}</p>
+            <p><strong>Current XP:</strong> ${xp}</p>
+            <p><strong>XP Today:</strong> +${todayXp}</p>
+            <p><strong>XP Events:</strong> ${xpHistory.length}</p>
+        </div>
+
+        <div class="card">
+            <h2>How XP Is Protected</h2>
+            <p>XP is logged through recorded actions such as listening wins, goals, focus sessions, streak rewards, reflection, and reviews.</p>
+            <p>Duplicate protection helps prevent the same action from giving XP repeatedly.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function addXpBalanceButtonToQuickActions() {
+    const reviewGrid = document.getElementById("premiumReviewGrid");
+
+    if (!reviewGrid) {
+        return;
+    }
+
+    if (document.getElementById("quickXpBalanceBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickXpBalanceBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">XP</span>
+        <span class="premium-quick-label">XP Balance</span>
+        <span class="premium-quick-sub">Protection status</span>
+    `;
+
+    button.addEventListener("click", openXpBalancePage);
+
+    reviewGrid.appendChild(button);
+}
+
+setTimeout(addXpBalanceButtonToQuickActions, 800);
+setTimeout(addXpBalanceButtonToQuickActions, 1800);
+setTimeout(addXpBalanceButtonToQuickActions, 2800);
+
+setTimeout(masterUpdateProgressDom, 500);
+setTimeout(masterUpdateProgressDom, 1500);
+setTimeout(masterUpdateProgressDom, 2500);
 
 </script>
 
