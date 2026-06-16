@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=goalxpfix1">
+    <link rel="stylesheet" href="style.css?v=xphistory1">
 </head>
 <body>
 
@@ -71,6 +71,12 @@
         <h2>Goal System</h2>
         <h3 id="homeGoalSystemTitle">0 Active Goals</h3>
         <p id="homeGoalSystemText">Create goals and track real progress.</p>
+    </div>
+
+    <div class="card xp-history-card">
+        <h2>XP History</h2>
+        <h3 id="homeXpHistoryTitle">0 XP Logged</h3>
+        <p id="homeXpHistoryText">Track where your XP comes from.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -150,6 +156,7 @@
     <button id="smartSuggestionsBtn">Smart Suggestions</button>
     <button id="disciplineCoachBtn">Discipline Coach</button>
     <button id="streakProtectionBtn">Streak Protection</button>
+    <button id="xpHistoryBtn">XP History</button>
     <button id="backupDataBtn">Backup Data</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
@@ -868,6 +875,7 @@ updateHomeSmartSuggestions();
 updateHomeDisciplineCoach();
 updateHomeStreakProtection();
 updateHomeGoalSystem();
+updateHomeXpHistory();
 }
 
 function isTodayReflectionWritten() {
@@ -2550,6 +2558,7 @@ document.getElementById("timerBtn").addEventListener("click", function() {
 
         incrementDailyReviewAction("focusSessions");
         autoProgressFocusShieldGoals("Focus", 1);
+        addXpHistoryEvent("Focus Session", 10, "Completed one focus timer session.", "Focus");
 
         const badgeUnlocked = checkBadgeUnlocks();
         const leveledUp = checkLevelUp();
@@ -2712,6 +2721,7 @@ document.getElementById("concentrationBtn").addEventListener("click", function()
 
                 incrementDailyReviewAction("concentrationSessions");
                 autoProgressFocusShieldGoals("Concentration", 1);
+                addXpHistoryEvent("Concentration Session", 10, "Completed one concentration session.", "Concentration");
 
                 const badgeUnlocked = checkBadgeUnlocks();
                 const leveledUp = checkLevelUp();
@@ -2831,6 +2841,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         document.getElementById("streakStatus").textContent = "Completed today.";
         document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
         autoProgressFocusShieldGoals("Listening", 1);
+        addXpHistoryEvent("Listening Win", 5, "Added one listening win.", "Listening");
 
         checkBadgeUnlocks();
         checkLevelUp();
@@ -3039,6 +3050,7 @@ if (reflectionBtn) {
             saveReflectionHistory(updatedHistory);
 
             autoProgressFocusShieldGoals("Reflection", 1);
+            logReflectionXpIfNeeded();
 
             const badgeUnlocked = checkBadgeUnlocks();
             const leveledUp = checkLevelUp();
@@ -4370,6 +4382,230 @@ function migrateOldCompletedGoalsAsRewarded() {
 
 migrateOldCompletedGoalsAsRewarded();
 
+
+/* XP History Log System */
+function getXpHistoryLog() {
+    const saved = localStorage.getItem("xpHistoryLog");
+
+    if (!saved) {
+        return [];
+    }
+
+    try {
+        const history = JSON.parse(saved);
+
+        if (Array.isArray(history)) {
+            return history;
+        }
+
+        return [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveXpHistoryLog(history) {
+    localStorage.setItem("xpHistoryLog", JSON.stringify(history));
+}
+
+function addXpHistoryEvent(source, amount, detail, category) {
+    const xpAmount = Number(amount || 0);
+
+    if (xpAmount <= 0) {
+        return;
+    }
+
+    const history = getXpHistoryLog();
+
+    history.unshift({
+        id: String(Date.now()) + "-" + String(Math.floor(Math.random() * 100000)),
+        source: String(source || "XP"),
+        amount: xpAmount,
+        detail: String(detail || ""),
+        category: String(category || "General"),
+        dateKey: typeof getLocalDateKey === "function" ? getLocalDateKey() : "",
+        createdAt: new Date().toISOString()
+    });
+
+    saveXpHistoryLog(history.slice(0, 200));
+}
+
+function getXpHistoryStats() {
+    const history = getXpHistoryLog();
+
+    const totalLoggedXp = history.reduce(function(sum, item) {
+        return sum + Number(item.amount || 0);
+    }, 0);
+
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : "";
+
+    const todayXp = history.filter(function(item) {
+        return item.dateKey === todayKey;
+    }).reduce(function(sum, item) {
+        return sum + Number(item.amount || 0);
+    }, 0);
+
+    return {
+        totalLoggedXp: totalLoggedXp,
+        todayXp: todayXp,
+        eventCount: history.length
+    };
+}
+
+function updateHomeXpHistory() {
+    const titleElement = document.getElementById("homeXpHistoryTitle");
+    const textElement = document.getElementById("homeXpHistoryText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const stats = getXpHistoryStats();
+
+    titleElement.textContent = stats.totalLoggedXp + " XP Logged";
+    textElement.textContent = "Today: +" + stats.todayXp + " XP from tracked actions.";
+}
+
+function getFormattedXpTime(isoText) {
+    if (!isoText) {
+        return "";
+    }
+
+    try {
+        const date = new Date(isoText);
+
+        return date.toLocaleString(undefined, {
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    } catch (error) {
+        return "";
+    }
+}
+
+function getXpHistoryItemsHtml() {
+    const history = getXpHistoryLog();
+
+    if (history.length === 0) {
+        return `<p>No XP history yet. New XP gains will appear here.</p>`;
+    }
+
+    let html = "";
+
+    history.slice(0, 50).forEach(function(item) {
+        html += `
+            <div class="xp-history-item">
+                <div class="xp-history-left">
+                    <h2>${escapeHtml(item.source)}</h2>
+                    <p>${escapeHtml(item.detail || item.category)}</p>
+                    <span>${escapeHtml(getFormattedXpTime(item.createdAt))}</span>
+                </div>
+                <strong>+${Number(item.amount || 0)} XP</strong>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function getXpHistoryHtml() {
+    const stats = getXpHistoryStats();
+
+    return `
+        <div class="card xp-history-card">
+            <h2>XP Summary</h2>
+            <h3>${stats.totalLoggedXp} XP Logged</h3>
+            <p><strong>Today:</strong> +${stats.todayXp} XP</p>
+            <p><strong>Events recorded:</strong> ${stats.eventCount}</p>
+        </div>
+
+        <div class="card">
+            <h2>Recent XP Events</h2>
+            ${getXpHistoryItemsHtml()}
+        </div>
+
+        <div class="card coach-card">
+            <h2>Note</h2>
+            <p>This log records new XP gains from now onward. Older XP may already exist in your level total but may not appear in the history list.</p>
+        </div>
+    `;
+}
+
+function logReflectionXpIfNeeded() {
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : "";
+    const logKey = "reflectionXpLogged-" + todayKey;
+
+    if (localStorage.getItem(logKey) === "true") {
+        return;
+    }
+
+    if (typeof isTodayReflectionWritten === "function" && isTodayReflectionWritten()) {
+        localStorage.setItem(logKey, "true");
+        addXpHistoryEvent("Daily Reflection", 10, "Reflection written for today.", "Reflection");
+    }
+}
+
+/* Override goal reward function to record XP history */
+function awardGoalXpForCompletedGoals(goals) {
+    let totalNewXp = 0;
+    let rewardedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (!goal.completed) {
+            return;
+        }
+
+        if (goal.xpRewarded === true) {
+            return;
+        }
+
+        const reward = calculateGoalXpReward(goal);
+
+        goal.xpRewarded = true;
+        goal.xpReward = reward;
+
+        totalNewXp += reward;
+        rewardedGoalNames.push(goal.title + " +" + reward + " XP");
+
+        addXpHistoryEvent(
+            "Goal Completed",
+            reward,
+            goal.title,
+            goal.category || "Goal"
+        );
+    });
+
+    if (totalNewXp > 0) {
+        saveGoalXpTotal(getGoalXpTotal() + totalNewXp);
+    }
+
+    return {
+        xp: totalNewXp,
+        names: rewardedGoalNames
+    };
+}
+
+
+
+const xpHistoryBtn = document.getElementById("xpHistoryBtn");
+
+if (xpHistoryBtn) {
+    xpHistoryBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>XP History</h1>
+
+            ${getXpHistoryHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+setTimeout(updateHomeXpHistory, 1200);
 </script>
 
 </body>

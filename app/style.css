@@ -894,3 +894,44 @@ textarea:focus {
     color: #111827;
     margin-top: 14px;
 }
+
+.xp-history-card {
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.34));
+}
+
+.xp-history-card h3 {
+    color: #facc15;
+}
+
+.xp-history-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.xp-history-item:last-child {
+    border-bottom: none;
+}
+
+.xp-history-left h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+}
+
+.xp-history-left p {
+    margin: 0 0 6px;
+    color: #cbd5e1;
+}
+
+.xp-history-left span {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.xp-history-item strong {
+    color: #facc15;
+    white-space: nowrap;
+}
