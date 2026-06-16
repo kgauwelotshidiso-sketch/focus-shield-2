@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=listeningcountfix1">
+    <link rel="stylesheet" href="style.css?v=hideoldnav1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    refreshPremiumQuickActions();
     refreshQuickActionMenuDirect();
     refreshQuickActionMenu();
     resetDashboardOrganizedFlag();
@@ -7538,6 +7539,256 @@ function forceQuickProgressPage() {
 function openQuickProgressPage() {
     forceQuickProgressPage();
 }
+
+
+/* Quick Action Premium Polish */
+function openPremiumQuickProgress() {
+    if (typeof forceQuickProgressPage === "function") {
+        forceQuickProgressPage();
+        return;
+    }
+
+    if (typeof openQuickProgressPage === "function") {
+        openQuickProgressPage();
+    }
+}
+
+function openPremiumQuickFocus() {
+    if (typeof forceQuickFocusPage === "function") {
+        forceQuickFocusPage();
+        return;
+    }
+
+    if (typeof forceClickRealButtonByText === "function") {
+        forceClickRealButtonByText(["Focus Timer", "Focus"]);
+    }
+}
+
+function openPremiumQuickGoals() {
+    if (typeof openGoalManagerPage === "function") {
+        openGoalManagerPage();
+        return;
+    }
+
+    if (typeof forceClickRealButtonByText === "function") {
+        forceClickRealButtonByText(["Goals"]);
+    }
+}
+
+function openPremiumQuickReflection() {
+    if (typeof openQuickReflectionFallbackPage === "function") {
+        openQuickReflectionFallbackPage();
+        return;
+    }
+
+    if (typeof forceClickRealButtonByText === "function") {
+        forceClickRealButtonByText(["Reflection", "Daily Reflection"]);
+    }
+}
+
+function openPremiumQuickCoach() {
+    if (typeof getDisciplineCoachHtml === "function") {
+        showPage(`
+            <h1>Discipline Coach</h1>
+            ${getDisciplineCoachHtml()}
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+        return;
+    }
+
+    if (typeof forceClickRealButtonByText === "function") {
+        forceClickRealButtonByText(["Discipline Coach"]);
+    }
+}
+
+function openPremiumQuickStats() {
+    if (typeof openStatisticsDashboardPage === "function") {
+        openStatisticsDashboardPage();
+        return;
+    }
+
+    if (typeof forceClickRealButtonByText === "function") {
+        forceClickRealButtonByText(["Statistics"]);
+    }
+}
+
+function openPremiumQuickCharts() {
+    if (typeof openChartsDashboardPage === "function") {
+        openChartsDashboardPage();
+        return;
+    }
+
+    if (typeof forceClickRealButtonByText === "function") {
+        forceClickRealButtonByText(["Charts"]);
+    }
+}
+
+function openPremiumQuickSettings() {
+    if (typeof openQuickSettingsFallbackPage === "function") {
+        openQuickSettingsFallbackPage();
+        return;
+    }
+
+    if (typeof forceClickRealButtonByText === "function") {
+        forceClickRealButtonByText(["Settings"]);
+    }
+}
+
+function makePremiumQuickButton(label, sublabel, code, buttonClass, handler) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "premium-quick-btn " + buttonClass;
+
+    button.innerHTML = `
+        <span class="premium-quick-code">${code}</span>
+        <span class="premium-quick-label">${label}</span>
+        <span class="premium-quick-sub">${sublabel}</span>
+    `;
+
+    button.addEventListener("click", handler);
+
+    return button;
+}
+
+function rebuildPremiumQuickActions() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    const oldMenu = document.getElementById("quickActionMenu");
+
+    if (oldMenu) {
+        oldMenu.remove();
+    }
+
+    const quoteCard = document.getElementById("dailyQuoteText")
+        ? document.getElementById("dailyQuoteText").closest(".card")
+        : null;
+
+    const missionCard = document.getElementById("homeMissionProgress")
+        ? document.getElementById("homeMissionProgress").closest(".card")
+        : null;
+
+    const insertAfterCard = quoteCard || missionCard;
+
+    if (!insertAfterCard) {
+        return;
+    }
+
+    const quickCard = document.createElement("div");
+    quickCard.id = "quickActionMenu";
+    quickCard.className = "card quick-action-card premium-quick-card";
+
+    quickCard.innerHTML = `
+        <div class="premium-quick-header">
+            <div>
+                <h2>Quick Actions</h2>
+                <p>Start, review, or adjust your discipline system fast.</p>
+            </div>
+            <span class="premium-quick-badge">FAST</span>
+        </div>
+
+        <div class="premium-quick-section">
+            <h3>Primary</h3>
+            <div id="premiumPrimaryGrid" class="premium-primary-grid"></div>
+        </div>
+
+        <div class="premium-quick-section">
+            <h3>Plan</h3>
+            <div id="premiumPlanGrid" class="premium-small-grid"></div>
+        </div>
+
+        <div class="premium-quick-section">
+            <h3>Review</h3>
+            <div id="premiumReviewGrid" class="premium-small-grid"></div>
+        </div>
+    `;
+
+    insertAfterCard.parentNode.insertBefore(quickCard, insertAfterCard.nextSibling);
+
+    const primaryGrid = document.getElementById("premiumPrimaryGrid");
+    const planGrid = document.getElementById("premiumPlanGrid");
+    const reviewGrid = document.getElementById("premiumReviewGrid");
+
+    primaryGrid.appendChild(makePremiumQuickButton("Progress", "Log listening wins", "01", "premium-main-action", openPremiumQuickProgress));
+    primaryGrid.appendChild(makePremiumQuickButton("Focus", "Start timer", "02", "premium-main-action", openPremiumQuickFocus));
+
+    planGrid.appendChild(makePremiumQuickButton("Goals", "Track targets", "G", "premium-secondary-action", openPremiumQuickGoals));
+    planGrid.appendChild(makePremiumQuickButton("Reflection", "Review today", "R", "premium-secondary-action", openPremiumQuickReflection));
+
+    reviewGrid.appendChild(makePremiumQuickButton("Coach", "Next instruction", "C", "premium-secondary-action", openPremiumQuickCoach));
+    reviewGrid.appendChild(makePremiumQuickButton("Stats", "Full numbers", "S", "premium-secondary-action", openPremiumQuickStats));
+    reviewGrid.appendChild(makePremiumQuickButton("Charts", "Visual data", "V", "premium-secondary-action", openPremiumQuickCharts));
+    reviewGrid.appendChild(makePremiumQuickButton("Settings", "Reset tools", "⚙", "premium-secondary-action", openPremiumQuickSettings));
+}
+
+function refreshPremiumQuickActions() {
+    setTimeout(rebuildPremiumQuickActions, 350);
+    setTimeout(rebuildPremiumQuickActions, 1000);
+    setTimeout(rebuildPremiumQuickActions, 1800);
+}
+
+refreshPremiumQuickActions();
+
+
+/* Hide Old Home Navigation When Quick Actions Exist */
+function hideOldHomeNavigationButtons() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (!document.getElementById("quickActionMenu")) {
+        return;
+    }
+
+    const oldNavLabels = [
+        "Goals",
+        "Focus Timer",
+        "Concentration",
+        "Progress",
+        "Level",
+        "Achievements",
+        "Reflection",
+        "Reflection History",
+        "Settings",
+        "Daily Review",
+        "Weekly Report",
+        "Weakness Detection",
+        "Smart Suggestions",
+        "Discipline Coach",
+        "Streak Protection",
+        "XP History",
+        "Streak Bonus",
+        "XP Balance",
+        "Statistics",
+        "Charts",
+        "Backup Data"
+    ];
+
+    const buttons = Array.from(document.querySelectorAll("button"));
+
+    buttons.forEach(function(button) {
+        if (button.closest("#quickActionMenu")) {
+            return;
+        }
+
+        if (button.id === "dashboardMoreToggleBtn" || button.id === "compactDetailsBtn") {
+            return;
+        }
+
+        const text = button.textContent.trim();
+
+        if (oldNavLabels.includes(text)) {
+            button.classList.add("hidden-old-home-nav");
+        }
+    });
+}
+
+setTimeout(hideOldHomeNavigationButtons, 500);
+setTimeout(hideOldHomeNavigationButtons, 1200);
+setTimeout(hideOldHomeNavigationButtons, 2200);
 
 </script>
 
