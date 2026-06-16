@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=hideoldnav1">
+    <link rel="stylesheet" href="style.css?v=dailystartplan1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    refreshDailyStartPlanHomeCard();
     refreshPremiumQuickActions();
     refreshQuickActionMenuDirect();
     refreshQuickActionMenu();
@@ -7789,6 +7790,255 @@ function hideOldHomeNavigationButtons() {
 setTimeout(hideOldHomeNavigationButtons, 500);
 setTimeout(hideOldHomeNavigationButtons, 1200);
 setTimeout(hideOldHomeNavigationButtons, 2200);
+
+
+/* Daily Start Plan System */
+function safeStartPlanEscape(value) {
+    if (typeof escapeHtml === "function") {
+        return escapeHtml(String(value || ""));
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getStartPlanActiveGoal() {
+    if (typeof getFocusShieldGoals !== "function") {
+        return null;
+    }
+
+    const goals = getFocusShieldGoals().filter(function(goal) {
+        return !goal.completed;
+    });
+
+    if (goals.length === 0) {
+        return null;
+    }
+
+    goals.sort(function(a, b) {
+        const aTarget = Math.max(1, Number(a.target || 1));
+        const bTarget = Math.max(1, Number(b.target || 1));
+        const aPercent = Number(a.progress || 0) / aTarget;
+        const bPercent = Number(b.progress || 0) / bTarget;
+
+        return aPercent - bPercent;
+    });
+
+    return goals[0];
+}
+
+function getDailyStartPlanInfo() {
+    const listeningWins = typeof forceGetTodayListeningCountFinal === "function"
+        ? forceGetTodayListeningCountFinal()
+        : getNumber("listeningCount");
+
+    const review = typeof getDailyReviewInfo === "function"
+        ? getDailyReviewInfo()
+        : {
+            score: 0,
+            missionComplete: listeningWins >= 3,
+            reflectionWritten: false,
+            focusDone: false,
+            concentrationDone: false
+        };
+
+    const weakness = typeof getWeaknessDetectionInfo === "function"
+        ? getWeaknessDetectionInfo()
+        : {
+            name: "Listening Mission",
+            action: "Get 3 listening wins today."
+        };
+
+    const streak = typeof getStreakProtectionInfo === "function"
+        ? getStreakProtectionInfo()
+        : {
+            status: listeningWins >= 3 ? "Fully Protected" : "At Risk",
+            riskLevel: listeningWins >= 3 ? "Low" : "Medium"
+        };
+
+    const goal = getStartPlanActiveGoal();
+
+    let firstMove = "Get 1 listening win to protect your streak.";
+    let mission = "Complete today’s 3-listening-win mission.";
+    let coachPriority = weakness.action || "Follow the next small discipline action.";
+    let planStatus = "Start";
+    let planMessage = "Start the day by protecting the streak.";
+
+    if (listeningWins >= 1 && listeningWins < 3) {
+        const remaining = 3 - listeningWins;
+        firstMove = "Your streak has minimum protection. Get " + remaining + " more listening win" + (remaining === 1 ? "" : "s") + ".";
+        mission = "Finish the 3 / 3 listening mission.";
+        planStatus = "Build";
+        planMessage = "You have started. Now complete the mission.";
+    }
+
+    if (listeningWins >= 3) {
+        firstMove = "Daily listening mission is complete.";
+        mission = "Protect your focus for the rest of the day.";
+        planStatus = "Protected";
+        planMessage = "Your streak is protected. Strengthen the day with one deeper action.";
+    }
+
+    if (!review.reflectionWritten && listeningWins >= 3) {
+        coachPriority = "Write today’s reflection before the day ends.";
+    } else if (!review.focusDone && listeningWins >= 3) {
+        coachPriority = "Complete one 5-minute focus session.";
+    } else if (!review.concentrationDone && listeningWins >= 3) {
+        coachPriority = "Complete one concentration session using your affirmation.";
+    } else if (review.reflectionWritten && review.focusDone && review.concentrationDone && listeningWins >= 3) {
+        coachPriority = "Maintain control. Do not let completion make you careless.";
+        planStatus = "Strong";
+        planMessage = "Core discipline actions are complete.";
+    }
+
+    let goalAction = "No active goal. Create one goal to give the day direction.";
+
+    if (goal) {
+        const target = Math.max(1, Number(goal.target || 1));
+        const progress = Math.min(Number(goal.progress || 0), target);
+        const remaining = Math.max(0, target - progress);
+
+        goalAction = "Move goal forward: " + goal.title + " — " + remaining + " " + (goal.unit || "steps") + " remaining.";
+    }
+
+    const remainingListening = Math.max(0, 3 - listeningWins);
+
+    return {
+        status: planStatus,
+        message: planMessage,
+        firstMove: firstMove,
+        mission: mission,
+        coachPriority: coachPriority,
+        goalAction: goalAction,
+        listeningWins: listeningWins,
+        remainingListening: remainingListening,
+        dailyScore: review.score || 0,
+        weaknessName: weakness.name || "Listening Mission",
+        streakStatus: streak.status || "Unknown",
+        riskLevel: streak.riskLevel || "Unknown",
+        reflectionWritten: review.reflectionWritten,
+        focusDone: review.focusDone,
+        concentrationDone: review.concentrationDone
+    };
+}
+
+function getDailyStartPlanHtml() {
+    const plan = getDailyStartPlanInfo();
+
+    return `
+        <div class="card daily-start-plan-card">
+            <h2>Plan Status</h2>
+            <h3>${safeStartPlanEscape(plan.status)}</h3>
+            <p>${safeStartPlanEscape(plan.message)}</p>
+        </div>
+
+        <div class="card coach-command-card">
+            <h2>First Move</h2>
+            <h3>${safeStartPlanEscape(plan.firstMove)}</h3>
+            <p>Do this before trying to do everything else.</p>
+        </div>
+
+        <div class="card">
+            <h2>Main Mission</h2>
+            <p><strong>Listening Wins:</strong> ${plan.listeningWins} / 3</p>
+            <p><strong>Remaining:</strong> ${plan.remainingListening}</p>
+            <p>${safeStartPlanEscape(plan.mission)}</p>
+        </div>
+
+        <div class="card smart-suggestions-card">
+            <h2>Coach Priority</h2>
+            <h3>${safeStartPlanEscape(plan.coachPriority)}</h3>
+            <p><strong>Detected weakness:</strong> ${safeStartPlanEscape(plan.weaknessName)}</p>
+        </div>
+
+        <div class="card goal-system-card">
+            <h2>Goal Move</h2>
+            <p>${safeStartPlanEscape(plan.goalAction)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Today’s Checklist</h2>
+            <p>${plan.listeningWins >= 3 ? "✅" : "⬜"} Listening mission</p>
+            <p>${plan.reflectionWritten ? "✅" : "⬜"} Daily reflection</p>
+            <p>${plan.focusDone ? "✅" : "⬜"} Focus session</p>
+            <p>${plan.concentrationDone ? "✅" : "⬜"} Concentration session</p>
+        </div>
+
+        <div class="card streak-protection-card">
+            <h2>Risk Check</h2>
+            <h3>${safeStartPlanEscape(plan.streakStatus)}</h3>
+            <p><strong>Risk Level:</strong> ${safeStartPlanEscape(plan.riskLevel)}</p>
+            <p><strong>Daily Score:</strong> ${plan.dailyScore}%</p>
+        </div>
+    `;
+}
+
+function openDailyStartPlanPage() {
+    showPage(`
+        <h1>Daily Start Plan</h1>
+
+        ${getDailyStartPlanHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertDailyStartPlanHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("dailyStartPlanHomeCard")) {
+        return;
+    }
+
+    const quickMenu = document.getElementById("quickActionMenu");
+    const dailyMessageCard = document.getElementById("dailyQuoteText")
+        ? document.getElementById("dailyQuoteText").closest(".card")
+        : null;
+
+    const insertAfter = quickMenu || dailyMessageCard;
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const plan = getDailyStartPlanInfo();
+
+    const card = document.createElement("div");
+    card.id = "dailyStartPlanHomeCard";
+    card.className = "card daily-start-plan-card";
+    card.innerHTML = `
+        <h2>Daily Start Plan</h2>
+        <h3>${safeStartPlanEscape(plan.status)}</h3>
+        <p>${safeStartPlanEscape(plan.firstMove)}</p>
+        <button id="openDailyStartPlanBtn">Open Start Plan</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openDailyStartPlanBtn").addEventListener("click", openDailyStartPlanPage);
+}
+
+function refreshDailyStartPlanHomeCard() {
+    const oldCard = document.getElementById("dailyStartPlanHomeCard");
+
+    if (oldCard) {
+        oldCard.remove();
+    }
+
+    setTimeout(insertDailyStartPlanHomeCard, 300);
+    setTimeout(insertDailyStartPlanHomeCard, 1000);
+    setTimeout(insertDailyStartPlanHomeCard, 1800);
+}
+
+refreshDailyStartPlanHomeCard();
 
 </script>
 
