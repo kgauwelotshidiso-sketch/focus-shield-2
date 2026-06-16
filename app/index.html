@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=healthautofix1">
+    <link rel="stylesheet" href="style.css?v=autofixbuttonpersist1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshDailyOperatingSystemV2, 800);
     setTimeout(addXpBalanceButtonToQuickActions, 700);
     setTimeout(masterUpdateProgressDom, 900);
     refreshSystemHealthHomeCard();
@@ -11557,6 +11558,817 @@ function openSystemHealthCheckPage() {
 setTimeout(insertAutoFixAllButton, 800);
 setTimeout(insertAutoFixAllButton, 1800);
 setTimeout(insertAutoFixAllButton, 2800);
+
+
+/* Focus Shield V2 Daily Operating System */
+function fsV2TodayKey() {
+    if (typeof masterTodayKey === "function") {
+        return masterTodayKey();
+    }
+
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsV2Escape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsV2GetJson(key, fallback) {
+    try {
+        const data = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        return data || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsV2SetJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function fsV2Number(key) {
+    return Number(localStorage.getItem(key) || 0);
+}
+
+function fsV2GetListeningCount() {
+    if (typeof masterGetListeningCount === "function") {
+        return masterGetListeningCount();
+    }
+
+    if (typeof getUnifiedTodayListeningCount === "function") {
+        return getUnifiedTodayListeningCount();
+    }
+
+    return Math.max(
+        fsV2Number("listeningCount"),
+        fsV2Number("todayListeningWins"),
+        fsV2Number("dailyListeningWins"),
+        fsV2Number("missionListeningWins")
+    );
+}
+
+function fsV2GetTodayActionData() {
+    const todayKey = fsV2TodayKey();
+
+    if (typeof getDailyActionData === "function") {
+        const data = getDailyActionData();
+        return data[todayKey] || {};
+    }
+
+    return {};
+}
+
+function fsV2GetMorningPlan() {
+    const data = fsV2GetJson("fsV2MorningPlans", {});
+    return data[fsV2TodayKey()] || {};
+}
+
+function fsV2SaveMorningPlan(plan) {
+    const data = fsV2GetJson("fsV2MorningPlans", {});
+    data[fsV2TodayKey()] = {
+        ...plan,
+        dateKey: fsV2TodayKey(),
+        savedAt: new Date().toISOString()
+    };
+    fsV2SetJson("fsV2MorningPlans", data);
+}
+
+function fsV2GetMiddayReset() {
+    const data = fsV2GetJson("fsV2MiddayResets", {});
+    return data[fsV2TodayKey()] || {};
+}
+
+function fsV2SaveMiddayReset(reset) {
+    const data = fsV2GetJson("fsV2MiddayResets", {});
+    data[fsV2TodayKey()] = {
+        ...reset,
+        dateKey: fsV2TodayKey(),
+        savedAt: new Date().toISOString()
+    };
+    fsV2SetJson("fsV2MiddayResets", data);
+}
+
+function fsV2GetNightReview() {
+    const data = fsV2GetJson("fsV2NightReviews", {});
+    return data[fsV2TodayKey()] || {};
+}
+
+function fsV2SaveNightReview(review) {
+    const data = fsV2GetJson("fsV2NightReviews", {});
+    data[fsV2TodayKey()] = {
+        ...review,
+        dateKey: fsV2TodayKey(),
+        savedAt: new Date().toISOString()
+    };
+    fsV2SetJson("fsV2NightReviews", data);
+}
+
+function fsV2GetGoalExecution() {
+    const data = fsV2GetJson("fsV2GoalExecutionPlans", {});
+    return data[fsV2TodayKey()] || {};
+}
+
+function fsV2SaveGoalExecution(plan) {
+    const data = fsV2GetJson("fsV2GoalExecutionPlans", {});
+    data[fsV2TodayKey()] = {
+        ...plan,
+        dateKey: fsV2TodayKey(),
+        savedAt: new Date().toISOString()
+    };
+    fsV2SetJson("fsV2GoalExecutionPlans", data);
+}
+
+function fsV2ReflectionSavedToday() {
+    const todayKey = fsV2TodayKey();
+    const reflectionHistory = fsV2GetJson("reflectionHistory", {});
+
+    if (reflectionHistory && reflectionHistory[todayKey]) {
+        return true;
+    }
+
+    return Boolean(localStorage.getItem("todayReflection"));
+}
+
+function fsV2EndReviewSavedToday() {
+    const todayKey = fsV2TodayKey();
+    const reviewHistory = fsV2GetJson("dailyEndReviewHistory", {});
+
+    if (reviewHistory && reviewHistory[todayKey]) {
+        return true;
+    }
+
+    return Boolean(localStorage.getItem("todayEndReview"));
+}
+
+function fsV2CalculateNightScore() {
+    const listening = Math.min(fsV2GetListeningCount(), 3);
+    const morning = fsV2GetMorningPlan();
+    const midday = fsV2GetMiddayReset();
+    const goalPlan = fsV2GetGoalExecution();
+
+    let score = 0;
+
+    score += Math.round((listening / 3) * 30);
+
+    if (morning.mainMission || morning.firstMove) {
+        score += 15;
+    }
+
+    if (midday.nextAction || midday.state) {
+        score += 15;
+    }
+
+    if (goalPlan.goalName || goalPlan.nextStep) {
+        score += 15;
+    }
+
+    if (fsV2ReflectionSavedToday()) {
+        score += 10;
+    }
+
+    if (fsV2EndReviewSavedToday()) {
+        score += 10;
+    }
+
+    if (listening >= 3) {
+        score += 5;
+    }
+
+    return Math.min(100, score);
+}
+
+function fsV2ScoreLabel(score) {
+    if (score >= 85) return "Elite Day";
+    if (score >= 70) return "Strong Day";
+    if (score >= 50) return "Protected Day";
+    return "Recovery Day";
+}
+
+function openDailyOperatingSystemPage() {
+    const score = fsV2CalculateNightScore();
+    const morning = fsV2GetMorningPlan();
+    const midday = fsV2GetMiddayReset();
+    const review = fsV2GetNightReview();
+    const goalPlan = fsV2GetGoalExecution();
+
+    showPage(`
+        <h1>Daily Operating System</h1>
+
+        <div class="card fs-v2-hero-card">
+            <h2>Today’s Command Status</h2>
+            <h3>${fsV2ScoreLabel(score)} — ${score}%</h3>
+            <p>This is your daily discipline control room.</p>
+        </div>
+
+        <div class="card">
+            <h2>Today’s System Summary</h2>
+            <p><strong>Listening Mission:</strong> ${fsV2GetListeningCount()} / 3</p>
+            <p><strong>Morning Plan:</strong> ${morning.mainMission || morning.firstMove ? "Saved" : "Not saved"}</p>
+            <p><strong>Midday Reset:</strong> ${midday.nextAction || midday.state ? "Saved" : "Not saved"}</p>
+            <p><strong>Goal Execution:</strong> ${goalPlan.goalName || goalPlan.nextStep ? "Planned" : "Not planned"}</p>
+            <p><strong>Night Review:</strong> ${review.score ? "Saved" : "Not saved"}</p>
+        </div>
+
+        <div class="card fs-v2-menu-card">
+            <h2>V2 Modules</h2>
+            <button id="openMorningCommandBtn">Morning Command Center</button>
+            <button id="openMiddayResetBtn">Midday Reset Check</button>
+            <button id="openNightReviewScoreBtn">Night Review Score</button>
+            <button id="openWeaknessPatternBtn">Weakness Pattern Tracker</button>
+            <button id="openWeeklyReportBtn">Weekly Discipline Report</button>
+            <button id="openGoalExecutionBtn">Goal Execution Plan</button>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("openMorningCommandBtn").addEventListener("click", openMorningCommandCenterPage);
+    document.getElementById("openMiddayResetBtn").addEventListener("click", openMiddayResetCheckPage);
+    document.getElementById("openNightReviewScoreBtn").addEventListener("click", openNightReviewScorePage);
+    document.getElementById("openWeaknessPatternBtn").addEventListener("click", openWeaknessPatternTrackerPage);
+    document.getElementById("openWeeklyReportBtn").addEventListener("click", openWeeklyDisciplineReportPage);
+    document.getElementById("openGoalExecutionBtn").addEventListener("click", openGoalExecutionPlanPage);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function openMorningCommandCenterPage() {
+    const plan = fsV2GetMorningPlan();
+
+    showPage(`
+        <h1>Morning Command Center</h1>
+
+        <div class="card fs-v2-hero-card">
+            <h2>Start the Day With Command</h2>
+            <p>Set the mission before emotions and distractions take control.</p>
+        </div>
+
+        <div class="card">
+            <label>Main Mission Today</label>
+            <textarea id="morningMainMission" placeholder="Example: I pause, I listen, and I follow my dreams.">${fsV2Escape(plan.mainMission || "")}</textarea>
+
+            <label>First Move</label>
+            <input id="morningFirstMove" placeholder="What is the first disciplined action today?" value="${fsV2Escape(plan.firstMove || "")}">
+
+            <label>Danger to Watch</label>
+            <input id="morningDanger" placeholder="What weakness/distraction must I guard against?" value="${fsV2Escape(plan.danger || "")}">
+
+            <label>Coach Command</label>
+            <textarea id="morningCoachCommand" placeholder="Write one command you will obey today.">${fsV2Escape(plan.coachCommand || "")}</textarea>
+
+            <button id="saveMorningCommandBtn">Save Morning Command</button>
+        </div>
+
+        <button id="backBtn">Back to Daily OS</button>
+    `);
+
+    document.getElementById("saveMorningCommandBtn").addEventListener("click", function() {
+        fsV2SaveMorningPlan({
+            mainMission: document.getElementById("morningMainMission").value.trim(),
+            firstMove: document.getElementById("morningFirstMove").value.trim(),
+            danger: document.getElementById("morningDanger").value.trim(),
+            coachCommand: document.getElementById("morningCoachCommand").value.trim()
+        });
+
+        if (typeof addTimelineAutoEvent === "function") {
+            addTimelineAutoEvent("Plan", "Morning Command Saved", "Started the day with a clear command.", "V2", "v2-morning-" + fsV2TodayKey());
+        }
+
+        alert("Morning Command saved.");
+        openDailyOperatingSystemPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openDailyOperatingSystemPage);
+}
+
+function openMiddayResetCheckPage() {
+    const reset = fsV2GetMiddayReset();
+
+    showPage(`
+        <h1>Midday Reset Check</h1>
+
+        <div class="card fs-v2-reset-card">
+            <h2>Return to Control</h2>
+            <p>This is where you stop the day from drifting.</p>
+        </div>
+
+        <div class="card">
+            <label>Current State</label>
+            <select id="middayState">
+                <option value="">Choose your state</option>
+                <option value="Focused" ${reset.state === "Focused" ? "selected" : ""}>Focused</option>
+                <option value="Distracted" ${reset.state === "Distracted" ? "selected" : ""}>Distracted</option>
+                <option value="Tired" ${reset.state === "Tired" ? "selected" : ""}>Tired</option>
+                <option value="Emotional" ${reset.state === "Emotional" ? "selected" : ""}>Emotional</option>
+                <option value="Recovering" ${reset.state === "Recovering" ? "selected" : ""}>Recovering</option>
+            </select>
+
+            <label>What pulled me off track?</label>
+            <input id="middayDistraction" placeholder="Example: emotions, phone, food, laziness, rushing" value="${fsV2Escape(reset.distraction || "")}">
+
+            <label>Next 30-Minute Action</label>
+            <input id="middayNextAction" placeholder="What will I do next?" value="${fsV2Escape(reset.nextAction || "")}">
+
+            <label>Reset Command</label>
+            <textarea id="middayCommand" placeholder="Example: I return to the system now.">${fsV2Escape(reset.command || "")}</textarea>
+
+            <button id="saveMiddayResetBtn">Save Midday Reset</button>
+        </div>
+
+        <button id="backBtn">Back to Daily OS</button>
+    `);
+
+    document.getElementById("saveMiddayResetBtn").addEventListener("click", function() {
+        fsV2SaveMiddayReset({
+            state: document.getElementById("middayState").value,
+            distraction: document.getElementById("middayDistraction").value.trim(),
+            nextAction: document.getElementById("middayNextAction").value.trim(),
+            command: document.getElementById("middayCommand").value.trim()
+        });
+
+        if (typeof addTimelineAutoEvent === "function") {
+            addTimelineAutoEvent("Focus", "Midday Reset Saved", "Returned to the system during the day.", "V2", "v2-midday-" + fsV2TodayKey());
+        }
+
+        alert("Midday Reset saved.");
+        openDailyOperatingSystemPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openDailyOperatingSystemPage);
+}
+
+function openNightReviewScorePage() {
+    const review = fsV2GetNightReview();
+    const autoScore = fsV2CalculateNightScore();
+
+    showPage(`
+        <h1>Night Review Score</h1>
+
+        <div class="card fs-v2-night-card">
+            <h2>Tonight’s Discipline Score</h2>
+            <h3>${fsV2ScoreLabel(autoScore)} — ${autoScore}%</h3>
+            <p>Score is based on listening wins, planning, reset, goal execution, reflection, and review.</p>
+        </div>
+
+        <div class="card">
+            <p><strong>Listening Mission:</strong> ${fsV2GetListeningCount()} / 3</p>
+            <p><strong>Reflection:</strong> ${fsV2ReflectionSavedToday() ? "Saved" : "Not saved"}</p>
+            <p><strong>End Review:</strong> ${fsV2EndReviewSavedToday() ? "Saved" : "Not saved"}</p>
+
+            <label>Biggest Win</label>
+            <textarea id="nightBiggestWin" placeholder="What was my strongest action today?">${fsV2Escape(review.biggestWin || "")}</textarea>
+
+            <label>Main Weakness</label>
+            <input id="nightWeakness" placeholder="What weakness appeared today?" value="${fsV2Escape(review.weakness || "")}">
+
+            <label>Tomorrow’s Correction</label>
+            <textarea id="nightCorrection" placeholder="What must I correct tomorrow?">${fsV2Escape(review.correction || "")}</textarea>
+
+            <button id="saveNightReviewScoreBtn">Save Night Score</button>
+        </div>
+
+        <button id="backBtn">Back to Daily OS</button>
+    `);
+
+    document.getElementById("saveNightReviewScoreBtn").addEventListener("click", function() {
+        const score = fsV2CalculateNightScore();
+
+        fsV2SaveNightReview({
+            score: score,
+            label: fsV2ScoreLabel(score),
+            listening: fsV2GetListeningCount(),
+            biggestWin: document.getElementById("nightBiggestWin").value.trim(),
+            weakness: document.getElementById("nightWeakness").value.trim(),
+            correction: document.getElementById("nightCorrection").value.trim()
+        });
+
+        if (typeof addTimelineAutoEvent === "function") {
+            addTimelineAutoEvent("Review", "Night Review Score Saved", "Closed the day with a discipline score of " + score + "%.", "V2", "v2-night-" + fsV2TodayKey());
+        }
+
+        alert("Night Review Score saved: " + score + "%.");
+        openDailyOperatingSystemPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openDailyOperatingSystemPage);
+}
+
+function fsV2Last7DateKeys() {
+    const keys = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+
+        keys.push(
+            d.getFullYear() + "-" +
+            String(d.getMonth() + 1).padStart(2, "0") + "-" +
+            String(d.getDate()).padStart(2, "0")
+        );
+    }
+
+    return keys;
+}
+
+function fsV2BuildWeeklyData() {
+    const keys = fsV2Last7DateKeys();
+    const morning = fsV2GetJson("fsV2MorningPlans", {});
+    const midday = fsV2GetJson("fsV2MiddayResets", {});
+    const night = fsV2GetJson("fsV2NightReviews", {});
+    const goals = fsV2GetJson("fsV2GoalExecutionPlans", {});
+
+    const rows = keys.map(function(key) {
+        return {
+            key: key,
+            morning: Boolean(morning[key] && (morning[key].mainMission || morning[key].firstMove)),
+            midday: Boolean(midday[key] && (midday[key].state || midday[key].nextAction)),
+            night: night[key] || {},
+            goal: Boolean(goals[key] && (goals[key].goalName || goals[key].nextStep))
+        };
+    });
+
+    return rows;
+}
+
+function openWeaknessPatternTrackerPage() {
+    const night = fsV2GetJson("fsV2NightReviews", {});
+    const midday = fsV2GetJson("fsV2MiddayResets", {});
+    const counts = {};
+
+    Object.values(night).forEach(function(item) {
+        const weakness = String(item.weakness || "").trim();
+
+        if (weakness) {
+            counts[weakness] = (counts[weakness] || 0) + 1;
+        }
+    });
+
+    Object.values(midday).forEach(function(item) {
+        const weakness = String(item.distraction || "").trim();
+
+        if (weakness) {
+            counts[weakness] = (counts[weakness] || 0) + 1;
+        }
+    });
+
+    const entries = Object.entries(counts).sort(function(a, b) {
+        return b[1] - a[1];
+    });
+
+    const listHtml = entries.length ? entries.map(function(entry) {
+        return `<p><strong>${fsV2Escape(entry[0])}:</strong> ${entry[1]} time${entry[1] === 1 ? "" : "s"}</p>`;
+    }).join("") : "<p>No weakness patterns recorded yet.</p>";
+
+    const topWeakness = entries[0] ? entries[0][0] : "None yet";
+
+    showPage(`
+        <h1>Weakness Pattern Tracker</h1>
+
+        <div class="card fs-v2-weakness-card">
+            <h2>Top Pattern</h2>
+            <h3>${fsV2Escape(topWeakness)}</h3>
+            <p>This tracker uses Midday Reset and Night Review entries.</p>
+        </div>
+
+        <div class="card">
+            <h2>Recorded Patterns</h2>
+            ${listHtml}
+        </div>
+
+        <div class="card">
+            <h2>Correction Rule</h2>
+            <p>When the same weakness appears repeatedly, do not rely on motivation. Build a rule, a cue, and a reset action.</p>
+            <p><strong>Example:</strong> When I notice the urge to interrupt, I pause, breathe, and wait for the person to finish.</p>
+        </div>
+
+        <button id="backBtn">Back to Daily OS</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", openDailyOperatingSystemPage);
+}
+
+function openWeeklyDisciplineReportPage() {
+    const rows = fsV2BuildWeeklyData();
+    const completedMorning = rows.filter(function(row) { return row.morning; }).length;
+    const completedMidday = rows.filter(function(row) { return row.midday; }).length;
+    const completedNight = rows.filter(function(row) { return row.night && row.night.score; }).length;
+    const completedGoals = rows.filter(function(row) { return row.goal; }).length;
+
+    const scores = rows
+        .map(function(row) { return Number(row.night.score || 0); })
+        .filter(function(score) { return score > 0; });
+
+    const averageScore = scores.length
+        ? Math.round(scores.reduce(function(sum, score) { return sum + score; }, 0) / scores.length)
+        : 0;
+
+    const rowHtml = rows.map(function(row) {
+        return `
+            <div class="card fs-v2-week-row">
+                <h2>${fsV2Escape(row.key)}</h2>
+                <p>Morning: ${row.morning ? "✅" : "—"}</p>
+                <p>Midday: ${row.midday ? "✅" : "—"}</p>
+                <p>Goal: ${row.goal ? "✅" : "—"}</p>
+                <p>Night Score: ${row.night.score ? row.night.score + "%" : "—"}</p>
+            </div>
+        `;
+    }).join("");
+
+    showPage(`
+        <h1>Weekly Discipline Report</h1>
+
+        <div class="card fs-v2-report-card">
+            <h2>7-Day Discipline Summary</h2>
+            <h3>${averageScore}% Average Score</h3>
+            <p>This report shows how consistently you operated your system.</p>
+        </div>
+
+        <div class="card">
+            <h2>Weekly Totals</h2>
+            <p><strong>Morning Commands:</strong> ${completedMorning} / 7</p>
+            <p><strong>Midday Resets:</strong> ${completedMidday} / 7</p>
+            <p><strong>Goal Execution Plans:</strong> ${completedGoals} / 7</p>
+            <p><strong>Night Reviews:</strong> ${completedNight} / 7</p>
+        </div>
+
+        <div class="card">
+            <h2>Coach Diagnosis</h2>
+            <p>${averageScore >= 75 ? "Your system is becoming consistent. Protect the routine." : "Your main work is consistency. Complete the small daily checkpoints before chasing bigger features."}</p>
+        </div>
+
+        ${rowHtml}
+
+        <button id="backBtn">Back to Daily OS</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", openDailyOperatingSystemPage);
+}
+
+function openGoalExecutionPlanPage() {
+    const plan = fsV2GetGoalExecution();
+
+    showPage(`
+        <h1>Goal Execution Plan</h1>
+
+        <div class="card fs-v2-goal-card">
+            <h2>Convert Goals Into Action</h2>
+            <p>A goal is weak until it has a next move.</p>
+        </div>
+
+        <div class="card">
+            <label>Main Goal</label>
+            <input id="goalExecutionName" placeholder="Example: Master listening without interrupting" value="${fsV2Escape(plan.goalName || "")}">
+
+            <label>Next Step Today</label>
+            <textarea id="goalExecutionStep" placeholder="What exact action will I complete today?">${fsV2Escape(plan.nextStep || "")}</textarea>
+
+            <label>When Will I Do It?</label>
+            <input id="goalExecutionTime" placeholder="Example: Before lunch / after work / 20:00" value="${fsV2Escape(plan.time || "")}">
+
+            <label>Success Rule</label>
+            <input id="goalExecutionSuccess" placeholder="How will I know I completed it?" value="${fsV2Escape(plan.successRule || "")}">
+
+            <button id="saveGoalExecutionBtn">Save Goal Execution Plan</button>
+        </div>
+
+        <button id="backBtn">Back to Daily OS</button>
+    `);
+
+    document.getElementById("saveGoalExecutionBtn").addEventListener("click", function() {
+        fsV2SaveGoalExecution({
+            goalName: document.getElementById("goalExecutionName").value.trim(),
+            nextStep: document.getElementById("goalExecutionStep").value.trim(),
+            time: document.getElementById("goalExecutionTime").value.trim(),
+            successRule: document.getElementById("goalExecutionSuccess").value.trim()
+        });
+
+        if (typeof addTimelineAutoEvent === "function") {
+            addTimelineAutoEvent("Goals", "Goal Execution Plan Saved", "Turned a goal into a next action.", "V2", "v2-goal-" + fsV2TodayKey());
+        }
+
+        alert("Goal Execution Plan saved.");
+        openDailyOperatingSystemPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openDailyOperatingSystemPage);
+}
+
+function insertDailyOperatingSystemHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("dailyOperatingSystemHomeCard")) {
+        return;
+    }
+
+    const systemHealthCard = document.getElementById("systemHealthHomeCard");
+    const timelineCard = document.getElementById("dailyTimelineHomeCard");
+    const insertAfter = systemHealthCard || timelineCard || document.querySelector(".card");
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const score = fsV2CalculateNightScore();
+    const card = document.createElement("div");
+
+    card.id = "dailyOperatingSystemHomeCard";
+    card.className = "card fs-v2-home-card";
+    card.innerHTML = `
+        <h2>Daily Operating System</h2>
+        <h3>${fsV2ScoreLabel(score)} — ${score}%</h3>
+        <p>Morning command, midday reset, night score, weekly report, and goal execution.</p>
+        <button id="openDailyOperatingSystemBtn">Open Daily OS</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openDailyOperatingSystemBtn").addEventListener("click", openDailyOperatingSystemPage);
+}
+
+function addDailyOperatingSystemQuickButton() {
+    const grids = [
+        document.getElementById("premiumPlanGrid"),
+        document.getElementById("premiumReviewGrid"),
+        document.getElementById("premiumPrimaryGrid")
+    ].filter(Boolean);
+
+    const grid = grids[0];
+
+    if (!grid) {
+        return;
+    }
+
+    if (document.getElementById("quickDailyOperatingSystemBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickDailyOperatingSystemBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-main-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">OS</span>
+        <span class="premium-quick-label">Daily OS</span>
+        <span class="premium-quick-sub">Command system</span>
+    `;
+
+    button.addEventListener("click", openDailyOperatingSystemPage);
+
+    grid.appendChild(button);
+}
+
+function refreshDailyOperatingSystemV2() {
+    const oldCard = document.getElementById("dailyOperatingSystemHomeCard");
+
+    if (oldCard) {
+        oldCard.remove();
+    }
+
+    setTimeout(insertDailyOperatingSystemHomeCard, 500);
+    setTimeout(insertDailyOperatingSystemHomeCard, 1300);
+    setTimeout(insertDailyOperatingSystemHomeCard, 2200);
+
+    setTimeout(addDailyOperatingSystemQuickButton, 600);
+    setTimeout(addDailyOperatingSystemQuickButton, 1500);
+    setTimeout(addDailyOperatingSystemQuickButton, 2500);
+}
+
+refreshDailyOperatingSystemV2();
+
+
+/* Auto-Fix Button Persistence Fix */
+function ensureAutoFixAllSystemsButtonPersists() {
+    const repairBtn = document.getElementById("repairMissionSyncBtn");
+
+    if (!repairBtn) {
+        return;
+    }
+
+    if (document.getElementById("autoFixAllSystemsBtn")) {
+        return;
+    }
+
+    const autoBtn = document.createElement("button");
+    autoBtn.id = "autoFixAllSystemsBtn";
+    autoBtn.type = "button";
+    autoBtn.textContent = "Auto-Fix All Systems";
+    autoBtn.className = "auto-fix-all-btn";
+
+    autoBtn.addEventListener("click", function(event) {
+        event.preventDefault();
+
+        if (typeof autoFixAllFocusShieldSystems === "function") {
+            autoFixAllFocusShieldSystems();
+        }
+    });
+
+    repairBtn.parentNode.insertBefore(autoBtn, repairBtn);
+}
+
+function refreshHealthCheckAutoFixButtonPersistence() {
+    setTimeout(ensureAutoFixAllSystemsButtonPersists, 50);
+    setTimeout(ensureAutoFixAllSystemsButtonPersists, 200);
+    setTimeout(ensureAutoFixAllSystemsButtonPersists, 500);
+    setTimeout(ensureAutoFixAllSystemsButtonPersists, 1000);
+}
+
+/* Wrap Mission Sync repair so Auto-Fix button returns after redraw */
+if (typeof repairMissionSyncFromHealthCheck === "function" && !window.repairMissionSyncAutoFixPersistenceWrapped) {
+    window.repairMissionSyncAutoFixPersistenceWrapped = true;
+
+    const oldRepairMissionSyncFromHealthCheck = repairMissionSyncFromHealthCheck;
+
+    repairMissionSyncFromHealthCheck = function() {
+        oldRepairMissionSyncFromHealthCheck();
+        refreshHealthCheckAutoFixButtonPersistence();
+    };
+}
+
+/* Wrap Health Check button attachment */
+if (typeof attachHealthButtonsMaster === "function" && !window.attachHealthButtonsMasterPersistenceWrapped) {
+    window.attachHealthButtonsMasterPersistenceWrapped = true;
+
+    const oldAttachHealthButtonsMaster = attachHealthButtonsMaster;
+
+    attachHealthButtonsMaster = function() {
+        oldAttachHealthButtonsMaster();
+        refreshHealthCheckAutoFixButtonPersistence();
+    };
+}
+
+if (typeof attachHealthButtonsMasterPlusAutoFix === "function" && !window.attachHealthButtonsMasterPlusAutoFixPersistenceWrapped) {
+    window.attachHealthButtonsMasterPlusAutoFixPersistenceWrapped = true;
+
+    const oldAttachHealthButtonsMasterPlusAutoFix = attachHealthButtonsMasterPlusAutoFix;
+
+    attachHealthButtonsMasterPlusAutoFix = function() {
+        oldAttachHealthButtonsMasterPlusAutoFix();
+        refreshHealthCheckAutoFixButtonPersistence();
+    };
+}
+
+/* Wrap System Health page opening */
+if (typeof openSystemHealthCheckPage === "function" && !window.openSystemHealthCheckPagePersistenceWrapped) {
+    window.openSystemHealthCheckPagePersistenceWrapped = true;
+
+    const oldOpenSystemHealthCheckPage = openSystemHealthCheckPage;
+
+    openSystemHealthCheckPage = function() {
+        oldOpenSystemHealthCheckPage();
+        refreshHealthCheckAutoFixButtonPersistence();
+    };
+}
+
+/* Catch any health-check redraw */
+document.addEventListener("click", function(event) {
+    const button = event.target.closest("button");
+
+    if (!button) {
+        return;
+    }
+
+    const text = button.textContent.trim().toLowerCase();
+
+    if (
+        text.includes("repair mission sync") ||
+        text.includes("run health check again") ||
+        text.includes("auto-fix all systems")
+    ) {
+        refreshHealthCheckAutoFixButtonPersistence();
+    }
+}, true);
+
+/* Watch the Health Check page for redraws */
+if (!window.healthCheckAutoFixButtonObserverStarted) {
+    window.healthCheckAutoFixButtonObserverStarted = true;
+
+    const observer = new MutationObserver(function() {
+        if (document.getElementById("healthCheckLiveRoot") || document.getElementById("repairMissionSyncBtn")) {
+            refreshHealthCheckAutoFixButtonPersistence();
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+refreshHealthCheckAutoFixButtonPersistence();
 
 </script>
 

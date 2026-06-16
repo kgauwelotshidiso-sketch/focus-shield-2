@@ -1844,3 +1844,60 @@ textarea:focus {
     border: 1px solid rgba(125, 211, 252, 0.45);
     box-shadow: 0 14px 28px rgba(14, 165, 233, 0.18);
 }
+
+.fs-v2-home-card,
+.fs-v2-hero-card {
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.2), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.35));
+}
+
+.fs-v2-home-card h3,
+.fs-v2-hero-card h3 {
+    color: #c084fc;
+}
+
+.fs-v2-menu-card button,
+.fs-v2-home-card button {
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+}
+
+.fs-v2-reset-card {
+    border: 1px solid rgba(14, 165, 233, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.3));
+}
+
+.fs-v2-night-card {
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.28));
+}
+
+.fs-v2-weakness-card {
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(248, 113, 113, 0.15), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(127, 29, 29, 0.28));
+}
+
+.fs-v2-report-card {
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.15), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(20, 83, 45, 0.3));
+}
+
+.fs-v2-goal-card {
+    border: 1px solid rgba(59, 130, 246, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 58, 138, 0.3));
+}
+
+.fs-v2-week-row {
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
