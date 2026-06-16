@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3router1">
+    <link rel="stylesheet" href="style.css?v=dailymemorydedupe1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshSmartCoachMemorySystems, 1100);
     setTimeout(p3RefreshActionRouterSystem, 1000);
     setTimeout(refreshPhase3SmartCoachSystems, 900);
     setTimeout(refreshDailyOperatingSystemV2, 800);
@@ -13428,6 +13429,1299 @@ function p3RefreshActionRouterSystem() {
 }
 
 p3RefreshActionRouterSystem();
+
+
+/* Phase 3 Smart Coach Memory Log */
+function p3MemoryTodayKey() {
+    if (typeof p3TodayKey === "function") return p3TodayKey();
+    if (typeof masterTodayKey === "function") return masterTodayKey();
+    if (typeof fsV2TodayKey === "function") return fsV2TodayKey();
+
+    const d = new Date();
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function p3MemoryEscape(value) {
+    if (typeof p3Escape === "function") {
+        return p3Escape(value);
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function p3MemoryGetLog() {
+    try {
+        const log = JSON.parse(localStorage.getItem("p3SmartCoachMemoryLog") || "[]");
+        return Array.isArray(log) ? log : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function p3MemorySaveLog(log) {
+    const cleaned = Array.isArray(log) ? log.slice(-300) : [];
+    localStorage.setItem("p3SmartCoachMemoryLog", JSON.stringify(cleaned));
+}
+
+function p3MemoryGetDaily() {
+    try {
+        const data = JSON.parse(localStorage.getItem("p3SmartCoachDailyMemory") || "{}");
+        return data && typeof data === "object" ? data : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function p3MemorySaveDaily(data) {
+    localStorage.setItem("p3SmartCoachDailyMemory", JSON.stringify(data || {}));
+}
+
+function p3MemoryCurrentState() {
+    if (typeof p3GetSmartCoachState === "function") {
+        return p3GetSmartCoachState();
+    }
+
+    return {
+        score: 0,
+        status: "Unknown",
+        mode: "Unknown",
+        priority: "Open Smart Coach.",
+        listening: 0
+    };
+}
+
+function p3MemoryCurrentAction() {
+    if (typeof p3GetNextCoachAction === "function") {
+        return p3GetNextCoachAction();
+    }
+
+    const state = p3MemoryCurrentState();
+
+    return {
+        label: state.priority || "Open Smart Coach",
+        detail: "Open Smart Coach and follow the current priority.",
+        type: "page",
+        page: "coach"
+    };
+}
+
+function p3MemoryAddEntry(type, label, detail, meta) {
+    const log = p3MemoryGetLog();
+    const state = p3MemoryCurrentState();
+
+    const entry = {
+        id: "p3-memory-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        dateKey: p3MemoryTodayKey(),
+        createdAt: new Date().toISOString(),
+        type: type,
+        label: label,
+        detail: detail,
+        score: state.score || 0,
+        mode: state.mode || "Unknown",
+        status: state.status || "Unknown",
+        priority: state.priority || "",
+        listening: state.listening || 0,
+        meta: meta || {}
+    };
+
+    log.push(entry);
+    p3MemorySaveLog(log);
+
+    return entry;
+}
+
+function p3MemoryLogRecommendation(source) {
+    const action = p3MemoryCurrentAction();
+    const daily = p3MemoryGetDaily();
+    const todayKey = p3MemoryTodayKey();
+
+    if (!daily[todayKey]) {
+        daily[todayKey] = {
+            dateKey: todayKey,
+            recommendations: [],
+            actionsTaken: [],
+            followThrough: [],
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    const today = daily[todayKey];
+    const last = today.recommendations[today.recommendations.length - 1];
+
+    const sameRecentRecommendation = last &&
+        last.label === action.label &&
+        (Date.now() - new Date(last.createdAt).getTime()) < 10 * 60 * 1000;
+
+    if (!sameRecentRecommendation) {
+        const recommendation = {
+            label: action.label,
+            detail: action.detail,
+            type: action.type,
+            page: action.page || "",
+            source: source || "Smart Coach",
+            createdAt: new Date().toISOString()
+        };
+
+        today.currentRecommendation = recommendation;
+        today.recommendations.push(recommendation);
+
+        p3MemoryAddEntry(
+            "Recommendation",
+            action.label,
+            action.detail,
+            {
+                source: source || "Smart Coach",
+                actionType: action.type,
+                page: action.page || ""
+            }
+        );
+    } else {
+        today.currentRecommendation = last;
+    }
+
+    today.updatedAt = new Date().toISOString();
+    p3MemorySaveDaily(daily);
+}
+
+function p3MemoryLogActionTaken(source) {
+    const action = p3MemoryCurrentAction();
+    const daily = p3MemoryGetDaily();
+    const todayKey = p3MemoryTodayKey();
+
+    if (!daily[todayKey]) {
+        daily[todayKey] = {
+            dateKey: todayKey,
+            recommendations: [],
+            actionsTaken: [],
+            followThrough: [],
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    const actionTaken = {
+        label: action.label,
+        detail: action.detail,
+        type: action.type,
+        page: action.page || "",
+        source: source || "Do Next Action",
+        createdAt: new Date().toISOString()
+    };
+
+    daily[todayKey].lastActionTaken = actionTaken;
+    daily[todayKey].actionsTaken.push(actionTaken);
+    daily[todayKey].updatedAt = new Date().toISOString();
+
+    p3MemorySaveDaily(daily);
+
+    p3MemoryAddEntry(
+        "Action Taken",
+        action.label,
+        "User followed coach route: " + action.detail,
+        {
+            source: source || "Do Next Action",
+            actionType: action.type,
+            page: action.page || ""
+        }
+    );
+}
+
+function p3MemoryLogFollowThrough(label, detail, source) {
+    const daily = p3MemoryGetDaily();
+    const todayKey = p3MemoryTodayKey();
+
+    if (!daily[todayKey]) {
+        daily[todayKey] = {
+            dateKey: todayKey,
+            recommendations: [],
+            actionsTaken: [],
+            followThrough: [],
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    const item = {
+        label: label,
+        detail: detail || "Follow-through recorded.",
+        source: source || "System",
+        createdAt: new Date().toISOString()
+    };
+
+    daily[todayKey].lastFollowThrough = item;
+    daily[todayKey].followThrough.push(item);
+    daily[todayKey].updatedAt = new Date().toISOString();
+
+    p3MemorySaveDaily(daily);
+
+    p3MemoryAddEntry(
+        "Follow-Through",
+        label,
+        detail || "Follow-through recorded.",
+        {
+            source: source || "System"
+        }
+    );
+}
+
+function p3MemoryCalculateStats() {
+    const daily = p3MemoryGetDaily();
+    const keys = Object.keys(daily).sort().slice(-7);
+
+    let recommendationDays = 0;
+    let actionDays = 0;
+    let followThroughDays = 0;
+
+    keys.forEach(function(key) {
+        const day = daily[key] || {};
+
+        if ((day.recommendations || []).length > 0) recommendationDays += 1;
+        if ((day.actionsTaken || []).length > 0) actionDays += 1;
+        if ((day.followThrough || []).length > 0) followThroughDays += 1;
+    });
+
+    const followThroughRate = recommendationDays
+        ? Math.round((followThroughDays / recommendationDays) * 100)
+        : 0;
+
+    return {
+        daysTracked: keys.length,
+        recommendationDays: recommendationDays,
+        actionDays: actionDays,
+        followThroughDays: followThroughDays,
+        followThroughRate: followThroughRate
+    };
+}
+
+function p3MemoryGetPriorityPatterns() {
+    const log = p3MemoryGetLog();
+    const counts = {};
+
+    log.forEach(function(entry) {
+        if (entry.type !== "Recommendation") return;
+
+        const label = entry.label || "Unknown";
+        counts[label] = (counts[label] || 0) + 1;
+    });
+
+    return Object.entries(counts)
+        .sort(function(a, b) { return b[1] - a[1]; })
+        .slice(0, 6);
+}
+
+function p3MemoryGetTodayHtml() {
+    const daily = p3MemoryGetDaily();
+    const today = daily[p3MemoryTodayKey()] || {};
+    const current = today.currentRecommendation;
+
+    const currentHtml = current ? `
+        <p><strong>Current Recommendation:</strong> ${p3MemoryEscape(current.label)}</p>
+        <p>${p3MemoryEscape(current.detail)}</p>
+    ` : `
+        <p>No recommendation logged today yet. Open or refresh Smart Coach.</p>
+    `;
+
+    const actionHtml = (today.actionsTaken || []).length
+        ? today.actionsTaken.slice(-5).reverse().map(function(item) {
+            return `<p>✅ ${p3MemoryEscape(item.label)} <br><small>${new Date(item.createdAt).toLocaleTimeString()}</small></p>`;
+        }).join("")
+        : "<p>No coach action taken today yet.</p>";
+
+    const followHtml = (today.followThrough || []).length
+        ? today.followThrough.slice(-5).reverse().map(function(item) {
+            return `<p>🔥 ${p3MemoryEscape(item.label)} <br><small>${new Date(item.createdAt).toLocaleTimeString()}</small></p>`;
+        }).join("")
+        : "<p>No follow-through recorded today yet.</p>";
+
+    return `
+        <div class="card p3-memory-today-card">
+            <h2>Today’s Coach Memory</h2>
+            ${currentHtml}
+        </div>
+
+        <div class="card">
+            <h2>Actions Taken Today</h2>
+            ${actionHtml}
+        </div>
+
+        <div class="card">
+            <h2>Follow-Through Today</h2>
+            ${followHtml}
+        </div>
+    `;
+}
+
+function p3MemoryGetStatsHtml() {
+    const stats = p3MemoryCalculateStats();
+    const patterns = p3MemoryGetPriorityPatterns();
+
+    const patternHtml = patterns.length
+        ? patterns.map(function(item) {
+            return `<p><strong>${p3MemoryEscape(item[0])}:</strong> ${item[1]} time${item[1] === 1 ? "" : "s"}</p>`;
+        }).join("")
+        : "<p>No priority patterns yet.</p>";
+
+    return `
+        <div class="card p3-memory-stats-card">
+            <h2>7-Day Coach Follow-Through</h2>
+            <h3>${stats.followThroughRate}%</h3>
+            <p><strong>Recommendation Days:</strong> ${stats.recommendationDays}</p>
+            <p><strong>Action Days:</strong> ${stats.actionDays}</p>
+            <p><strong>Follow-Through Days:</strong> ${stats.followThroughDays}</p>
+        </div>
+
+        <div class="card">
+            <h2>Repeated Coach Priorities</h2>
+            ${patternHtml}
+        </div>
+    `;
+}
+
+function p3MemoryGetLogHtml() {
+    const log = p3MemoryGetLog().slice(-20).reverse();
+
+    if (!log.length) {
+        return `
+            <div class="card">
+                <h2>Memory Timeline</h2>
+                <p>No Smart Coach memory entries yet.</p>
+            </div>
+        `;
+    }
+
+    const html = log.map(function(entry) {
+        return `
+            <div class="card p3-memory-entry-card">
+                <h2>${p3MemoryEscape(entry.type)}</h2>
+                <h3>${p3MemoryEscape(entry.label)}</h3>
+                <p>${p3MemoryEscape(entry.detail)}</p>
+                <p><strong>Score:</strong> ${entry.score}% • <strong>Mode:</strong> ${p3MemoryEscape(entry.mode)}</p>
+                <small>${p3MemoryEscape(entry.dateKey)} — ${new Date(entry.createdAt).toLocaleTimeString()}</small>
+            </div>
+        `;
+    }).join("");
+
+    return `
+        <div class="card">
+            <h2>Memory Timeline</h2>
+            <p>Latest 20 coach memory entries.</p>
+        </div>
+        ${html}
+    `;
+}
+
+function openSmartCoachMemoryLogPage() {
+    p3MemoryLogRecommendation("Memory Log Opened");
+
+    showPage(`
+        <h1>Smart Coach Memory Log</h1>
+
+        ${p3MemoryGetTodayHtml()}
+
+        ${p3MemoryGetStatsHtml()}
+
+        <div class="card p3-action-card">
+            <h2>Memory Actions</h2>
+            <button id="p3MemoryLogRecommendationBtn">Log Current Recommendation</button>
+            <button id="p3MemoryFollowThroughBtn">Record Follow-Through</button>
+            <button id="p3MemoryOpenCoachBtn">Open Smart Coach</button>
+            <button id="p3MemoryRefreshBtn">Refresh Memory Log</button>
+        </div>
+
+        ${p3MemoryGetLogHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("p3MemoryLogRecommendationBtn").addEventListener("click", function() {
+        p3MemoryLogRecommendation("Manual Log");
+        openSmartCoachMemoryLogPage();
+    });
+
+    document.getElementById("p3MemoryFollowThroughBtn").addEventListener("click", function() {
+        const action = p3MemoryCurrentAction();
+        p3MemoryLogFollowThrough(
+            action.label,
+            "User manually confirmed follow-through for: " + action.detail,
+            "Manual Confirmation"
+        );
+        openSmartCoachMemoryLogPage();
+    });
+
+    document.getElementById("p3MemoryOpenCoachBtn").addEventListener("click", function() {
+        if (typeof openSmartDailyCoachPage === "function") {
+            openSmartDailyCoachPage();
+        }
+    });
+
+    document.getElementById("p3MemoryRefreshBtn").addEventListener("click", openSmartCoachMemoryLogPage);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+/* Wrap Smart Coach so it logs recommendations */
+if (typeof openSmartDailyCoachPage === "function" && !window.p3MemoryOpenCoachWrapped) {
+    window.p3MemoryOpenCoachWrapped = true;
+
+    const oldOpenSmartDailyCoachPageMemory = openSmartDailyCoachPage;
+
+    openSmartDailyCoachPage = function() {
+        p3MemoryLogRecommendation("Smart Coach Opened");
+        oldOpenSmartDailyCoachPageMemory();
+        setTimeout(p3MemoryAttachButtons, 200);
+        setTimeout(p3MemoryAttachButtons, 600);
+    };
+}
+
+/* Wrap refresh so it logs recommendation without spam */
+if (typeof p3RefreshSmartCoachPage === "function" && !window.p3MemoryRefreshCoachWrapped) {
+    window.p3MemoryRefreshCoachWrapped = true;
+
+    const oldP3RefreshSmartCoachPageMemory = p3RefreshSmartCoachPage;
+
+    p3RefreshSmartCoachPage = function() {
+        p3MemoryLogRecommendation("Smart Coach Refreshed");
+        oldP3RefreshSmartCoachPageMemory();
+        setTimeout(p3MemoryAttachButtons, 200);
+    };
+}
+
+/* Wrap Do Next Action so it logs action taken */
+if (typeof p3ExecuteNextCoachAction === "function" && !window.p3MemoryExecuteActionWrapped) {
+    window.p3MemoryExecuteActionWrapped = true;
+
+    const oldP3ExecuteNextCoachActionMemory = p3ExecuteNextCoachAction;
+
+    p3ExecuteNextCoachAction = function() {
+        p3MemoryLogRecommendation("Before Do Next Action");
+        p3MemoryLogActionTaken("Do Next Action");
+
+        const action = p3MemoryCurrentAction();
+        const result = oldP3ExecuteNextCoachActionMemory.apply(this, arguments);
+
+        if (action.type === "listening") {
+            p3MemoryLogFollowThrough(
+                "Listening Win Completed",
+                "Coach action completed by adding a listening win.",
+                "Automatic"
+            );
+        }
+
+        return result;
+    };
+}
+
+/* Wrap V2 save functions so follow-through is logged automatically */
+if (typeof fsV2SaveMorningPlan === "function" && !window.p3MemoryMorningWrapped) {
+    window.p3MemoryMorningWrapped = true;
+
+    const oldFsV2SaveMorningPlanMemory = fsV2SaveMorningPlan;
+
+    fsV2SaveMorningPlan = function(plan) {
+        const result = oldFsV2SaveMorningPlanMemory.apply(this, arguments);
+        p3MemoryLogFollowThrough("Morning Command Saved", "Followed through on Morning Command.", "Automatic");
+        return result;
+    };
+}
+
+if (typeof fsV2SaveMiddayReset === "function" && !window.p3MemoryMiddayWrapped) {
+    window.p3MemoryMiddayWrapped = true;
+
+    const oldFsV2SaveMiddayResetMemory = fsV2SaveMiddayReset;
+
+    fsV2SaveMiddayReset = function(reset) {
+        const result = oldFsV2SaveMiddayResetMemory.apply(this, arguments);
+        p3MemoryLogFollowThrough("Midday Reset Saved", "Followed through on Midday Reset.", "Automatic");
+        return result;
+    };
+}
+
+if (typeof fsV2SaveGoalExecution === "function" && !window.p3MemoryGoalWrapped) {
+    window.p3MemoryGoalWrapped = true;
+
+    const oldFsV2SaveGoalExecutionMemory = fsV2SaveGoalExecution;
+
+    fsV2SaveGoalExecution = function(plan) {
+        const result = oldFsV2SaveGoalExecutionMemory.apply(this, arguments);
+        p3MemoryLogFollowThrough("Goal Execution Plan Saved", "Followed through on Goal Execution Plan.", "Automatic");
+        return result;
+    };
+}
+
+if (typeof fsV2SaveNightReview === "function" && !window.p3MemoryNightWrapped) {
+    window.p3MemoryNightWrapped = true;
+
+    const oldFsV2SaveNightReviewMemory = fsV2SaveNightReview;
+
+    fsV2SaveNightReview = function(review) {
+        const result = oldFsV2SaveNightReviewMemory.apply(this, arguments);
+        p3MemoryLogFollowThrough("Night Review Saved", "Followed through on Night Review.", "Automatic");
+        return result;
+    };
+}
+
+function p3MemoryAttachButtons() {
+    const coachActions = document.querySelector(".p3-action-card");
+
+    if (coachActions && !document.getElementById("p3OpenMemoryLogBtn")) {
+        const btn = document.createElement("button");
+        btn.id = "p3OpenMemoryLogBtn";
+        btn.type = "button";
+        btn.textContent = "Open Memory Log";
+        btn.className = "p3-memory-btn";
+        btn.addEventListener("click", openSmartCoachMemoryLogPage);
+        coachActions.appendChild(btn);
+    }
+}
+
+function insertSmartCoachMemoryHomeButton() {
+    const card = document.getElementById("smartDailyCoachHomeCard");
+
+    if (!card) {
+        return;
+    }
+
+    if (document.getElementById("p3HomeMemoryLogBtn")) {
+        return;
+    }
+
+    const btn = document.createElement("button");
+    btn.id = "p3HomeMemoryLogBtn";
+    btn.type = "button";
+    btn.textContent = "Memory Log";
+    btn.className = "p3-memory-btn";
+    btn.addEventListener("click", openSmartCoachMemoryLogPage);
+
+    card.appendChild(btn);
+}
+
+function addSmartCoachMemoryQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) {
+        return;
+    }
+
+    if (document.getElementById("quickSmartCoachMemoryBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickSmartCoachMemoryBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">MEM</span>
+        <span class="premium-quick-label">Coach Memory</span>
+        <span class="premium-quick-sub">Follow-through log</span>
+    `;
+
+    button.addEventListener("click", openSmartCoachMemoryLogPage);
+
+    grid.appendChild(button);
+}
+
+/* Add Memory Log to System Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.p3MemoryHealthWrapped) {
+    window.p3MemoryHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksMemory = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksMemory();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Smart Coach Memory Log";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Smart Coach Memory Log",
+                "PASS",
+                "Coach recommendations, actions, and follow-through can now be logged.",
+                "Use Memory Log to review whether you obeyed the coach."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshSmartCoachMemorySystems() {
+    setTimeout(p3MemoryAttachButtons, 400);
+    setTimeout(insertSmartCoachMemoryHomeButton, 600);
+    setTimeout(insertSmartCoachMemoryHomeButton, 1500);
+    setTimeout(addSmartCoachMemoryQuickButton, 700);
+    setTimeout(addSmartCoachMemoryQuickButton, 1700);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof refreshSmartCoachHomeCard === "function" && !window.p3MemoryHomeCardWrapped) {
+    window.p3MemoryHomeCardWrapped = true;
+
+    const oldRefreshSmartCoachHomeCardMemory = refreshSmartCoachHomeCard;
+
+    refreshSmartCoachHomeCard = function() {
+        oldRefreshSmartCoachHomeCardMemory();
+        refreshSmartCoachMemorySystems();
+    };
+}
+
+refreshSmartCoachMemorySystems();
+
+
+/* Phase 3 Memory Duplicate Guard + Follow-Through Clarity Fix */
+function p3MemoryDedupeList(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+
+    const seen = {};
+
+    return list.filter(function(item) {
+        const key = [
+            item.type || "",
+            item.label || "",
+            item.detail || "",
+            item.dateKey || "",
+            item.page || "",
+            String(item.createdAt || "").slice(0, 19)
+        ].join("|");
+
+        if (seen[key]) {
+            return false;
+        }
+
+        seen[key] = true;
+        return true;
+    });
+}
+
+function p3MemoryCleanDuplicateLogs() {
+    try {
+        const log = typeof p3MemoryGetLog === "function"
+            ? p3MemoryGetLog()
+            : JSON.parse(localStorage.getItem("p3SmartCoachMemoryLog") || "[]");
+
+        const cleanLog = p3MemoryDedupeList(log);
+
+        if (typeof p3MemorySaveLog === "function") {
+            p3MemorySaveLog(cleanLog);
+        } else {
+            localStorage.setItem("p3SmartCoachMemoryLog", JSON.stringify(cleanLog.slice(-300)));
+        }
+    } catch (error) {}
+
+    try {
+        const daily = typeof p3MemoryGetDaily === "function"
+            ? p3MemoryGetDaily()
+            : JSON.parse(localStorage.getItem("p3SmartCoachDailyMemory") || "{}");
+
+        Object.keys(daily).forEach(function(dateKey) {
+            const day = daily[dateKey] || {};
+
+            day.recommendations = p3MemoryDedupeList(day.recommendations || []);
+            day.actionsTaken = p3MemoryDedupeList(day.actionsTaken || []);
+            day.followThrough = p3MemoryDedupeList(day.followThrough || []);
+
+            daily[dateKey] = day;
+        });
+
+        if (typeof p3MemorySaveDaily === "function") {
+            p3MemorySaveDaily(daily);
+        } else {
+            localStorage.setItem("p3SmartCoachDailyMemory", JSON.stringify(daily));
+        }
+    } catch (error) {}
+}
+
+function p3MemoryIsRecentDuplicateAction(action) {
+    try {
+        const daily = typeof p3MemoryGetDaily === "function" ? p3MemoryGetDaily() : {};
+        const todayKey = typeof p3MemoryTodayKey === "function" ? p3MemoryTodayKey() : p3TodayKey();
+        const today = daily[todayKey] || {};
+        const actions = today.actionsTaken || [];
+        const last = actions[actions.length - 1];
+
+        if (!last) {
+            return false;
+        }
+
+        const lastTime = new Date(last.createdAt || 0).getTime();
+        const now = Date.now();
+
+        return last.label === action.label &&
+            last.type === action.type &&
+            (last.page || "") === (action.page || "") &&
+            now - lastTime < 2000;
+    } catch (error) {
+        return false;
+    }
+}
+
+/* Stop Do Next Action from firing twice from one tap */
+if (typeof p3ExecuteNextCoachAction === "function" && !window.p3MemorySingleTapRouterGuardWrapped) {
+    window.p3MemorySingleTapRouterGuardWrapped = true;
+
+    const oldP3ExecuteNextCoachActionSingleTap = p3ExecuteNextCoachAction;
+
+    p3ExecuteNextCoachAction = function() {
+        const action = typeof p3GetNextCoachAction === "function"
+            ? p3GetNextCoachAction()
+            : { label: "Unknown", type: "unknown", page: "" };
+
+        const key = [
+            action.label || "",
+            action.type || "",
+            action.page || ""
+        ].join("|");
+
+        const now = Date.now();
+
+        if (
+            window.p3LastCoachRouterTapKey === key &&
+            window.p3LastCoachRouterTapTime &&
+            now - window.p3LastCoachRouterTapTime < 1200
+        ) {
+            return;
+        }
+
+        window.p3LastCoachRouterTapKey = key;
+        window.p3LastCoachRouterTapTime = now;
+
+        return oldP3ExecuteNextCoachActionSingleTap.apply(this, arguments);
+    };
+}
+
+/* Stop Action Taken from duplicate logging */
+if (typeof p3MemoryLogActionTaken === "function" && !window.p3MemoryActionTakenDuplicateGuardWrapped) {
+    window.p3MemoryActionTakenDuplicateGuardWrapped = true;
+
+    const oldP3MemoryLogActionTakenGuard = p3MemoryLogActionTaken;
+
+    p3MemoryLogActionTaken = function(source) {
+        const action = typeof p3MemoryCurrentAction === "function"
+            ? p3MemoryCurrentAction()
+            : { label: "Unknown", type: "unknown", page: "" };
+
+        if (p3MemoryIsRecentDuplicateAction(action)) {
+            return null;
+        }
+
+        const result = oldP3MemoryLogActionTakenGuard.apply(this, arguments);
+        p3MemoryCleanDuplicateLogs();
+
+        return result;
+    };
+}
+
+/* Explain memory meaning inside Memory Log */
+if (typeof p3MemoryGetTodayHtml === "function" && !window.p3MemoryClarityCardWrapped) {
+    window.p3MemoryClarityCardWrapped = true;
+
+    const oldP3MemoryGetTodayHtmlClarity = p3MemoryGetTodayHtml;
+
+    p3MemoryGetTodayHtml = function() {
+        return oldP3MemoryGetTodayHtmlClarity() + `
+            <div class="card p3-memory-clarity-card">
+                <h2>Memory Meaning</h2>
+                <p><strong>Recommendation:</strong> what the coach told you to do.</p>
+                <p><strong>Action Taken:</strong> you pressed Do Next Action or followed the route.</p>
+                <p><strong>Follow-Through:</strong> you completed/saved the action, or pressed Record Follow-Through.</p>
+            </div>
+        `;
+    };
+}
+
+/* Clean duplicates every time Memory Log opens */
+if (typeof openSmartCoachMemoryLogPage === "function" && !window.p3MemoryOpenDedupeWrapped) {
+    window.p3MemoryOpenDedupeWrapped = true;
+
+    const oldOpenSmartCoachMemoryLogPageDedupe = openSmartCoachMemoryLogPage;
+
+    openSmartCoachMemoryLogPage = function() {
+        p3MemoryCleanDuplicateLogs();
+        oldOpenSmartCoachMemoryLogPageDedupe();
+    };
+}
+
+p3MemoryCleanDuplicateLogs();
+
+
+/* Phase 3 Memory Strong Daily Dedupe Fix */
+function p3MemoryStrongKey(item) {
+    const type = item.type || "";
+    const label = item.label || "";
+    const dateKey = item.dateKey || "";
+    const page = item.page || (item.meta && item.meta.page) || "";
+
+    if (type === "Action Taken") {
+        return [dateKey, type, label, page].join("|");
+    }
+
+    if (type === "Follow-Through") {
+        return [dateKey, type, label].join("|");
+    }
+
+    if (type === "Recommendation") {
+        return [dateKey, type, label, page].join("|");
+    }
+
+    return [
+        dateKey,
+        type,
+        label,
+        item.detail || "",
+        String(item.createdAt || "").slice(0, 19)
+    ].join("|");
+}
+
+function p3MemoryStrongDedupeArray(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+
+    const seen = {};
+    const cleaned = [];
+
+    list.forEach(function(item) {
+        const key = p3MemoryStrongKey(item);
+
+        if (seen[key]) {
+            return;
+        }
+
+        seen[key] = true;
+        cleaned.push(item);
+    });
+
+    return cleaned;
+}
+
+function p3MemoryStrongCleanAll() {
+    try {
+        const log = typeof p3MemoryGetLog === "function"
+            ? p3MemoryGetLog()
+            : JSON.parse(localStorage.getItem("p3SmartCoachMemoryLog") || "[]");
+
+        const cleanLog = p3MemoryStrongDedupeArray(log);
+
+        if (typeof p3MemorySaveLog === "function") {
+            p3MemorySaveLog(cleanLog);
+        } else {
+            localStorage.setItem("p3SmartCoachMemoryLog", JSON.stringify(cleanLog.slice(-300)));
+        }
+    } catch (error) {}
+
+    try {
+        const daily = typeof p3MemoryGetDaily === "function"
+            ? p3MemoryGetDaily()
+            : JSON.parse(localStorage.getItem("p3SmartCoachDailyMemory") || "{}");
+
+        Object.keys(daily).forEach(function(dateKey) {
+            const day = daily[dateKey] || {};
+
+            day.recommendations = p3MemoryStrongDedupeArray(day.recommendations || []);
+            day.actionsTaken = p3MemoryStrongDedupeArray(day.actionsTaken || []);
+            day.followThrough = p3MemoryStrongDedupeArray(day.followThrough || []);
+
+            daily[dateKey] = day;
+        });
+
+        if (typeof p3MemorySaveDaily === "function") {
+            p3MemorySaveDaily(daily);
+        } else {
+            localStorage.setItem("p3SmartCoachDailyMemory", JSON.stringify(daily));
+        }
+    } catch (error) {}
+}
+
+/* Strong duplicate guard before logging Action Taken */
+if (typeof p3MemoryLogActionTaken === "function" && !window.p3MemoryStrongActionTakenGuardWrapped) {
+    window.p3MemoryStrongActionTakenGuardWrapped = true;
+
+    const oldP3MemoryLogActionTakenStrong = p3MemoryLogActionTaken;
+
+    p3MemoryLogActionTaken = function(source) {
+        const action = typeof p3MemoryCurrentAction === "function"
+            ? p3MemoryCurrentAction()
+            : { label: "Unknown", type: "unknown", page: "" };
+
+        const todayKey = typeof p3MemoryTodayKey === "function"
+            ? p3MemoryTodayKey()
+            : p3TodayKey();
+
+        const daily = typeof p3MemoryGetDaily === "function" ? p3MemoryGetDaily() : {};
+        const today = daily[todayKey] || {};
+        const existing = today.actionsTaken || [];
+
+        const alreadyLoggedToday = existing.some(function(item) {
+            return item.label === action.label &&
+                item.type === action.type &&
+                (item.page || "") === (action.page || "");
+        });
+
+        if (alreadyLoggedToday) {
+            return null;
+        }
+
+        const result = oldP3MemoryLogActionTakenStrong.apply(this, arguments);
+        p3MemoryStrongCleanAll();
+
+        return result;
+    };
+}
+
+/* Strong duplicate guard before logging Follow-Through */
+if (typeof p3MemoryLogFollowThrough === "function" && !window.p3MemoryStrongFollowGuardWrapped) {
+    window.p3MemoryStrongFollowGuardWrapped = true;
+
+    const oldP3MemoryLogFollowThroughStrong = p3MemoryLogFollowThrough;
+
+    p3MemoryLogFollowThrough = function(label, detail, source) {
+        const todayKey = typeof p3MemoryTodayKey === "function"
+            ? p3MemoryTodayKey()
+            : p3TodayKey();
+
+        const daily = typeof p3MemoryGetDaily === "function" ? p3MemoryGetDaily() : {};
+        const today = daily[todayKey] || {};
+        const existing = today.followThrough || [];
+
+        const alreadyLoggedToday = existing.some(function(item) {
+            return item.label === label;
+        });
+
+        if (alreadyLoggedToday) {
+            return null;
+        }
+
+        const result = oldP3MemoryLogFollowThroughStrong.apply(this, arguments);
+        p3MemoryStrongCleanAll();
+
+        return result;
+    };
+}
+
+/* Clean before Memory Log opens and after it opens */
+if (typeof openSmartCoachMemoryLogPage === "function" && !window.p3MemoryStrongOpenWrapped) {
+    window.p3MemoryStrongOpenWrapped = true;
+
+    const oldOpenSmartCoachMemoryLogPageStrong = openSmartCoachMemoryLogPage;
+
+    openSmartCoachMemoryLogPage = function() {
+        p3MemoryStrongCleanAll();
+        oldOpenSmartCoachMemoryLogPageStrong();
+        setTimeout(p3MemoryStrongCleanAll, 200);
+    };
+}
+
+/* Manual cleanup button */
+function p3MemoryManualStrongCleanup() {
+    p3MemoryStrongCleanAll();
+
+    if (typeof openSmartCoachMemoryLogPage === "function") {
+        openSmartCoachMemoryLogPage();
+    }
+}
+
+/* Add cleanup button to Memory Actions */
+document.addEventListener("click", function() {
+    setTimeout(function() {
+        const memoryActions = Array.from(document.querySelectorAll(".card"))
+            .find(function(card) {
+                const heading = card.querySelector("h2");
+                return heading && heading.textContent.trim() === "Memory Actions";
+            });
+
+        if (!memoryActions) {
+            return;
+        }
+
+        if (document.getElementById("p3CleanMemoryDuplicatesBtn")) {
+            return;
+        }
+
+        const button = document.createElement("button");
+        button.id = "p3CleanMemoryDuplicatesBtn";
+        button.type = "button";
+        button.textContent = "Clean Memory Duplicates";
+        button.className = "p3-memory-btn";
+        button.addEventListener("click", p3MemoryManualStrongCleanup);
+
+        memoryActions.appendChild(button);
+    }, 300);
+}, true);
+
+p3MemoryStrongCleanAll();
+
+
+/* Phase 3 Daily Memory Bucket Dedupe Fix */
+function p3DailyMemoryDedupeByLabel(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+
+    const seen = {};
+    const cleaned = [];
+
+    list.forEach(function(item) {
+        const key = [
+            item.label || "",
+            item.page || "",
+            item.source || "",
+            item.type || ""
+        ].join("|");
+
+        if (seen[key]) {
+            return;
+        }
+
+        seen[key] = true;
+        cleaned.push(item);
+    });
+
+    return cleaned;
+}
+
+function p3DailyMemoryDedupeRecommendations(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+
+    const seen = {};
+    const cleaned = [];
+
+    list.forEach(function(item) {
+        const key = [
+            item.label || "",
+            item.page || "",
+            item.type || ""
+        ].join("|");
+
+        if (seen[key]) {
+            return;
+        }
+
+        seen[key] = true;
+        cleaned.push(item);
+    });
+
+    return cleaned;
+}
+
+function p3DailyMemoryDedupeFollowThrough(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+
+    const seen = {};
+    const cleaned = [];
+
+    list.forEach(function(item) {
+        const key = item.label || "";
+
+        if (seen[key]) {
+            return;
+        }
+
+        seen[key] = true;
+        cleaned.push(item);
+    });
+
+    return cleaned;
+}
+
+function p3CleanDailyMemoryBucketsHard() {
+    try {
+        const daily = typeof p3MemoryGetDaily === "function"
+            ? p3MemoryGetDaily()
+            : JSON.parse(localStorage.getItem("p3SmartCoachDailyMemory") || "{}");
+
+        Object.keys(daily).forEach(function(dateKey) {
+            const day = daily[dateKey] || {};
+
+            day.recommendations = p3DailyMemoryDedupeRecommendations(day.recommendations || []);
+            day.actionsTaken = p3DailyMemoryDedupeByLabel(day.actionsTaken || []);
+            day.followThrough = p3DailyMemoryDedupeFollowThrough(day.followThrough || []);
+
+            if (day.recommendations.length) {
+                day.currentRecommendation = day.recommendations[day.recommendations.length - 1];
+            }
+
+            if (day.actionsTaken.length) {
+                day.lastActionTaken = day.actionsTaken[day.actionsTaken.length - 1];
+            }
+
+            if (day.followThrough.length) {
+                day.lastFollowThrough = day.followThrough[day.followThrough.length - 1];
+            }
+
+            daily[dateKey] = day;
+        });
+
+        if (typeof p3MemorySaveDaily === "function") {
+            p3MemorySaveDaily(daily);
+        } else {
+            localStorage.setItem("p3SmartCoachDailyMemory", JSON.stringify(daily));
+        }
+    } catch (error) {}
+
+    if (typeof p3MemoryStrongCleanAll === "function") {
+        p3MemoryStrongCleanAll();
+    }
+
+    if (typeof p3MemoryCleanDuplicateLogs === "function") {
+        p3MemoryCleanDuplicateLogs();
+    }
+}
+
+/* Hard guard for future Action Taken entries */
+if (typeof p3MemoryLogActionTaken === "function" && !window.p3DailyMemoryActionHardGuardWrapped) {
+    window.p3DailyMemoryActionHardGuardWrapped = true;
+
+    const oldP3MemoryLogActionTakenHardDaily = p3MemoryLogActionTaken;
+
+    p3MemoryLogActionTaken = function(source) {
+        const action = typeof p3MemoryCurrentAction === "function"
+            ? p3MemoryCurrentAction()
+            : { label: "Unknown", type: "unknown", page: "" };
+
+        const todayKey = typeof p3MemoryTodayKey === "function"
+            ? p3MemoryTodayKey()
+            : p3TodayKey();
+
+        const daily = typeof p3MemoryGetDaily === "function" ? p3MemoryGetDaily() : {};
+        const today = daily[todayKey] || {};
+        const existing = today.actionsTaken || [];
+
+        const alreadyExists = existing.some(function(item) {
+            return item.label === action.label;
+        });
+
+        if (alreadyExists) {
+            p3CleanDailyMemoryBucketsHard();
+            return null;
+        }
+
+        const result = oldP3MemoryLogActionTakenHardDaily.apply(this, arguments);
+        p3CleanDailyMemoryBucketsHard();
+
+        return result;
+    };
+}
+
+/* Hard guard for future recommendations */
+if (typeof p3MemoryLogRecommendation === "function" && !window.p3DailyMemoryRecommendationHardGuardWrapped) {
+    window.p3DailyMemoryRecommendationHardGuardWrapped = true;
+
+    const oldP3MemoryLogRecommendationHardDaily = p3MemoryLogRecommendation;
+
+    p3MemoryLogRecommendation = function(source) {
+        const action = typeof p3MemoryCurrentAction === "function"
+            ? p3MemoryCurrentAction()
+            : { label: "Unknown", type: "unknown", page: "" };
+
+        const todayKey = typeof p3MemoryTodayKey === "function"
+            ? p3MemoryTodayKey()
+            : p3TodayKey();
+
+        const daily = typeof p3MemoryGetDaily === "function" ? p3MemoryGetDaily() : {};
+        const today = daily[todayKey] || {};
+        const existing = today.recommendations || [];
+
+        const alreadyExists = existing.some(function(item) {
+            return item.label === action.label;
+        });
+
+        if (alreadyExists) {
+            p3CleanDailyMemoryBucketsHard();
+            return null;
+        }
+
+        const result = oldP3MemoryLogRecommendationHardDaily.apply(this, arguments);
+        p3CleanDailyMemoryBucketsHard();
+
+        return result;
+    };
+}
+
+/* Hard guard for future Follow-Through entries */
+if (typeof p3MemoryLogFollowThrough === "function" && !window.p3DailyMemoryFollowHardGuardWrapped) {
+    window.p3DailyMemoryFollowHardGuardWrapped = true;
+
+    const oldP3MemoryLogFollowThroughHardDaily = p3MemoryLogFollowThrough;
+
+    p3MemoryLogFollowThrough = function(label, detail, source) {
+        const todayKey = typeof p3MemoryTodayKey === "function"
+            ? p3MemoryTodayKey()
+            : p3TodayKey();
+
+        const daily = typeof p3MemoryGetDaily === "function" ? p3MemoryGetDaily() : {};
+        const today = daily[todayKey] || {};
+        const existing = today.followThrough || [];
+
+        const alreadyExists = existing.some(function(item) {
+            return item.label === label;
+        });
+
+        if (alreadyExists) {
+            p3CleanDailyMemoryBucketsHard();
+            return null;
+        }
+
+        const result = oldP3MemoryLogFollowThroughHardDaily.apply(this, arguments);
+        p3CleanDailyMemoryBucketsHard();
+
+        return result;
+    };
+}
+
+/* Clean when Memory Log opens */
+if (typeof openSmartCoachMemoryLogPage === "function" && !window.p3DailyMemoryOpenHardCleanWrapped) {
+    window.p3DailyMemoryOpenHardCleanWrapped = true;
+
+    const oldOpenSmartCoachMemoryLogPageHardDaily = openSmartCoachMemoryLogPage;
+
+    openSmartCoachMemoryLogPage = function() {
+        p3CleanDailyMemoryBucketsHard();
+        oldOpenSmartCoachMemoryLogPageHardDaily();
+        setTimeout(p3CleanDailyMemoryBucketsHard, 200);
+    };
+}
+
+/* Upgrade Clean Memory Duplicates button */
+function p3ManualCleanDailyMemoryHard() {
+    p3CleanDailyMemoryBucketsHard();
+
+    if (typeof openSmartCoachMemoryLogPage === "function") {
+        openSmartCoachMemoryLogPage();
+    }
+}
+
+document.addEventListener("click", function(event) {
+    const button = event.target.closest("button");
+
+    if (!button) {
+        return;
+    }
+
+    if (button.id === "p3CleanMemoryDuplicatesBtn") {
+        event.preventDefault();
+        p3ManualCleanDailyMemoryHard();
+    }
+}, true);
+
+p3CleanDailyMemoryBucketsHard();
 
 </script>
 

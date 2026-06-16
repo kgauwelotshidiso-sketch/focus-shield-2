@@ -1995,3 +1995,35 @@ textarea:focus {
     border: 1px solid rgba(125, 211, 252, 0.45);
     box-shadow: 0 14px 28px rgba(14, 165, 233, 0.18);
 }
+
+.p3-memory-today-card,
+.p3-memory-stats-card {
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.32));
+}
+
+.p3-memory-stats-card h3 {
+    color: #c084fc;
+}
+
+.p3-memory-entry-card {
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.p3-memory-entry-card h3 {
+    color: #93c5fd;
+}
+
+.p3-memory-btn {
+    background: linear-gradient(135deg, #a855f7, #2563eb) !important;
+    border: 1px solid rgba(196, 181, 253, 0.45);
+}
+
+.p3-memory-clarity-card {
+    border: 1px solid rgba(14, 165, 233, 0.38);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.22));
+}
