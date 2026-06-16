@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=masterlivesync1">
+    <link rel="stylesheet" href="style.css?v=healthautofix1">
 </head>
 <body>
 
@@ -11199,6 +11199,364 @@ setTimeout(addXpBalanceButtonToQuickActions, 2800);
 setTimeout(masterUpdateProgressDom, 500);
 setTimeout(masterUpdateProgressDom, 1500);
 setTimeout(masterUpdateProgressDom, 2500);
+
+
+/* Health Check Auto-Fix All Systems */
+function autoFixGetTodayKey() {
+    if (typeof masterTodayKey === "function") {
+        return masterTodayKey();
+    }
+
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const today = new Date();
+
+    return today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+}
+
+function autoFixGetBestListeningCount() {
+    let best = 0;
+
+    const keys = [
+        "listeningCount",
+        "todayListeningWins",
+        "dailyListeningWins",
+        "missionListeningWins"
+    ];
+
+    keys.forEach(function(key) {
+        const value = Number(localStorage.getItem(key) || 0);
+
+        if (!Number.isNaN(value) && value > best) {
+            best = value;
+        }
+    });
+
+    if (typeof masterGetListeningCount === "function") {
+        const masterValue = Number(masterGetListeningCount() || 0);
+
+        if (!Number.isNaN(masterValue) && masterValue > best) {
+            best = masterValue;
+        }
+    }
+
+    if (typeof forceGetTodayListeningCountFinal === "function") {
+        const forceValue = Number(forceGetTodayListeningCountFinal() || 0);
+
+        if (!Number.isNaN(forceValue) && forceValue > best) {
+            best = forceValue;
+        }
+    }
+
+    try {
+        const todayKey = autoFixGetTodayKey();
+        const dailyData = typeof getDailyActionData === "function"
+            ? getDailyActionData()
+            : JSON.parse(localStorage.getItem("dailyActionData") || "{}");
+
+        const actionValue = Number((dailyData[todayKey] || {}).listeningWins || 0);
+
+        if (!Number.isNaN(actionValue) && actionValue > best) {
+            best = actionValue;
+        }
+    } catch (error) {}
+
+    return Math.max(0, best);
+}
+
+function autoFixMissionAndProgressSync() {
+    const todayKey = autoFixGetTodayKey();
+    const count = autoFixGetBestListeningCount();
+
+    localStorage.setItem("listeningCount", String(count));
+    localStorage.setItem("todayListeningWins", String(count));
+    localStorage.setItem("dailyListeningWins", String(count));
+    localStorage.setItem("missionListeningWins", String(count));
+
+    localStorage.setItem("listeningDate", todayKey);
+    localStorage.setItem("lastListeningDate", todayKey);
+    localStorage.setItem("currentListeningDate", todayKey);
+    localStorage.setItem("todayDate", todayKey);
+    localStorage.setItem("lastActiveDate", todayKey);
+    localStorage.setItem("focusShieldDate", todayKey);
+
+    try {
+        const dailyData = typeof getDailyActionData === "function"
+            ? getDailyActionData()
+            : JSON.parse(localStorage.getItem("dailyActionData") || "{}");
+
+        if (!dailyData[todayKey]) {
+            dailyData[todayKey] = {};
+        }
+
+        dailyData[todayKey].listeningWins = count;
+        dailyData[todayKey].updatedAt = new Date().toISOString();
+
+        if (typeof saveDailyActionData === "function") {
+            saveDailyActionData(dailyData);
+        } else {
+            localStorage.setItem("dailyActionData", JSON.stringify(dailyData));
+        }
+    } catch (error) {}
+
+    return count;
+}
+
+function autoFixTimelineStorageDuplicates() {
+    if (typeof getTimelineAutoLogEvents !== "function" || typeof saveTimelineAutoLogEvents !== "function") {
+        return 0;
+    }
+
+    const events = getTimelineAutoLogEvents();
+
+    if (!Array.isArray(events)) {
+        return 0;
+    }
+
+    const before = events.length;
+
+    let cleaned = events;
+
+    if (typeof dedupeTimelineEvents === "function") {
+        cleaned = dedupeTimelineEvents(events);
+    } else {
+        const seen = {};
+        cleaned = events.filter(function(event) {
+            const key = [
+                event.dateKey || "",
+                event.type || "",
+                event.title || "",
+                event.detail || "",
+                event.badge || "",
+                String(event.time || "").slice(0, 16)
+            ].join("|");
+
+            if (seen[key]) {
+                return false;
+            }
+
+            seen[key] = true;
+            return true;
+        });
+    }
+
+    saveTimelineAutoLogEvents(cleaned);
+
+    return before - cleaned.length;
+}
+
+function autoFixXpHistoryExactDuplicates() {
+    let xpHistory = [];
+
+    try {
+        xpHistory = JSON.parse(localStorage.getItem("xpHistoryLog") || "[]");
+    } catch (error) {
+        xpHistory = [];
+    }
+
+    if (!Array.isArray(xpHistory)) {
+        return 0;
+    }
+
+    const before = xpHistory.length;
+    const seen = {};
+    const cleaned = [];
+
+    xpHistory.forEach(function(item) {
+        const key = item.uniqueKey || [
+            item.dateKey || "",
+            item.source || "",
+            item.amount || "",
+            item.detail || "",
+            item.category || "",
+            String(item.createdAt || "").slice(0, 19)
+        ].join("|");
+
+        if (seen[key]) {
+            return;
+        }
+
+        seen[key] = true;
+        cleaned.push(item);
+    });
+
+    localStorage.setItem("xpHistoryLog", JSON.stringify(cleaned.slice(0, 300)));
+
+    return before - cleaned.length;
+}
+
+function autoFixRefreshAllSystems() {
+    if (typeof masterUpdateProgressDom === "function") {
+        masterUpdateProgressDom();
+    }
+
+    if (typeof updateHomeMissionUnified === "function") {
+        updateHomeMissionUnified();
+    }
+
+    if (typeof refreshAllHomeSystemsQuick === "function") {
+        refreshAllHomeSystemsQuick();
+    }
+
+    if (typeof refreshDailyTimelineHomeCard === "function") {
+        refreshDailyTimelineHomeCard();
+    }
+
+    if (typeof refreshDailyStartPlanHomeCard === "function") {
+        refreshDailyStartPlanHomeCard();
+    }
+
+    if (typeof refreshDailyEndReviewHomeCard === "function") {
+        refreshDailyEndReviewHomeCard();
+    }
+
+    if (typeof refreshEndReviewHistoryHomeCard === "function") {
+        refreshEndReviewHistoryHomeCard();
+    }
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+
+    if (typeof addXpBalanceButtonToQuickActions === "function") {
+        addXpBalanceButtonToQuickActions();
+    }
+}
+
+function autoFixAllFocusShieldSystems() {
+    const syncedCount = autoFixMissionAndProgressSync();
+    const timelineDuplicatesRemoved = autoFixTimelineStorageDuplicates();
+    const xpDuplicatesRemoved = autoFixXpHistoryExactDuplicates();
+
+    autoFixRefreshAllSystems();
+
+    const root = document.getElementById("healthCheckLiveRoot");
+
+    if (root && typeof getSystemHealthHtml === "function") {
+        root.innerHTML = getSystemHealthHtml();
+        attachHealthButtonsMasterPlusAutoFix();
+    }
+
+    setTimeout(function() {
+        const rootAgain = document.getElementById("healthCheckLiveRoot");
+
+        if (rootAgain && typeof getSystemHealthHtml === "function") {
+            rootAgain.innerHTML = getSystemHealthHtml();
+            attachHealthButtonsMasterPlusAutoFix();
+        }
+
+        autoFixRefreshAllSystems();
+    }, 250);
+
+    alert(
+        "Auto-Fix complete. Mission synced to " +
+        syncedCount +
+        " / 3. Timeline duplicates removed: " +
+        timelineDuplicatesRemoved +
+        ". XP duplicates removed: " +
+        xpDuplicatesRemoved +
+        "."
+    );
+}
+
+function insertAutoFixAllButton() {
+    const repairBtn = document.getElementById("repairMissionSyncBtn");
+
+    if (!repairBtn) {
+        return;
+    }
+
+    if (document.getElementById("autoFixAllSystemsBtn")) {
+        return;
+    }
+
+    const autoBtn = document.createElement("button");
+    autoBtn.id = "autoFixAllSystemsBtn";
+    autoBtn.type = "button";
+    autoBtn.textContent = "Auto-Fix All Systems";
+    autoBtn.className = "auto-fix-all-btn";
+
+    autoBtn.addEventListener("click", function(event) {
+        event.preventDefault();
+        autoFixAllFocusShieldSystems();
+    });
+
+    repairBtn.parentNode.insertBefore(autoBtn, repairBtn);
+}
+
+function attachHealthButtonsMasterPlusAutoFix() {
+    if (typeof attachHealthButtonsMaster === "function") {
+        attachHealthButtonsMaster();
+    }
+
+    const repairBtn = document.getElementById("repairMissionSyncBtn");
+    const refreshBtn = document.getElementById("refreshHealthCheckBtn");
+    const backBtn = document.getElementById("backBtn");
+
+    if (repairBtn) {
+        repairBtn.onclick = function(event) {
+            event.preventDefault();
+
+            if (typeof repairMissionSyncFromHealthCheck === "function") {
+                repairMissionSyncFromHealthCheck();
+            }
+
+            autoFixRefreshAllSystems();
+
+            const root = document.getElementById("healthCheckLiveRoot");
+
+            if (root && typeof getSystemHealthHtml === "function") {
+                root.innerHTML = getSystemHealthHtml();
+                attachHealthButtonsMasterPlusAutoFix();
+            }
+        };
+    }
+
+    if (refreshBtn) {
+        refreshBtn.onclick = function(event) {
+            event.preventDefault();
+
+            autoFixMissionAndProgressSync();
+
+            const root = document.getElementById("healthCheckLiveRoot");
+
+            if (root && typeof getSystemHealthHtml === "function") {
+                root.innerHTML = getSystemHealthHtml();
+                attachHealthButtonsMasterPlusAutoFix();
+            }
+        };
+    }
+
+    if (backBtn) {
+        backBtn.onclick = goHome;
+    }
+
+    insertAutoFixAllButton();
+}
+
+function openSystemHealthCheckPage() {
+    autoFixMissionAndProgressSync();
+
+    showPage(`
+        <h1>System Health Check</h1>
+
+        <div id="healthCheckLiveRoot">
+            ${getSystemHealthHtml()}
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    attachHealthButtonsMasterPlusAutoFix();
+}
+
+setTimeout(insertAutoFixAllButton, 800);
+setTimeout(insertAutoFixAllButton, 1800);
+setTimeout(insertAutoFixAllButton, 2800);
 
 </script>
 
