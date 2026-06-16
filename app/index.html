@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=dailytimeline1">
+    <link rel="stylesheet" href="style.css?v=timelinefilters1">
 </head>
 <body>
 
@@ -8924,6 +8924,209 @@ function refreshDailyTimelineHomeCard() {
 }
 
 refreshDailyTimelineHomeCard();
+
+
+/* Timeline Quick Filters System */
+let currentTimelineFilter = "All";
+
+function normalizeTimelineFilterType(type) {
+    const cleanType = String(type || "").toLowerCase();
+
+    if (cleanType.includes("xp")) {
+        return "XP";
+    }
+
+    if (cleanType.includes("listening")) {
+        return "Listening";
+    }
+
+    if (cleanType.includes("goal")) {
+        return "Goals";
+    }
+
+    if (cleanType.includes("reflection")) {
+        return "Reflection";
+    }
+
+    if (cleanType.includes("review")) {
+        return "Review";
+    }
+
+    if (cleanType.includes("focus")) {
+        return "Focus";
+    }
+
+    if (cleanType.includes("concentration")) {
+        return "Focus";
+    }
+
+    return "Other";
+}
+
+function getFilteredTimelineEvents(filterName) {
+    const events = typeof getDailyTimelineEvents === "function"
+        ? getDailyTimelineEvents()
+        : [];
+
+    if (filterName === "All") {
+        return events;
+    }
+
+    return events.filter(function(event) {
+        return normalizeTimelineFilterType(event.type) === filterName;
+    });
+}
+
+function getTimelineFilterCounts() {
+    const events = typeof getDailyTimelineEvents === "function"
+        ? getDailyTimelineEvents()
+        : [];
+
+    const counts = {
+        All: events.length,
+        XP: 0,
+        Listening: 0,
+        Goals: 0,
+        Reflection: 0,
+        Review: 0,
+        Focus: 0
+    };
+
+    events.forEach(function(event) {
+        const type = normalizeTimelineFilterType(event.type);
+
+        if (counts[type] !== undefined) {
+            counts[type] += 1;
+        }
+    });
+
+    return counts;
+}
+
+function getTimelineFilterButtonsHtml(activeFilter) {
+    const counts = getTimelineFilterCounts();
+    const filters = ["All", "XP", "Listening", "Goals", "Reflection", "Review", "Focus"];
+
+    return `
+        <div class="timeline-filter-card card">
+            <h2>Quick Filters</h2>
+            <div class="timeline-filter-grid">
+                ${filters.map(function(filter) {
+                    const activeClass = filter === activeFilter ? " active-timeline-filter" : "";
+
+                    return `
+                        <button type="button" class="timeline-filter-btn${activeClass}" data-filter="${filter}">
+                            <span>${filter}</span>
+                            <strong>${counts[filter]}</strong>
+                        </button>
+                    `;
+                }).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function getFilteredTimelineItemsHtml(filterName) {
+    const events = getFilteredTimelineEvents(filterName);
+
+    if (events.length === 0) {
+        return `
+            <div class="card">
+                <h2>No ${filterName === "All" ? "" : safeTimelineEscape(filterName)} Events Yet</h2>
+                <p>When matching actions happen today, they will appear here.</p>
+            </div>
+        `;
+    }
+
+    let html = "";
+
+    events.forEach(function(event) {
+        html += `
+            <div class="timeline-event">
+                <div class="timeline-dot"></div>
+                <div class="timeline-event-card">
+                    <div class="timeline-event-top">
+                        <div>
+                            <h2>${safeTimelineEscape(event.title)}</h2>
+                            <p>${safeTimelineEscape(getTimelineTimeText(event.time))}</p>
+                        </div>
+                        <strong>${safeTimelineEscape(event.badge)}</strong>
+                    </div>
+                    <p>${safeTimelineEscape(event.detail)}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function renderTimelineFilterContent(filterName) {
+    currentTimelineFilter = filterName || "All";
+
+    const content = document.getElementById("timelineFilteredContent");
+
+    if (!content) {
+        return;
+    }
+
+    content.innerHTML = getFilteredTimelineItemsHtml(currentTimelineFilter);
+
+    const buttons = Array.from(document.querySelectorAll(".timeline-filter-btn"));
+
+    buttons.forEach(function(button) {
+        if (button.dataset.filter === currentTimelineFilter) {
+            button.classList.add("active-timeline-filter");
+        } else {
+            button.classList.remove("active-timeline-filter");
+        }
+    });
+}
+
+function getDailyTimelineHtml() {
+    const summary = getDailyTimelineSummary();
+
+    return `
+        <div class="card daily-timeline-card">
+            <h2>Timeline Summary</h2>
+            <h3>${summary.eventCount} Event${summary.eventCount === 1 ? "" : "s"} Today</h3>
+            <p><strong>XP logged today:</strong> +${summary.xpTotal} XP</p>
+            <p><strong>Listening mission:</strong> ${summary.listeningWins} / 3</p>
+            <p><strong>Status:</strong> ${summary.missionComplete ? "Mission complete" : "Mission still open"}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Purpose</h2>
+            <p>This timeline shows what happened today in order, so you can see your discipline pattern clearly.</p>
+        </div>
+
+        ${getTimelineFilterButtonsHtml(currentTimelineFilter)}
+
+        <div id="timelineFilteredContent" class="timeline-list">
+            ${getFilteredTimelineItemsHtml(currentTimelineFilter)}
+        </div>
+    `;
+}
+
+function openDailyTimelinePage() {
+    currentTimelineFilter = "All";
+
+    showPage(`
+        <h1>Daily Timeline</h1>
+
+        ${getDailyTimelineHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    Array.from(document.querySelectorAll(".timeline-filter-btn")).forEach(function(button) {
+        button.addEventListener("click", function() {
+            renderTimelineFilterContent(button.dataset.filter);
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
 
 </script>
 
