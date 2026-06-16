@@ -1316,3 +1316,53 @@ textarea:focus {
 .compact-details-card button {
     background: linear-gradient(135deg, #64748b, #334155);
 }
+
+.quick-action-card {
+    border: 1px solid rgba(56, 189, 248, 0.42);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.32));
+}
+
+.quick-action-card h2 {
+    color: #e2e8f0;
+}
+
+.quick-action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.quick-action-btn {
+    min-height: 76px;
+    margin: 0 !important;
+    padding: 12px 8px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+}
+
+.quick-action-btn span {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.quick-action-btn strong {
+    font-size: 12px;
+    color: #ffffff;
+}
+
+@media (max-width: 420px) {
+    .quick-action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .quick-action-btn {
+        min-height: 64px;
+    }
+}

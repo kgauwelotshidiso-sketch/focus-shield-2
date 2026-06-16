@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=compacthomefix1">
+    <link rel="stylesheet" href="style.css?v=listeningcountfix1">
 </head>
 <body>
 
@@ -2476,6 +2476,8 @@ function showPage(content) {
 }
 
 function goHome() {
+    refreshQuickActionMenuDirect();
+    refreshQuickActionMenu();
     resetDashboardOrganizedFlag();
     setTimeout(organizeHomeDashboard, 300);
     setTimeout(refreshPhase2DashboardCards, 80);
@@ -6387,6 +6389,1155 @@ function compactHomeDashboardFix() {
 setTimeout(compactHomeDashboardFix, 500);
 setTimeout(compactHomeDashboardFix, 1200);
 setTimeout(compactHomeDashboardFix, 2200);
+
+
+/* Quick Action Menu Upgrade */
+function triggerFocusShieldAction(targetId, fallbackFunctionName) {
+    const targetButton = document.getElementById(targetId);
+
+    if (targetButton) {
+        targetButton.click();
+        return;
+    }
+
+    if (fallbackFunctionName && typeof window[fallbackFunctionName] === "function") {
+        window[fallbackFunctionName]();
+    }
+}
+
+function createQuickActionButton(label, targetId, fallbackFunctionName, iconText) {
+    const button = document.createElement("button");
+    button.className = "quick-action-btn";
+    button.innerHTML = `
+        <span>${iconText}</span>
+        <strong>${label}</strong>
+    `;
+
+    button.addEventListener("click", function() {
+        triggerFocusShieldAction(targetId, fallbackFunctionName);
+    });
+
+    return button;
+}
+
+function insertQuickActionMenu() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("quickActionMenu")) {
+        return;
+    }
+
+    const quoteCard = document.getElementById("dailyQuoteText")
+        ? document.getElementById("dailyQuoteText").closest(".card")
+        : null;
+
+    const missionCard = document.getElementById("homeMissionProgress")
+        ? document.getElementById("homeMissionProgress").closest(".card")
+        : null;
+
+    const insertAfterCard = quoteCard || missionCard;
+
+    if (!insertAfterCard) {
+        return;
+    }
+
+    const quickCard = document.createElement("div");
+    quickCard.id = "quickActionMenu";
+    quickCard.className = "card quick-action-card";
+
+    quickCard.innerHTML = `
+        <h2>Quick Actions</h2>
+        <p>Open the main tools without scrolling.</p>
+        <div id="quickActionGrid" class="quick-action-grid"></div>
+    `;
+
+    insertAfterCard.parentNode.insertBefore(quickCard, insertAfterCard.nextSibling);
+
+    const grid = document.getElementById("quickActionGrid");
+
+    grid.appendChild(createQuickActionButton("Progress", "progressBtn", "", "📈"));
+    grid.appendChild(createQuickActionButton("Goals", "goalsBtn", "openGoalManagerPage", "🎯"));
+    grid.appendChild(createQuickActionButton("Focus", "focusTimerBtn", "", "⏱️"));
+    grid.appendChild(createQuickActionButton("Reflection", "reflectionBtn", "", "📝"));
+    grid.appendChild(createQuickActionButton("Coach", "disciplineCoachBtn", "openDisciplineCoachPage", "🧠"));
+    grid.appendChild(createQuickActionButton("Stats", "statisticsBtn", "openStatisticsDashboardPage", "📊"));
+    grid.appendChild(createQuickActionButton("Charts", "chartsDashboardBtn", "openChartsDashboardPage", "📉"));
+    grid.appendChild(createQuickActionButton("Settings", "settingsBtn", "", "⚙️"));
+}
+
+function refreshQuickActionMenu() {
+    setTimeout(insertQuickActionMenu, 250);
+    setTimeout(insertQuickActionMenu, 800);
+    setTimeout(insertQuickActionMenu, 1500);
+}
+
+refreshQuickActionMenu();
+
+
+/* Quick Action Direct Open Fix */
+function clickRealButtonById(buttonId) {
+    const button = document.getElementById(buttonId);
+
+    if (!button) {
+        alert("This section is not available yet.");
+        return;
+    }
+
+    button.dispatchEvent(new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+    }));
+}
+
+function openQuickProgressPage() {
+    clickRealButtonById("progressBtn");
+}
+
+function openQuickFocusPage() {
+    clickRealButtonById("focusTimerBtn");
+}
+
+function openQuickReflectionPage() {
+    clickRealButtonById("reflectionBtn");
+}
+
+function openQuickSettingsPage() {
+    clickRealButtonById("settingsBtn");
+}
+
+function openQuickCoachPage() {
+    if (typeof getDisciplineCoachHtml === "function") {
+        showPage(`
+            <h1>Discipline Coach</h1>
+
+            ${getDisciplineCoachHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+        return;
+    }
+
+    clickRealButtonById("disciplineCoachBtn");
+}
+
+function openQuickStatsPage() {
+    if (typeof openStatisticsDashboardPage === "function") {
+        openStatisticsDashboardPage();
+        return;
+    }
+
+    clickRealButtonById("statisticsBtn");
+}
+
+function openQuickChartsPage() {
+    if (typeof openChartsDashboardPage === "function") {
+        openChartsDashboardPage();
+        return;
+    }
+
+    clickRealButtonById("chartsDashboardBtn");
+}
+
+function openQuickGoalsPage() {
+    if (typeof openGoalManagerPage === "function") {
+        openGoalManagerPage();
+        return;
+    }
+
+    clickRealButtonById("goalsBtn");
+}
+
+function rebuildQuickActionMenuDirect() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    const oldMenu = document.getElementById("quickActionMenu");
+
+    if (oldMenu) {
+        oldMenu.remove();
+    }
+
+    const quoteCard = document.getElementById("dailyQuoteText")
+        ? document.getElementById("dailyQuoteText").closest(".card")
+        : null;
+
+    const missionCard = document.getElementById("homeMissionProgress")
+        ? document.getElementById("homeMissionProgress").closest(".card")
+        : null;
+
+    const insertAfterCard = quoteCard || missionCard;
+
+    if (!insertAfterCard) {
+        return;
+    }
+
+    const quickCard = document.createElement("div");
+    quickCard.id = "quickActionMenu";
+    quickCard.className = "card quick-action-card";
+
+    quickCard.innerHTML = `
+        <h2>Quick Actions</h2>
+        <p>Open the main tools without scrolling.</p>
+        <div class="quick-action-grid">
+            <button type="button" class="quick-action-btn" id="quickProgressBtn"><span>📈</span><strong>Progress</strong></button>
+            <button type="button" class="quick-action-btn" id="quickGoalsBtn"><span>🎯</span><strong>Goals</strong></button>
+            <button type="button" class="quick-action-btn" id="quickFocusBtn"><span>⏱️</span><strong>Focus</strong></button>
+            <button type="button" class="quick-action-btn" id="quickReflectionBtn"><span>📝</span><strong>Reflection</strong></button>
+            <button type="button" class="quick-action-btn" id="quickCoachBtn"><span>🧠</span><strong>Coach</strong></button>
+            <button type="button" class="quick-action-btn" id="quickStatsBtn"><span>📊</span><strong>Stats</strong></button>
+            <button type="button" class="quick-action-btn" id="quickChartsBtn"><span>📉</span><strong>Charts</strong></button>
+            <button type="button" class="quick-action-btn" id="quickSettingsBtn"><span>⚙️</span><strong>Settings</strong></button>
+        </div>
+    `;
+
+    insertAfterCard.parentNode.insertBefore(quickCard, insertAfterCard.nextSibling);
+
+    document.getElementById("quickProgressBtn").addEventListener("click", openQuickProgressPage);
+    document.getElementById("quickGoalsBtn").addEventListener("click", openQuickGoalsPage);
+    document.getElementById("quickFocusBtn").addEventListener("click", openQuickFocusPage);
+    document.getElementById("quickReflectionBtn").addEventListener("click", openQuickReflectionPage);
+    document.getElementById("quickCoachBtn").addEventListener("click", openQuickCoachPage);
+    document.getElementById("quickStatsBtn").addEventListener("click", openQuickStatsPage);
+    document.getElementById("quickChartsBtn").addEventListener("click", openQuickChartsPage);
+    document.getElementById("quickSettingsBtn").addEventListener("click", openQuickSettingsPage);
+}
+
+function refreshQuickActionMenuDirect() {
+    setTimeout(rebuildQuickActionMenuDirect, 300);
+    setTimeout(rebuildQuickActionMenuDirect, 900);
+    setTimeout(rebuildQuickActionMenuDirect, 1600);
+}
+
+refreshQuickActionMenuDirect();
+
+
+/* Quick Action Missing Pages Fix */
+function setQuickStorageNumber(key, value) {
+    localStorage.setItem(key, String(Number(value || 0)));
+}
+
+function getQuickTodayKey() {
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const today = new Date();
+    return today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+}
+
+function findRealNavButtonByText(labels) {
+    const buttons = Array.from(document.querySelectorAll("button"));
+
+    return buttons.find(function(button) {
+        if (button.closest("#quickActionMenu")) {
+            return false;
+        }
+
+        const text = button.textContent.trim().toLowerCase();
+
+        return labels.some(function(label) {
+            return text === label.toLowerCase();
+        });
+    });
+}
+
+function clickRealNavButtonByIdOrText(ids, labels) {
+    for (let i = 0; i < ids.length; i++) {
+        const button = document.getElementById(ids[i]);
+
+        if (button && !button.closest("#quickActionMenu")) {
+            button.dispatchEvent(new MouseEvent("click", {
+                bubbles: true,
+                cancelable: true,
+                view: window
+            }));
+            return true;
+        }
+    }
+
+    const textButton = findRealNavButtonByText(labels);
+
+    if (textButton) {
+        textButton.dispatchEvent(new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        }));
+        return true;
+    }
+
+    return false;
+}
+
+function refreshAllHomeSystemsQuick() {
+    const updateNames = [
+        "updateHomeStats",
+        "updateHomeDailyReviewScore",
+        "updateHomeWeeklyReport",
+        "updateHomeWeaknessDetection",
+        "updateHomeSmartSuggestions",
+        "updateHomeDisciplineCoach",
+        "updateHomeStreakProtection",
+        "updateHomeGoalSystem",
+        "updateHomeXpHistory",
+        "updateHomeStreakBonus",
+        "updateHomeXpBalance",
+        "updateHomeStatistics",
+        "updateHomeChartsDashboard"
+    ];
+
+    updateNames.forEach(function(name) {
+        if (typeof window[name] === "function") {
+            window[name]();
+        }
+    });
+}
+
+function openQuickProgressFallbackPage() {
+    showPage(`
+        <h1>Progress</h1>
+
+        <div class="card">
+            <h2>Listening Practice Today</h2>
+            <h3>${getNumber("listeningCount")} / 3</h3>
+            <p>Pause, listen fully, then speak.</p>
+            <button id="quickAddListeningWinBtn">+ Add Listening Win</button>
+            <button id="quickResetTodayBtn">Reset Today</button>
+        </div>
+
+        <div class="card">
+            <h2>Total Progress</h2>
+            <p><strong>Total Listening Wins:</strong> ${getNumber("totalListeningWins")}</p>
+            <p><strong>This Week's Wins:</strong> ${getNumber("weeklyWins")}</p>
+            <p><strong>Current Streak:</strong> ${typeof getSmartCurrentStreakValue === "function" ? getSmartCurrentStreakValue() : getNumber("currentStreak")} day(s)</p>
+            <p><strong>Longest Streak:</strong> ${typeof getSmartLongestStreakValue === "function" ? getSmartLongestStreakValue() : getNumber("longestStreak")} day(s)</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("quickAddListeningWinBtn").addEventListener("click", function() {
+        setQuickStorageNumber("listeningCount", getNumber("listeningCount") + 1);
+        setQuickStorageNumber("totalListeningWins", getNumber("totalListeningWins") + 1);
+        setQuickStorageNumber("weeklyWins", getNumber("weeklyWins") + 1);
+
+        if (getNumber("currentStreak") <= 0) {
+            setQuickStorageNumber("currentStreak", 1);
+        }
+
+        if (getNumber("longestStreak") < getNumber("currentStreak")) {
+            setQuickStorageNumber("longestStreak", getNumber("currentStreak"));
+        }
+
+        localStorage.setItem("listeningDate", getQuickTodayKey());
+
+        if (typeof autoProgressFocusShieldGoals === "function") {
+            autoProgressFocusShieldGoals("Listening", 1);
+        }
+
+        if (typeof addXpHistoryEvent === "function") {
+            addXpHistoryEvent("Listening Win", 5, "Added one listening win.", "Listening");
+        }
+
+        if (typeof awardMissionStreakBonusIfReady === "function") {
+            awardMissionStreakBonusIfReady();
+        }
+
+        if (typeof checkBadgeUnlocks === "function") {
+            checkBadgeUnlocks();
+        }
+
+        if (typeof checkLevelUp === "function") {
+            checkLevelUp();
+        }
+
+        refreshAllHomeSystemsQuick();
+        openQuickProgressFallbackPage();
+    });
+
+    document.getElementById("quickResetTodayBtn").addEventListener("click", function() {
+        localStorage.setItem("listeningCount", "0");
+        refreshAllHomeSystemsQuick();
+        openQuickProgressFallbackPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function openQuickReflectionFallbackPage() {
+    const todayKey = getQuickTodayKey();
+    let history = {};
+
+    try {
+        history = JSON.parse(localStorage.getItem("reflectionHistory") || "{}");
+    } catch (error) {
+        history = {};
+    }
+
+    const todayReflection = history[todayKey] || {};
+
+    showPage(`
+        <h1>Daily Reflection</h1>
+
+        <div class="card">
+            <h2>What happened today?</h2>
+            <textarea id="quickReflectionHappened" class="backup-textarea" placeholder="Write what happened today.">${escapeHtml(todayReflection.happened || "")}</textarea>
+        </div>
+
+        <div class="card">
+            <h2>What did I learn?</h2>
+            <textarea id="quickReflectionLearned" class="backup-textarea" placeholder="Write what you learned.">${escapeHtml(todayReflection.learned || "")}</textarea>
+        </div>
+
+        <div class="card">
+            <h2>How will I improve tomorrow?</h2>
+            <textarea id="quickReflectionImprove" class="backup-textarea" placeholder="Write how you will improve tomorrow.">${escapeHtml(todayReflection.improve || "")}</textarea>
+        </div>
+
+        <button id="quickSaveReflectionBtn">Save Reflection</button>
+        <button id="quickClearReflectionBtn">Clear Today</button>
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("quickSaveReflectionBtn").addEventListener("click", function() {
+        let savedHistory = {};
+
+        try {
+            savedHistory = JSON.parse(localStorage.getItem("reflectionHistory") || "{}");
+        } catch (error) {
+            savedHistory = {};
+        }
+
+        savedHistory[todayKey] = {
+            happened: document.getElementById("quickReflectionHappened").value.trim(),
+            learned: document.getElementById("quickReflectionLearned").value.trim(),
+            improve: document.getElementById("quickReflectionImprove").value.trim(),
+            savedAt: new Date().toISOString()
+        };
+
+        localStorage.setItem("reflectionHistory", JSON.stringify(savedHistory));
+
+        if (typeof autoProgressFocusShieldGoals === "function") {
+            autoProgressFocusShieldGoals("Reflection", 1);
+        }
+
+        if (typeof logReflectionXpIfNeeded === "function") {
+            logReflectionXpIfNeeded();
+        }
+
+        if (typeof checkBadgeUnlocks === "function") {
+            checkBadgeUnlocks();
+        }
+
+        if (typeof checkLevelUp === "function") {
+            checkLevelUp();
+        }
+
+        refreshAllHomeSystemsQuick();
+        alert("Daily reflection saved.");
+    });
+
+    document.getElementById("quickClearReflectionBtn").addEventListener("click", function() {
+        let savedHistory = {};
+
+        try {
+            savedHistory = JSON.parse(localStorage.getItem("reflectionHistory") || "{}");
+        } catch (error) {
+            savedHistory = {};
+        }
+
+        delete savedHistory[todayKey];
+        localStorage.setItem("reflectionHistory", JSON.stringify(savedHistory));
+        refreshAllHomeSystemsQuick();
+        openQuickReflectionFallbackPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function openQuickSettingsFallbackPage() {
+    showPage(`
+        <h1>Settings</h1>
+
+        <div class="card">
+            <h2>Reset Tools</h2>
+            <button id="quickResetTodaySettingsBtn">Reset Today's Listening Count</button>
+            <button id="quickResetBadgeMemoryBtn">Reset Badge Memory Only</button>
+            <button id="quickResetLevelMemoryBtn">Reset Level Memory Only</button>
+            <button id="quickResetAllStatsBtn">Reset All Stats</button>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Warning</h2>
+            <p>Reset All Stats deletes Focus Shield progress on this device. Make a backup first.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("quickResetTodaySettingsBtn").addEventListener("click", function() {
+        localStorage.setItem("listeningCount", "0");
+        alert("Today's listening count has been reset.");
+        refreshAllHomeSystemsQuick();
+    });
+
+    document.getElementById("quickResetBadgeMemoryBtn").addEventListener("click", function() {
+        localStorage.removeItem("unlockedBadges");
+        alert("Badge memory has been reset.");
+    });
+
+    document.getElementById("quickResetLevelMemoryBtn").addEventListener("click", function() {
+        localStorage.removeItem("disciplineLevelMemory");
+        alert("Level memory has been reset.");
+    });
+
+    document.getElementById("quickResetAllStatsBtn").addEventListener("click", function() {
+        const confirmReset = confirm("Reset all Focus Shield stats? This cannot be undone unless you have a backup.");
+
+        if (!confirmReset) {
+            return;
+        }
+
+        localStorage.clear();
+        alert("All stats have been reset.");
+        location.reload();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+/* Override broken Quick Action functions */
+function openQuickProgressPage() {
+    const opened = clickRealNavButtonByIdOrText(
+        ["progressBtn", "progressButton", "openProgressBtn"],
+        ["Progress", "Progress Tracker"]
+    );
+
+    if (!opened) {
+        openQuickProgressFallbackPage();
+    }
+}
+
+function openQuickReflectionPage() {
+    const opened = clickRealNavButtonByIdOrText(
+        ["reflectionBtn", "dailyReflectionBtn", "openReflectionBtn"],
+        ["Reflection", "Daily Reflection"]
+    );
+
+    if (!opened) {
+        openQuickReflectionFallbackPage();
+    }
+}
+
+function openQuickSettingsPage() {
+    const opened = clickRealNavButtonByIdOrText(
+        ["settingsBtn", "settingsButton", "openSettingsBtn"],
+        ["Settings"]
+    );
+
+    if (!opened) {
+        openQuickSettingsFallbackPage();
+    }
+}
+
+
+/* Quick Progress Live Counter Fix */
+function updateQuickProgressNumbersLive() {
+    const listeningCount = getNumber("listeningCount");
+    const totalListeningWins = getNumber("totalListeningWins");
+    const weeklyWins = getNumber("weeklyWins");
+    const currentStreak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+    const longestStreak = typeof getSmartLongestStreakValue === "function"
+        ? getSmartLongestStreakValue()
+        : getNumber("longestStreak");
+
+    const todayElement = document.getElementById("quickProgressTodayCount");
+    const totalElement = document.getElementById("quickProgressTotalWins");
+    const weeklyElement = document.getElementById("quickProgressWeeklyWins");
+    const currentStreakElement = document.getElementById("quickProgressCurrentStreak");
+    const longestStreakElement = document.getElementById("quickProgressLongestStreak");
+
+    if (todayElement) {
+        todayElement.textContent = listeningCount + " / 3";
+    }
+
+    if (totalElement) {
+        totalElement.textContent = totalListeningWins;
+    }
+
+    if (weeklyElement) {
+        weeklyElement.textContent = weeklyWins;
+    }
+
+    if (currentStreakElement) {
+        currentStreakElement.textContent = currentStreak + " day" + (currentStreak === 1 ? "" : "s");
+    }
+
+    if (longestStreakElement) {
+        longestStreakElement.textContent = longestStreak + " day" + (longestStreak === 1 ? "" : "s");
+    }
+}
+
+function syncQuickProgressDailyActionData() {
+    if (typeof getDailyActionData !== "function" || typeof saveDailyActionData !== "function") {
+        return;
+    }
+
+    const data = getDailyActionData();
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : getQuickTodayKey();
+
+    if (!data[todayKey]) {
+        data[todayKey] = {};
+    }
+
+    data[todayKey].listeningWins = getNumber("listeningCount");
+
+    saveDailyActionData(data);
+}
+
+function addQuickListeningWinLive() {
+    const currentToday = getNumber("listeningCount");
+    const newToday = currentToday + 1;
+
+    setQuickStorageNumber("listeningCount", newToday);
+    setQuickStorageNumber("totalListeningWins", getNumber("totalListeningWins") + 1);
+    setQuickStorageNumber("weeklyWins", getNumber("weeklyWins") + 1);
+
+    localStorage.setItem("listeningDate", getQuickTodayKey());
+
+    if (getNumber("currentStreak") <= 0) {
+        setQuickStorageNumber("currentStreak", 1);
+    }
+
+    if (getNumber("longestStreak") < getNumber("currentStreak")) {
+        setQuickStorageNumber("longestStreak", getNumber("currentStreak"));
+    }
+
+    syncQuickProgressDailyActionData();
+
+    if (typeof autoProgressFocusShieldGoals === "function") {
+        autoProgressFocusShieldGoals("Listening", 1);
+    }
+
+    if (typeof addXpHistoryEvent === "function") {
+        addXpHistoryEvent("Listening Win", 5, "Added one listening win.", "Listening");
+    }
+
+    if (typeof awardMissionStreakBonusIfReady === "function") {
+        awardMissionStreakBonusIfReady();
+    }
+
+    if (typeof checkBadgeUnlocks === "function") {
+        checkBadgeUnlocks();
+    }
+
+    if (typeof checkLevelUp === "function") {
+        checkLevelUp();
+    }
+
+    refreshAllHomeSystemsQuick();
+    updateQuickProgressNumbersLive();
+}
+
+function openQuickProgressPage() {
+    showPage(`
+        <h1>Progress</h1>
+
+        <div class="card">
+            <h2>Listening Practice Today</h2>
+            <h3 id="quickProgressTodayCount">${getNumber("listeningCount")} / 3</h3>
+            <p>Pause, listen fully, then speak.</p>
+            <button id="quickAddListeningWinBtn">+ Add Listening Win</button>
+            <button id="quickResetTodayBtn">Reset Today</button>
+        </div>
+
+        <div class="card">
+            <h2>Total Progress</h2>
+            <p><strong>Total Listening Wins:</strong> <span id="quickProgressTotalWins">${getNumber("totalListeningWins")}</span></p>
+            <p><strong>This Week's Wins:</strong> <span id="quickProgressWeeklyWins">${getNumber("weeklyWins")}</span></p>
+            <p><strong>Current Streak:</strong> <span id="quickProgressCurrentStreak">${typeof getSmartCurrentStreakValue === "function" ? getSmartCurrentStreakValue() : getNumber("currentStreak")} day(s)</span></p>
+            <p><strong>Longest Streak:</strong> <span id="quickProgressLongestStreak">${typeof getSmartLongestStreakValue === "function" ? getSmartLongestStreakValue() : getNumber("longestStreak")} day(s)</span></p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("quickAddListeningWinBtn").addEventListener("click", addQuickListeningWinLive);
+
+    document.getElementById("quickResetTodayBtn").addEventListener("click", function() {
+        localStorage.setItem("listeningCount", "0");
+        syncQuickProgressDailyActionData();
+        refreshAllHomeSystemsQuick();
+        updateQuickProgressNumbersLive();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+
+    updateQuickProgressNumbersLive();
+}
+
+
+/* Final Quick Action Binding Fix */
+function forceClickRealButtonByText(possibleTexts) {
+    const buttons = Array.from(document.querySelectorAll("button"));
+
+    const found = buttons.find(function(button) {
+        if (button.closest("#quickActionMenu")) {
+            return false;
+        }
+
+        const text = button.textContent.trim().toLowerCase();
+
+        return possibleTexts.some(function(item) {
+            return text === item.toLowerCase();
+        });
+    });
+
+    if (found) {
+        found.dispatchEvent(new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        }));
+        return true;
+    }
+
+    return false;
+}
+
+function forceQuickProgressPage() {
+    showPage(`
+        <h1>Progress</h1>
+
+        <div class="card">
+            <h2>Listening Practice Today</h2>
+            <h3 id="forceProgressToday">${getNumber("listeningCount")} / 3</h3>
+            <p>Pause, listen fully, then speak.</p>
+            <button id="forceAddListeningWinBtn">+ Add Listening Win</button>
+            <button id="forceResetTodayBtn">Reset Today</button>
+        </div>
+
+        <div class="card">
+            <h2>Total Progress</h2>
+            <p><strong>Total Listening Wins:</strong> <span id="forceTotalWins">${getNumber("totalListeningWins")}</span></p>
+            <p><strong>This Week's Wins:</strong> <span id="forceWeeklyWins">${getNumber("weeklyWins")}</span></p>
+            <p><strong>Current Streak:</strong> <span id="forceCurrentStreak">${typeof getSmartCurrentStreakValue === "function" ? getSmartCurrentStreakValue() : getNumber("currentStreak")} day(s)</span></p>
+            <p><strong>Longest Streak:</strong> <span id="forceLongestStreak">${typeof getSmartLongestStreakValue === "function" ? getSmartLongestStreakValue() : getNumber("longestStreak")} day(s)</span></p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    function updateForceProgressDisplay() {
+        const today = getNumber("listeningCount");
+        const total = getNumber("totalListeningWins");
+        const weekly = getNumber("weeklyWins");
+
+        document.getElementById("forceProgressToday").textContent = today + " / 3";
+        document.getElementById("forceTotalWins").textContent = total;
+        document.getElementById("forceWeeklyWins").textContent = weekly;
+
+        const currentStreak = typeof getSmartCurrentStreakValue === "function"
+            ? getSmartCurrentStreakValue()
+            : getNumber("currentStreak");
+
+        const longestStreak = typeof getSmartLongestStreakValue === "function"
+            ? getSmartLongestStreakValue()
+            : getNumber("longestStreak");
+
+        document.getElementById("forceCurrentStreak").textContent = currentStreak + " day" + (currentStreak === 1 ? "" : "s");
+        document.getElementById("forceLongestStreak").textContent = longestStreak + " day" + (longestStreak === 1 ? "" : "s");
+    }
+
+    document.getElementById("forceAddListeningWinBtn").addEventListener("click", function() {
+        const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : getQuickTodayKey();
+
+        localStorage.setItem("listeningCount", String(getNumber("listeningCount") + 1));
+        localStorage.setItem("totalListeningWins", String(getNumber("totalListeningWins") + 1));
+        localStorage.setItem("weeklyWins", String(getNumber("weeklyWins") + 1));
+        localStorage.setItem("listeningDate", todayKey);
+
+        if (getNumber("currentStreak") <= 0) {
+            localStorage.setItem("currentStreak", "1");
+        }
+
+        if (getNumber("longestStreak") < getNumber("currentStreak")) {
+            localStorage.setItem("longestStreak", String(getNumber("currentStreak")));
+        }
+
+        if (typeof getDailyActionData === "function" && typeof saveDailyActionData === "function") {
+            const data = getDailyActionData();
+
+            if (!data[todayKey]) {
+                data[todayKey] = {};
+            }
+
+            data[todayKey].listeningWins = getNumber("listeningCount");
+            saveDailyActionData(data);
+        }
+
+        if (typeof autoProgressFocusShieldGoals === "function") {
+            autoProgressFocusShieldGoals("Listening", 1);
+        }
+
+        if (typeof addXpHistoryEvent === "function") {
+            addXpHistoryEvent("Listening Win", 5, "Added one listening win.", "Listening");
+        }
+
+        if (typeof awardMissionStreakBonusIfReady === "function") {
+            awardMissionStreakBonusIfReady();
+        }
+
+        if (typeof checkBadgeUnlocks === "function") {
+            checkBadgeUnlocks();
+        }
+
+        if (typeof checkLevelUp === "function") {
+            checkLevelUp();
+        }
+
+        if (typeof refreshAllHomeSystemsQuick === "function") {
+            refreshAllHomeSystemsQuick();
+        }
+
+        updateForceProgressDisplay();
+    });
+
+    document.getElementById("forceResetTodayBtn").addEventListener("click", function() {
+        const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : getQuickTodayKey();
+
+        localStorage.setItem("listeningCount", "0");
+
+        if (typeof getDailyActionData === "function" && typeof saveDailyActionData === "function") {
+            const data = getDailyActionData();
+
+            if (!data[todayKey]) {
+                data[todayKey] = {};
+            }
+
+            data[todayKey].listeningWins = 0;
+            saveDailyActionData(data);
+        }
+
+        if (typeof refreshAllHomeSystemsQuick === "function") {
+            refreshAllHomeSystemsQuick();
+        }
+
+        updateForceProgressDisplay();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function forceQuickFocusPage() {
+    const opened = forceClickRealButtonByText([
+        "Focus Timer",
+        "Focus"
+    ]);
+
+    if (!opened) {
+        showPage(`
+            <h1>Focus Timer</h1>
+
+            <div class="card">
+                <h2>Focus Timer Not Found</h2>
+                <p>The main Focus Timer button could not be found. Scroll down and use the original Focus Timer button for now.</p>
+            </div>
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    }
+}
+
+function forceRebindQuickButton(buttonId, handler) {
+    const oldButton = document.getElementById(buttonId);
+
+    if (!oldButton) {
+        return;
+    }
+
+    const newButton = oldButton.cloneNode(true);
+    oldButton.parentNode.replaceChild(newButton, oldButton);
+    newButton.addEventListener("click", handler);
+}
+
+function forceBindQuickActionsFinal() {
+    if (!document.getElementById("quickActionMenu")) {
+        return;
+    }
+
+    forceRebindQuickButton("quickProgressBtn", forceQuickProgressPage);
+    forceRebindQuickButton("quickFocusBtn", forceQuickFocusPage);
+
+    forceRebindQuickButton("quickGoalsBtn", function() {
+        if (typeof openGoalManagerPage === "function") {
+            openGoalManagerPage();
+        } else {
+            forceClickRealButtonByText(["Goals"]);
+        }
+    });
+
+    forceRebindQuickButton("quickReflectionBtn", function() {
+        if (typeof openQuickReflectionFallbackPage === "function") {
+            openQuickReflectionFallbackPage();
+        } else {
+            forceClickRealButtonByText(["Reflection", "Daily Reflection"]);
+        }
+    });
+
+    forceRebindQuickButton("quickCoachBtn", function() {
+        if (typeof getDisciplineCoachHtml === "function") {
+            showPage(`
+                <h1>Discipline Coach</h1>
+                ${getDisciplineCoachHtml()}
+                <button id="backBtn">Back</button>
+            `);
+            document.getElementById("backBtn").addEventListener("click", goHome);
+        } else {
+            forceClickRealButtonByText(["Discipline Coach"]);
+        }
+    });
+
+    forceRebindQuickButton("quickStatsBtn", function() {
+        if (typeof openStatisticsDashboardPage === "function") {
+            openStatisticsDashboardPage();
+        } else {
+            forceClickRealButtonByText(["Statistics"]);
+        }
+    });
+
+    forceRebindQuickButton("quickChartsBtn", function() {
+        if (typeof openChartsDashboardPage === "function") {
+            openChartsDashboardPage();
+        } else {
+            forceClickRealButtonByText(["Charts"]);
+        }
+    });
+
+    forceRebindQuickButton("quickSettingsBtn", function() {
+        if (typeof openQuickSettingsFallbackPage === "function") {
+            openQuickSettingsFallbackPage();
+        } else {
+            forceClickRealButtonByText(["Settings"]);
+        }
+    });
+}
+
+setTimeout(forceBindQuickActionsFinal, 500);
+setTimeout(forceBindQuickActionsFinal, 1200);
+setTimeout(forceBindQuickActionsFinal, 2200);
+
+
+/* Final Listening Count Sync Fix */
+function getFocusShieldTodayKeyFinal() {
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const today = new Date();
+
+    return today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+}
+
+function saveListeningDateEverywhereFinal() {
+    const todayKey = getFocusShieldTodayKeyFinal();
+
+    localStorage.setItem("listeningDate", todayKey);
+    localStorage.setItem("lastListeningDate", todayKey);
+    localStorage.setItem("currentListeningDate", todayKey);
+    localStorage.setItem("todayDate", todayKey);
+    localStorage.setItem("lastActiveDate", todayKey);
+    localStorage.setItem("focusShieldDate", todayKey);
+}
+
+function forceSetTodayListeningCountFinal(value) {
+    const cleanValue = Math.max(0, Number(value || 0));
+
+    localStorage.setItem("listeningCount", String(cleanValue));
+    localStorage.setItem("todayListeningWins", String(cleanValue));
+    localStorage.setItem("dailyListeningWins", String(cleanValue));
+    localStorage.setItem("missionListeningWins", String(cleanValue));
+
+    saveListeningDateEverywhereFinal();
+
+    const todayKey = getFocusShieldTodayKeyFinal();
+
+    if (typeof getDailyActionData === "function" && typeof saveDailyActionData === "function") {
+        const data = getDailyActionData();
+
+        if (!data[todayKey]) {
+            data[todayKey] = {};
+        }
+
+        data[todayKey].listeningWins = cleanValue;
+        saveDailyActionData(data);
+    }
+}
+
+function forceGetTodayListeningCountFinal() {
+    const possibleKeys = [
+        "listeningCount",
+        "todayListeningWins",
+        "dailyListeningWins",
+        "missionListeningWins"
+    ];
+
+    let highest = 0;
+
+    possibleKeys.forEach(function(key) {
+        const value = Number(localStorage.getItem(key) || 0);
+
+        if (!Number.isNaN(value) && value > highest) {
+            highest = value;
+        }
+    });
+
+    return highest;
+}
+
+function forceUpdateProgressDisplayFinal() {
+    const todayCount = forceGetTodayListeningCountFinal();
+    const totalWins = getNumber("totalListeningWins");
+    const weeklyWins = getNumber("weeklyWins");
+
+    const todayElement = document.getElementById("forceProgressToday");
+    const totalElement = document.getElementById("forceTotalWins");
+    const weeklyElement = document.getElementById("forceWeeklyWins");
+    const currentElement = document.getElementById("forceCurrentStreak");
+    const longestElement = document.getElementById("forceLongestStreak");
+
+    if (todayElement) {
+        todayElement.textContent = todayCount + " / 3";
+    }
+
+    if (totalElement) {
+        totalElement.textContent = totalWins;
+    }
+
+    if (weeklyElement) {
+        weeklyElement.textContent = weeklyWins;
+    }
+
+    const currentStreak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    const longestStreak = typeof getSmartLongestStreakValue === "function"
+        ? getSmartLongestStreakValue()
+        : getNumber("longestStreak");
+
+    if (currentElement) {
+        currentElement.textContent = currentStreak + " day" + (currentStreak === 1 ? "" : "s");
+    }
+
+    if (longestElement) {
+        longestElement.textContent = longestStreak + " day" + (longestStreak === 1 ? "" : "s");
+    }
+}
+
+function addListeningWinFinal() {
+    const currentToday = forceGetTodayListeningCountFinal();
+    const newToday = currentToday + 1;
+
+    forceSetTodayListeningCountFinal(newToday);
+
+    localStorage.setItem("totalListeningWins", String(getNumber("totalListeningWins") + 1));
+    localStorage.setItem("weeklyWins", String(getNumber("weeklyWins") + 1));
+
+    if (getNumber("currentStreak") <= 0) {
+        localStorage.setItem("currentStreak", "1");
+    }
+
+    if (getNumber("longestStreak") < getNumber("currentStreak")) {
+        localStorage.setItem("longestStreak", String(getNumber("currentStreak")));
+    }
+
+    if (typeof autoProgressFocusShieldGoals === "function") {
+        autoProgressFocusShieldGoals("Listening", 1);
+    }
+
+    if (typeof addXpHistoryEvent === "function") {
+        addXpHistoryEvent("Listening Win", 5, "Added one listening win.", "Listening");
+    }
+
+    if (typeof awardMissionStreakBonusIfReady === "function") {
+        awardMissionStreakBonusIfReady();
+    }
+
+    if (typeof checkBadgeUnlocks === "function") {
+        checkBadgeUnlocks();
+    }
+
+    if (typeof checkLevelUp === "function") {
+        checkLevelUp();
+    }
+
+    if (typeof refreshAllHomeSystemsQuick === "function") {
+        refreshAllHomeSystemsQuick();
+    }
+
+    forceUpdateProgressDisplayFinal();
+}
+
+function resetTodayListeningFinal() {
+    forceSetTodayListeningCountFinal(0);
+
+    if (typeof refreshAllHomeSystemsQuick === "function") {
+        refreshAllHomeSystemsQuick();
+    }
+
+    forceUpdateProgressDisplayFinal();
+}
+
+function forceQuickProgressPage() {
+    forceSetTodayListeningCountFinal(forceGetTodayListeningCountFinal());
+
+    showPage(`
+        <h1>Progress</h1>
+
+        <div class="card">
+            <h2>Listening Practice Today</h2>
+            <h3 id="forceProgressToday">${forceGetTodayListeningCountFinal()} / 3</h3>
+            <p>Pause, listen fully, then speak.</p>
+            <button id="forceAddListeningWinBtn">+ Add Listening Win</button>
+            <button id="forceResetTodayBtn">Reset Today</button>
+        </div>
+
+        <div class="card">
+            <h2>Total Progress</h2>
+            <p><strong>Total Listening Wins:</strong> <span id="forceTotalWins">${getNumber("totalListeningWins")}</span></p>
+            <p><strong>This Week's Wins:</strong> <span id="forceWeeklyWins">${getNumber("weeklyWins")}</span></p>
+            <p><strong>Current Streak:</strong> <span id="forceCurrentStreak">${typeof getSmartCurrentStreakValue === "function" ? getSmartCurrentStreakValue() : getNumber("currentStreak")} day(s)</span></p>
+            <p><strong>Longest Streak:</strong> <span id="forceLongestStreak">${typeof getSmartLongestStreakValue === "function" ? getSmartLongestStreakValue() : getNumber("longestStreak")} day(s)</span></p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("forceAddListeningWinBtn").addEventListener("click", addListeningWinFinal);
+    document.getElementById("forceResetTodayBtn").addEventListener("click", resetTodayListeningFinal);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+
+    forceUpdateProgressDisplayFinal();
+}
+
+function openQuickProgressPage() {
+    forceQuickProgressPage();
+}
 
 </script>
 
