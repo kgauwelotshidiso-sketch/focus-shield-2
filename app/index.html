@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=timelinefilters1">
+    <link rel="stylesheet" href="style.css?v=timelinedetails1">
 </head>
 <body>
 
@@ -9124,6 +9124,206 @@ function openDailyTimelinePage() {
             renderTimelineFilterContent(button.dataset.filter);
         });
     });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+
+/* Timeline Event Details System */
+let currentTimelineRenderedEvents = [];
+
+function getTimelineEventWhy(event) {
+    const type = normalizeTimelineFilterType(event.type);
+
+    if (type === "XP") {
+        return "This shows a discipline action that produced XP. XP proves that small actions are being recorded and counted.";
+    }
+
+    if (type === "Listening") {
+        return "Listening wins protect your main habit: pausing, listening fully, and speaking after the other person finishes.";
+    }
+
+    if (type === "Goals") {
+        return "Goal completion shows that you are turning discipline into measurable progress.";
+    }
+
+    if (type === "Reflection") {
+        return "Reflection helps you learn from the day instead of repeating the same mistake unconsciously.";
+    }
+
+    if (type === "Review") {
+        return "End reviews show whether the day was strong, protected, recoverable, or weak, and what tomorrow must correct.";
+    }
+
+    if (type === "Focus") {
+        return "Focus and concentration sessions strengthen your ability to return to your goal after distraction.";
+    }
+
+    return "This event is part of your daily discipline record.";
+}
+
+function getTimelineEventNextAction(event) {
+    const type = normalizeTimelineFilterType(event.type);
+
+    if (type === "XP") {
+        return "Repeat the action that created this XP if it supports today’s mission.";
+    }
+
+    if (type === "Listening") {
+        return "Get the next listening win until today reaches 3 / 3.";
+    }
+
+    if (type === "Goals") {
+        return "Choose the next active goal and move it forward by one small step.";
+    }
+
+    if (type === "Reflection") {
+        return "Use the reflection lesson to adjust tomorrow’s first move.";
+    }
+
+    if (type === "Review") {
+        return "Follow the correction written in the end review tomorrow.";
+    }
+
+    if (type === "Focus") {
+        return "Complete one short focus or concentration session before distractions take over.";
+    }
+
+    return "Continue with the next small useful action.";
+}
+
+function openTimelineEventDetail(index) {
+    const event = currentTimelineRenderedEvents[index];
+
+    if (!event) {
+        alert("Timeline event not found.");
+        return;
+    }
+
+    const type = normalizeTimelineFilterType(event.type);
+
+    showPage(`
+        <h1>Event Details</h1>
+
+        <div class="card timeline-detail-card">
+            <h2>${safeTimelineEscape(event.title)}</h2>
+            <h3>${safeTimelineEscape(event.badge || type)}</h3>
+            <p>${safeTimelineEscape(event.detail)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Event Information</h2>
+            <p><strong>Type:</strong> ${safeTimelineEscape(type)}</p>
+            <p><strong>Time:</strong> ${safeTimelineEscape(getTimelineTimeText(event.time))}</p>
+            <p><strong>Raw category:</strong> ${safeTimelineEscape(event.type || "Unknown")}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Why This Matters</h2>
+            <p>${safeTimelineEscape(getTimelineEventWhy(event))}</p>
+        </div>
+
+        <div class="card smart-suggestions-card">
+            <h2>Next Action</h2>
+            <h3>${safeTimelineEscape(getTimelineEventNextAction(event))}</h3>
+        </div>
+
+        <button id="backToTimelineBtn">Back to Timeline</button>
+        <button id="backBtn">Back Home</button>
+    `);
+
+    document.getElementById("backToTimelineBtn").addEventListener("click", openDailyTimelinePage);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function attachTimelineEventDetailButtons() {
+    Array.from(document.querySelectorAll(".timeline-detail-btn")).forEach(function(button) {
+        button.addEventListener("click", function() {
+            openTimelineEventDetail(Number(button.dataset.eventIndex || 0));
+        });
+    });
+}
+
+function getFilteredTimelineItemsHtml(filterName) {
+    const events = getFilteredTimelineEvents(filterName);
+
+    currentTimelineRenderedEvents = events;
+
+    if (events.length === 0) {
+        return `
+            <div class="card">
+                <h2>No ${filterName === "All" ? "" : safeTimelineEscape(filterName)} Events Yet</h2>
+                <p>When matching actions happen today, they will appear here.</p>
+            </div>
+        `;
+    }
+
+    let html = "";
+
+    events.forEach(function(event, index) {
+        html += `
+            <div class="timeline-event">
+                <div class="timeline-dot"></div>
+                <div class="timeline-event-card">
+                    <div class="timeline-event-top">
+                        <div>
+                            <h2>${safeTimelineEscape(event.title)}</h2>
+                            <p>${safeTimelineEscape(getTimelineTimeText(event.time))}</p>
+                        </div>
+                        <strong>${safeTimelineEscape(event.badge)}</strong>
+                    </div>
+                    <p>${safeTimelineEscape(event.detail)}</p>
+                    <button type="button" class="timeline-detail-btn" data-event-index="${index}">Open Details</button>
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function renderTimelineFilterContent(filterName) {
+    currentTimelineFilter = filterName || "All";
+
+    const content = document.getElementById("timelineFilteredContent");
+
+    if (!content) {
+        return;
+    }
+
+    content.innerHTML = getFilteredTimelineItemsHtml(currentTimelineFilter);
+
+    const buttons = Array.from(document.querySelectorAll(".timeline-filter-btn"));
+
+    buttons.forEach(function(button) {
+        if (button.dataset.filter === currentTimelineFilter) {
+            button.classList.add("active-timeline-filter");
+        } else {
+            button.classList.remove("active-timeline-filter");
+        }
+    });
+
+    attachTimelineEventDetailButtons();
+}
+
+function openDailyTimelinePage() {
+    currentTimelineFilter = "All";
+
+    showPage(`
+        <h1>Daily Timeline</h1>
+
+        ${getDailyTimelineHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    Array.from(document.querySelectorAll(".timeline-filter-btn")).forEach(function(button) {
+        button.addEventListener("click", function() {
+            renderTimelineFilterContent(button.dataset.filter);
+        });
+    });
+
+    attachTimelineEventDetailButtons();
 
     document.getElementById("backBtn").addEventListener("click", goHome);
 }
