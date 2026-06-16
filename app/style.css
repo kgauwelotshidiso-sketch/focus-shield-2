@@ -1901,3 +1901,79 @@ textarea:focus {
 .fs-v2-week-row {
     border: 1px solid rgba(148, 163, 184, 0.25);
 }
+
+.p3-smart-coach-card {
+    border: 1px solid rgba(14, 165, 233, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.32));
+}
+
+.p3-smart-coach-card h3 {
+    color: #67e8f9;
+}
+
+.p3-coach-elite {
+    border-color: rgba(34, 197, 94, 0.6);
+}
+
+.p3-coach-elite h3 {
+    color: #4ade80;
+}
+
+.p3-coach-strong {
+    border-color: rgba(14, 165, 233, 0.58);
+}
+
+.p3-coach-strong h3 {
+    color: #67e8f9;
+}
+
+.p3-coach-stable {
+    border-color: rgba(250, 204, 21, 0.56);
+}
+
+.p3-coach-stable h3 {
+    color: #facc15;
+}
+
+.p3-coach-recovery {
+    border-color: rgba(248, 113, 113, 0.6);
+}
+
+.p3-coach-recovery h3 {
+    color: #f87171;
+}
+
+.p3-alert-card {
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.12), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.25));
+}
+
+.p3-command-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.15), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.28));
+}
+
+.p3-weakness-card {
+    border: 1px solid rgba(248, 113, 113, 0.42);
+    background:
+        radial-gradient(circle at top right, rgba(248, 113, 113, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(127, 29, 29, 0.25));
+}
+
+.p3-recovery-card {
+    border: 1px solid rgba(248, 113, 113, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(248, 113, 113, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(127, 29, 29, 0.32));
+}
+
+.p3-action-card button,
+.p3-smart-coach-card button {
+    background: linear-gradient(135deg, #06b6d4, #2563eb);
+}

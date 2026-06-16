@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=autofixbuttonpersist1">
+    <link rel="stylesheet" href="style.css?v=smartcoachinstantrefresh1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshPhase3SmartCoachSystems, 900);
     setTimeout(refreshDailyOperatingSystemV2, 800);
     setTimeout(addXpBalanceButtonToQuickActions, 700);
     setTimeout(masterUpdateProgressDom, 900);
@@ -12369,6 +12370,668 @@ if (!window.healthCheckAutoFixButtonObserverStarted) {
 }
 
 refreshHealthCheckAutoFixButtonPersistence();
+
+
+/* Phase 3 Smart Daily Coach Engine */
+function p3TodayKey() {
+    if (typeof masterTodayKey === "function") {
+        return masterTodayKey();
+    }
+
+    if (typeof fsV2TodayKey === "function") {
+        return fsV2TodayKey();
+    }
+
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function p3Escape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function p3GetJson(key, fallback) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        return value || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function p3Number(key) {
+    return Number(localStorage.getItem(key) || 0);
+}
+
+function p3GetListeningCount() {
+    if (typeof masterGetListeningCount === "function") {
+        return masterGetListeningCount();
+    }
+
+    if (typeof fsV2GetListeningCount === "function") {
+        return fsV2GetListeningCount();
+    }
+
+    if (typeof getUnifiedTodayListeningCount === "function") {
+        return getUnifiedTodayListeningCount();
+    }
+
+    return Math.max(
+        p3Number("listeningCount"),
+        p3Number("todayListeningWins"),
+        p3Number("dailyListeningWins"),
+        p3Number("missionListeningWins")
+    );
+}
+
+function p3GetMorningPlan() {
+    if (typeof fsV2GetMorningPlan === "function") {
+        return fsV2GetMorningPlan();
+    }
+
+    const data = p3GetJson("fsV2MorningPlans", {});
+    return data[p3TodayKey()] || {};
+}
+
+function p3GetMiddayReset() {
+    if (typeof fsV2GetMiddayReset === "function") {
+        return fsV2GetMiddayReset();
+    }
+
+    const data = p3GetJson("fsV2MiddayResets", {});
+    return data[p3TodayKey()] || {};
+}
+
+function p3GetNightReview() {
+    if (typeof fsV2GetNightReview === "function") {
+        return fsV2GetNightReview();
+    }
+
+    const data = p3GetJson("fsV2NightReviews", {});
+    return data[p3TodayKey()] || {};
+}
+
+function p3GetGoalExecution() {
+    if (typeof fsV2GetGoalExecution === "function") {
+        return fsV2GetGoalExecution();
+    }
+
+    const data = p3GetJson("fsV2GoalExecutionPlans", {});
+    return data[p3TodayKey()] || {};
+}
+
+function p3ReflectionSavedToday() {
+    if (typeof fsV2ReflectionSavedToday === "function") {
+        return fsV2ReflectionSavedToday();
+    }
+
+    const data = p3GetJson("reflectionHistory", {});
+    return Boolean(data[p3TodayKey()] || localStorage.getItem("todayReflection"));
+}
+
+function p3EndReviewSavedToday() {
+    if (typeof fsV2EndReviewSavedToday === "function") {
+        return fsV2EndReviewSavedToday();
+    }
+
+    const data = p3GetJson("dailyEndReviewHistory", {});
+    return Boolean(data[p3TodayKey()] || localStorage.getItem("todayEndReview"));
+}
+
+function p3GetTopWeakness() {
+    const night = p3GetJson("fsV2NightReviews", {});
+    const midday = p3GetJson("fsV2MiddayResets", {});
+    const counts = {};
+
+    Object.values(night).forEach(function(item) {
+        const weakness = String(item.weakness || "").trim();
+
+        if (weakness) {
+            counts[weakness] = (counts[weakness] || 0) + 1;
+        }
+    });
+
+    Object.values(midday).forEach(function(item) {
+        const weakness = String(item.distraction || "").trim();
+
+        if (weakness) {
+            counts[weakness] = (counts[weakness] || 0) + 1;
+        }
+    });
+
+    const entries = Object.entries(counts).sort(function(a, b) {
+        return b[1] - a[1];
+    });
+
+    if (!entries.length) {
+        return {
+            name: "No repeated weakness detected yet",
+            count: 0
+        };
+    }
+
+    return {
+        name: entries[0][0],
+        count: entries[0][1]
+    };
+}
+
+function p3GetSmartCoachState() {
+    const now = new Date();
+    const hour = now.getHours();
+
+    const listening = p3GetListeningCount();
+    const morning = p3GetMorningPlan();
+    const midday = p3GetMiddayReset();
+    const goalPlan = p3GetGoalExecution();
+    const night = p3GetNightReview();
+
+    const morningSaved = Boolean(morning.mainMission || morning.firstMove);
+    const middaySaved = Boolean(midday.state || midday.nextAction);
+    const goalSaved = Boolean(goalPlan.goalName || goalPlan.nextStep);
+    const reflectionSaved = p3ReflectionSavedToday();
+    const endReviewSaved = p3EndReviewSavedToday();
+    const nightSaved = Boolean(night.score || night.biggestWin || night.correction);
+
+    const alerts = [];
+    const commands = [];
+
+    if (!morningSaved) {
+        alerts.push("Morning Command is not saved.");
+        commands.push("Set your Morning Command so the day starts with direction.");
+    }
+
+    if (listening < 3) {
+        alerts.push("Listening mission is incomplete: " + listening + " / 3.");
+        commands.push("Get " + (3 - listening) + " more listening win" + ((3 - listening) === 1 ? "" : "s") + " today.");
+    }
+    if (hour >= 11 && !middaySaved) {
+        alerts.push("Midday Reset has not been saved.");
+        commands.push("Run a Midday Reset before the day drifts.");
+    }
+
+    if (!goalSaved) {
+        alerts.push("Goal Execution Plan is not saved.");
+        commands.push("Choose one goal and define the next action.");
+    }
+
+    if (hour >= 18 && !reflectionSaved) {
+        alerts.push("Daily Reflection is not saved yet.");
+        commands.push("Write the lesson from today before sleeping.");
+    }
+
+    if (hour >= 18 && !endReviewSaved && !nightSaved) {
+        alerts.push("Night Review is not saved yet.");
+        commands.push("Close the day with a score and correction.");
+    }
+
+    const topWeakness = p3GetTopWeakness();
+
+    if (topWeakness.count >= 2) {
+        alerts.push("Repeated weakness detected: " + topWeakness.name + ".");
+        commands.push("Build a rule for this weakness instead of relying on motivation.");
+    }
+
+    let score = 100;
+
+    if (!morningSaved) score -= 15;
+    if (listening < 3) score -= Math.round(((3 - listening) / 3) * 30);
+    if (hour >= 11 && !middaySaved) score -= 15;
+    if (!goalSaved) score -= 15;
+    if (hour >= 18 && !reflectionSaved) score -= 10;
+    if (hour >= 18 && !endReviewSaved && !nightSaved) score -= 10;
+    if (topWeakness.count >= 2) score -= 5;
+
+    score = Math.max(0, Math.min(100, score));
+
+    let status = "Locked In";
+    let priority = "Protect the system and keep executing.";
+    let mode = "Command Mode";
+
+    if (!morningSaved) {
+        priority = "Save your Morning Command first.";
+        mode = "Start Mode";
+    } else if (listening < 3) {
+        priority = "Complete your listening mission.";
+        mode = "Mission Mode";
+    } else if (hour >= 11 && !middaySaved) {
+        priority = "Run your Midday Reset.";
+        mode = "Reset Mode";
+    } else if (!goalSaved) {
+        priority = "Create your Goal Execution Plan.";
+        mode = "Execution Mode";
+    } else if (score < 50) {
+        priority = "Enter Recovery Mode and complete one small action.";
+        mode = "Recovery Mode";
+    } else if (hour >= 18 && (!reflectionSaved || (!endReviewSaved && !nightSaved))) {
+        priority = "Close the day with reflection and night review.";
+        mode = "Review Mode";
+    }
+
+    if (score < 50) {
+        status = "Needs Recovery";
+    } else if (score < 75) {
+        status = "Stable With Gaps";
+    } else if (score < 90) {
+        status = "Strong";
+    }
+
+    if (!commands.length) {
+        commands.push("Stay consistent. Do not relax the system because the day is going well.");
+    }
+
+    return {
+        score: score,
+        status: status,
+        mode: mode,
+        priority: priority,
+        alerts: alerts,
+        commands: commands,
+        topWeakness: topWeakness,
+        listening: listening,
+        morningSaved: morningSaved,
+        middaySaved: middaySaved,
+        goalSaved: goalSaved,
+        reflectionSaved: reflectionSaved,
+        endReviewSaved: endReviewSaved || nightSaved
+    };
+}
+
+function p3SmartCoachBadgeClass(score) {
+    if (score >= 90) return "p3-coach-elite";
+    if (score >= 75) return "p3-coach-strong";
+    if (score >= 50) return "p3-coach-stable";
+    return "p3-coach-recovery";
+}
+
+function p3GetSmartCoachHtml() {
+    const state = p3GetSmartCoachState();
+
+    const alertsHtml = state.alerts.length
+        ? state.alerts.map(function(alert) {
+            return `<p>⚠️ ${p3Escape(alert)}</p>`;
+        }).join("")
+        : "<p>✅ No critical alerts right now.</p>";
+
+    const commandsHtml = state.commands.map(function(command) {
+        return `<p>• ${p3Escape(command)}</p>`;
+    }).join("");
+
+    const recoveryHtml = state.score < 50 ? `
+        <div class="card p3-recovery-card">
+            <h2>Recovery Mode</h2>
+            <p>Your day is not lost. Do not chase perfection. Stabilize with 3 small actions:</p>
+            <p><strong>1.</strong> Pause and breathe for 10 seconds.</p>
+            <p><strong>2.</strong> Complete one listening win or one goal step.</p>
+            <p><strong>3.</strong> Save a Midday Reset or Night Review.</p>
+        </div>
+    ` : "";
+
+    return `
+        <div class="card p3-smart-coach-card ${p3SmartCoachBadgeClass(state.score)}">
+            <h2>Smart Daily Coach</h2>
+            <h3>${p3Escape(state.status)} — ${state.score}%</h3>
+            <p><strong>Mode:</strong> ${p3Escape(state.mode)}</p>
+            <p><strong>Priority:</strong> ${p3Escape(state.priority)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Today’s Coach Diagnosis</h2>
+            <p><strong>Listening Mission:</strong> ${state.listening} / 3</p>
+            <p><strong>Morning Command:</strong> ${state.morningSaved ? "Saved" : "Not saved"}</p>
+            <p><strong>Midday Reset:</strong> ${state.middaySaved ? "Saved" : "Not saved"}</p>
+            <p><strong>Goal Execution:</strong> ${state.goalSaved ? "Planned" : "Not planned"}</p>
+            <p><strong>Reflection / Review:</strong> ${state.reflectionSaved || state.endReviewSaved ? "Started" : "Not started"}</p>
+        </div>
+
+        <div class="card p3-alert-card">
+            <h2>In-App Coach Alerts</h2>
+            ${alertsHtml}
+        </div>
+
+        <div class="card p3-command-card">
+            <h2>Main Coach Commands</h2>
+            ${commandsHtml}
+        </div>
+
+        <div class="card p3-weakness-card">
+            <h2>Weakness Diagnosis</h2>
+            <p><strong>Top Pattern:</strong> ${p3Escape(state.topWeakness.name)}</p>
+            <p><strong>Detected:</strong> ${state.topWeakness.count} time${state.topWeakness.count === 1 ? "" : "s"}</p>
+            <p>Rule: repeated weakness needs a system rule, not only motivation.</p>
+        </div>
+
+        ${recoveryHtml}
+    `;
+}
+
+function openSmartDailyCoachPage() {
+    showPage(`
+        <h1>Smart Daily Coach</h1>
+
+        <div id="p3SmartCoachLiveRoot">
+            ${p3GetSmartCoachHtml()}
+        </div>
+
+        <div class="card p3-action-card">
+            <h2>Coach Actions</h2>
+            <button id="p3AddListeningWinBtn">+ Add Listening Win</button>
+            <button id="p3OpenDailyOSBtn">Open Daily OS</button>
+            <button id="p3OpenMorningBtn">Morning Command</button>
+            <button id="p3OpenMiddayBtn">Midday Reset</button>
+            <button id="p3OpenGoalPlanBtn">Goal Execution Plan</button>
+            <button id="p3OpenNightReviewBtn">Night Review Score</button>
+            <button id="p3RefreshCoachBtn">Refresh Coach</button>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("p3AddListeningWinBtn").addEventListener("click", function() {
+        if (typeof masterAddListeningWin === "function") {
+            masterAddListeningWin();
+        }
+
+        p3RefreshSmartCoachPage();
+    });
+
+    document.getElementById("p3OpenDailyOSBtn").addEventListener("click", function() {
+        if (typeof openDailyOperatingSystemPage === "function") {
+            openDailyOperatingSystemPage();
+        }
+    });
+
+    document.getElementById("p3OpenMorningBtn").addEventListener("click", function() {
+        if (typeof openMorningCommandCenterPage === "function") {
+            openMorningCommandCenterPage();
+        }
+    });
+
+    document.getElementById("p3OpenMiddayBtn").addEventListener("click", function() {
+        if (typeof openMiddayResetCheckPage === "function") {
+            openMiddayResetCheckPage();
+        }
+    });
+
+    document.getElementById("p3OpenGoalPlanBtn").addEventListener("click", function() {
+        if (typeof openGoalExecutionPlanPage === "function") {
+            openGoalExecutionPlanPage();
+        }
+    });
+
+    document.getElementById("p3OpenNightReviewBtn").addEventListener("click", function() {
+        if (typeof openNightReviewScorePage === "function") {
+            openNightReviewScorePage();
+        }
+    });
+
+    document.getElementById("p3RefreshCoachBtn").addEventListener("click", p3RefreshSmartCoachPage);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function p3RefreshSmartCoachPage() {
+    const root = document.getElementById("p3SmartCoachLiveRoot");
+
+    if (root) {
+        root.innerHTML = p3GetSmartCoachHtml();
+    }
+
+    if (typeof refreshSmartCoachHomeCard === "function") {
+        refreshSmartCoachHomeCard();
+    }
+}
+
+function insertSmartCoachHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("smartDailyCoachHomeCard")) {
+        return;
+    }
+
+    const dailyOsCard = document.getElementById("dailyOperatingSystemHomeCard");
+    const systemHealthCard = document.getElementById("systemHealthHomeCard");
+    const insertAfter = dailyOsCard || systemHealthCard || document.querySelector(".card");
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const state = p3GetSmartCoachState();
+    const card = document.createElement("div");
+
+    card.id = "smartDailyCoachHomeCard";
+    card.className = "card p3-smart-coach-card " + p3SmartCoachBadgeClass(state.score);
+    card.innerHTML = `
+        <h2>Smart Daily Coach</h2>
+        <h3>${p3Escape(state.status)} — ${state.score}%</h3>
+        <p><strong>Priority:</strong> ${p3Escape(state.priority)}</p>
+        <button id="openSmartDailyCoachBtn">Open Smart Coach</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openSmartDailyCoachBtn").addEventListener("click", openSmartDailyCoachPage);
+}
+
+function refreshSmartCoachHomeCard() {
+    const oldCard = document.getElementById("smartDailyCoachHomeCard");
+
+    if (oldCard) {
+        oldCard.remove();
+    }
+
+    setTimeout(insertSmartCoachHomeCard, 400);
+    setTimeout(insertSmartCoachHomeCard, 1100);
+    setTimeout(insertSmartCoachHomeCard, 2200);
+}
+
+function addSmartCoachQuickButton() {
+    const grids = [
+        document.getElementById("premiumPrimaryGrid"),
+        document.getElementById("premiumPlanGrid"),
+        document.getElementById("premiumReviewGrid")
+    ].filter(Boolean);
+
+    const grid = grids[0];
+
+    if (!grid) {
+        return;
+    }
+
+    if (document.getElementById("quickSmartCoachBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickSmartCoachBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-main-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">AI</span>
+        <span class="premium-quick-label">Smart Coach</span>
+        <span class="premium-quick-sub">Priority engine</span>
+    `;
+
+    button.addEventListener("click", openSmartDailyCoachPage);
+
+    grid.appendChild(button);
+}
+
+function refreshSmartCoachQuickButton() {
+    setTimeout(addSmartCoachQuickButton, 500);
+    setTimeout(addSmartCoachQuickButton, 1500);
+    setTimeout(addSmartCoachQuickButton, 2500);
+}
+
+/* Add Smart Coach to System Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.p3SmartCoachHealthCheckWrapped) {
+    window.p3SmartCoachHealthCheckWrapped = true;
+
+    const oldRunFocusShieldHealthChecksP3 = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksP3();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Smart Daily Coach";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Smart Daily Coach",
+                "PASS",
+                "Phase 3 Smart Daily Coach engine is available.",
+                "Use Smart Coach daily to see the next priority."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshPhase3SmartCoachSystems() {
+    refreshSmartCoachHomeCard();
+    refreshSmartCoachQuickButton();
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+refreshPhase3SmartCoachSystems();
+
+
+/* Phase 3 Smart Coach Instant Refresh Fix */
+function p3ForceSmartCoachInstantRefresh() {
+    function refreshNow() {
+        const root = document.getElementById("p3SmartCoachLiveRoot");
+
+        if (root && typeof p3GetSmartCoachHtml === "function") {
+            root.innerHTML = p3GetSmartCoachHtml();
+        }
+
+        if (typeof refreshSmartCoachHomeCard === "function") {
+            refreshSmartCoachHomeCard();
+        }
+
+        if (typeof refreshSystemHealthHomeCard === "function") {
+            refreshSystemHealthHomeCard();
+        }
+    }
+
+    refreshNow();
+    setTimeout(refreshNow, 100);
+    setTimeout(refreshNow, 300);
+    setTimeout(refreshNow, 700);
+}
+
+/* Wrap master listening win so Smart Coach updates every time */
+if (typeof masterAddListeningWin === "function" && !window.p3MasterAddListeningWinRefreshWrapped) {
+    window.p3MasterAddListeningWinRefreshWrapped = true;
+
+    const oldMasterAddListeningWinP3Refresh = masterAddListeningWin;
+
+    masterAddListeningWin = function() {
+        const result = oldMasterAddListeningWinP3Refresh.apply(this, arguments);
+        p3ForceSmartCoachInstantRefresh();
+        return result;
+    };
+}
+
+/* Wrap master progress update as backup */
+if (typeof masterUpdateProgressDom === "function" && !window.p3MasterProgressRefreshWrapped) {
+    window.p3MasterProgressRefreshWrapped = true;
+
+    const oldMasterUpdateProgressDomP3Refresh = masterUpdateProgressDom;
+
+    masterUpdateProgressDom = function() {
+        const result = oldMasterUpdateProgressDomP3Refresh.apply(this, arguments);
+        p3ForceSmartCoachInstantRefresh();
+        return result;
+    };
+}
+
+/* Make Smart Coach page Add Listening Win button force redraw */
+if (typeof openSmartDailyCoachPage === "function" && !window.p3OpenSmartCoachRefreshWrapped) {
+    window.p3OpenSmartCoachRefreshWrapped = true;
+
+    const oldOpenSmartDailyCoachPageP3Refresh = openSmartDailyCoachPage;
+
+    openSmartDailyCoachPage = function() {
+        oldOpenSmartDailyCoachPageP3Refresh();
+
+        setTimeout(function() {
+            const addBtn = document.getElementById("p3AddListeningWinBtn");
+
+            if (addBtn) {
+                addBtn.onclick = function(event) {
+                    event.preventDefault();
+
+                    if (typeof masterAddListeningWin === "function") {
+                        masterAddListeningWin();
+                    }
+
+                    p3ForceSmartCoachInstantRefresh();
+                };
+            }
+
+            const refreshBtn = document.getElementById("p3RefreshCoachBtn");
+
+            if (refreshBtn) {
+                refreshBtn.onclick = function(event) {
+                    event.preventDefault();
+                    p3ForceSmartCoachInstantRefresh();
+                };
+            }
+        }, 100);
+
+        p3ForceSmartCoachInstantRefresh();
+    };
+}
+
+/* Catch old global Add Listening Win handling and redraw Smart Coach after it */
+document.addEventListener("click", function(event) {
+    const button = event.target.closest("button");
+
+    if (!button) {
+        return;
+    }
+
+    const text = button.textContent.trim().toLowerCase();
+
+    if (text.includes("add listening win")) {
+        setTimeout(p3ForceSmartCoachInstantRefresh, 120);
+        setTimeout(p3ForceSmartCoachInstantRefresh, 350);
+        setTimeout(p3ForceSmartCoachInstantRefresh, 800);
+    }
+}, true);
+
+/* Keep Smart Coach live while the page is open */
+if (!window.p3SmartCoachLiveRefreshIntervalStarted) {
+    window.p3SmartCoachLiveRefreshIntervalStarted = true;
+
+    setInterval(function() {
+        if (document.getElementById("p3SmartCoachLiveRoot")) {
+            p3ForceSmartCoachInstantRefresh();
+        }
+    }, 1500);
+}
+
+p3ForceSmartCoachInstantRefresh();
 
 </script>
 
