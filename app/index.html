@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=streakbonus1">
+    <link rel="stylesheet" href="style.css?v=xpbalance1">
 </head>
 <body>
 
@@ -83,6 +83,12 @@
         <h2>XP Streak Bonus</h2>
         <h3 id="homeStreakBonusTitle">Not Claimed</h3>
         <p id="homeStreakBonusText">Complete today’s mission to earn bonus XP.</p>
+    </div>
+
+    <div class="card xp-balance-card">
+        <h2>XP Balance</h2>
+        <h3 id="homeXpBalanceTitle">Protected</h3>
+        <p id="homeXpBalanceText">XP duplicate protection is active.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -164,6 +170,7 @@
     <button id="streakProtectionBtn">Streak Protection</button>
     <button id="xpHistoryBtn">XP History</button>
     <button id="streakBonusBtn">Streak Bonus</button>
+    <button id="xpBalanceBtn">XP Balance</button>
     <button id="backupDataBtn">Backup Data</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
@@ -4938,6 +4945,524 @@ if (streakBonusBtn) {
 
 
 setTimeout(updateHomeStreakBonus, 1300);
+
+/* XP Balance Fix System */
+function getSafeArrayFromStorage(key) {
+    const saved = localStorage.getItem(key);
+
+    if (!saved) {
+        return [];
+    }
+
+    try {
+        const data = JSON.parse(saved);
+
+        if (Array.isArray(data)) {
+            return data;
+        }
+
+        return [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function getBalancedGoalXpTotal() {
+    if (typeof getFocusShieldGoals !== "function") {
+        return 0;
+    }
+
+    const goals = getFocusShieldGoals();
+
+    return goals.reduce(function(sum, goal) {
+        if (goal.completed && goal.xpRewarded === true && goal.xpIgnoredForBalance !== true) {
+            return sum + Number(goal.xpReward || 0);
+        }
+
+        return sum;
+    }, 0);
+}
+
+function getGoalXpTotal() {
+    return getBalancedGoalXpTotal();
+}
+
+function getBalancedMissionStreakBonusXpTotal() {
+    const history = getSafeArrayFromStorage("missionStreakBonusHistory");
+    const seenDates = {};
+    let total = 0;
+
+    history.forEach(function(item) {
+        const dateKey = item.dateKey || "";
+
+        if (dateKey === "") {
+            return;
+        }
+
+        if (seenDates[dateKey]) {
+            return;
+        }
+
+        seenDates[dateKey] = true;
+        total += Number(item.xp || 0);
+    });
+
+    return total;
+}
+
+function getMissionStreakBonusXpTotal() {
+    return getBalancedMissionStreakBonusXpTotal();
+}
+
+function cleanDuplicateXpHistoryEvents(history) {
+    const seen = {};
+    const cleaned = [];
+
+    history.forEach(function(item) {
+        const key = [
+            item.source || "",
+            item.amount || 0,
+            item.detail || "",
+            item.category || "",
+            item.dateKey || ""
+        ].join("|");
+
+        if (seen[key]) {
+            return;
+        }
+
+        seen[key] = true;
+        cleaned.push(item);
+    });
+
+    return cleaned;
+}
+
+function getXpBalanceInfo() {
+    const goals = typeof getFocusShieldGoals === "function" ? getFocusShieldGoals() : [];
+    const xpHistory = getSafeArrayFromStorage("xpHistoryLog");
+    const bonusHistory = getSafeArrayFromStorage("missionStreakBonusHistory");
+
+    const legacyGoalRewards = goals.filter(function(goal) {
+        return goal.completed &&
+            goal.xpRewarded === true &&
+            goal.xpIgnoredForBalance !== true &&
+            (!goal.xpRewardId || !goal.xpAwardedAt);
+    });
+
+    const duplicateHistoryCount = xpHistory.length - cleanDuplicateXpHistoryEvents(xpHistory).length;
+
+    const balancedGoalXp = getBalancedGoalXpTotal();
+    const storedGoalXp = Number(localStorage.getItem("goalXpTotal") || 0);
+
+    const balancedStreakXp = getBalancedMissionStreakBonusXpTotal();
+    const storedStreakXp = Number(localStorage.getItem("missionStreakBonusXpTotal") || 0);
+
+    let status = "Protected";
+    let message = "XP duplicate protection is active.";
+
+    if (legacyGoalRewards.length > 0 || duplicateHistoryCount > 0 || balancedGoalXp !== storedGoalXp || balancedStreakXp !== storedStreakXp) {
+        status = "Repair Recommended";
+        message = "XP records need a balance check.";
+    }
+
+    return {
+        status: status,
+        message: message,
+        legacyGoalRewards: legacyGoalRewards.length,
+        duplicateHistoryCount: duplicateHistoryCount,
+        balancedGoalXp: balancedGoalXp,
+        storedGoalXp: storedGoalXp,
+        balancedStreakXp: balancedStreakXp,
+        storedStreakXp: storedStreakXp,
+        xpHistoryCount: xpHistory.length,
+        bonusHistoryCount: bonusHistory.length
+    };
+}
+
+function updateHomeXpBalance() {
+    const titleElement = document.getElementById("homeXpBalanceTitle");
+    const textElement = document.getElementById("homeXpBalanceText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const info = getXpBalanceInfo();
+
+    titleElement.textContent = info.status;
+    textElement.textContent = info.message;
+}
+
+function runXpBalanceRepair() {
+    const confirmRepair = confirm(
+        "Run XP Balance Repair? This will remove legacy duplicated goal XP from old completed goals, keep future XP protected, and recalculate stored XP totals."
+    );
+
+    if (!confirmRepair) {
+        return;
+    }
+
+    let goals = typeof getFocusShieldGoals === "function" ? getFocusShieldGoals() : [];
+    let ignoredGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (
+            goal.completed &&
+            goal.xpRewarded === true &&
+            goal.xpIgnoredForBalance !== true &&
+            (!goal.xpRewardId || !goal.xpAwardedAt)
+        ) {
+            goal.xpIgnoredForBalance = true;
+            goal.xpReward = 0;
+            ignoredGoalNames.push(goal.title);
+        }
+    });
+
+    if (typeof saveFocusShieldGoals === "function") {
+        saveFocusShieldGoals(goals);
+    }
+
+    let xpHistory = getSafeArrayFromStorage("xpHistoryLog");
+
+    xpHistory = cleanDuplicateXpHistoryEvents(xpHistory);
+
+    if (ignoredGoalNames.length > 0) {
+        xpHistory = xpHistory.filter(function(item) {
+            if (item.source !== "Goal Completed") {
+                return true;
+            }
+
+            return ignoredGoalNames.indexOf(item.detail) === -1;
+        });
+    }
+
+    localStorage.setItem("xpHistoryLog", JSON.stringify(xpHistory));
+
+    let bonusHistory = getSafeArrayFromStorage("missionStreakBonusHistory");
+    const seenBonusDates = {};
+    const cleanedBonusHistory = [];
+
+    bonusHistory.forEach(function(item) {
+        const dateKey = item.dateKey || "";
+
+        if (dateKey === "") {
+            return;
+        }
+
+        if (seenBonusDates[dateKey]) {
+            return;
+        }
+
+        seenBonusDates[dateKey] = true;
+        cleanedBonusHistory.push(item);
+    });
+
+    localStorage.setItem("missionStreakBonusHistory", JSON.stringify(cleanedBonusHistory));
+
+    localStorage.setItem("goalXpTotal", String(getBalancedGoalXpTotal()));
+    localStorage.setItem("missionStreakBonusXpTotal", String(getBalancedMissionStreakBonusXpTotal()));
+
+    if (typeof updateHomeLevel === "function") {
+        updateHomeLevel();
+    }
+
+    if (typeof updateHomeXpHistory === "function") {
+        updateHomeXpHistory();
+    }
+
+    if (typeof updateHomeXpBalance === "function") {
+        updateHomeXpBalance();
+    }
+
+    alert("XP Balance Repair complete. Legacy duplicate goal XP was removed from balance.");
+    openXpBalancePage();
+}
+
+/* Override XP History logging with duplicate protection */
+function addXpHistoryEvent(source, amount, detail, category, uniqueKey) {
+    const xpAmount = Number(amount || 0);
+
+    if (xpAmount <= 0) {
+        return false;
+    }
+
+    if (uniqueKey) {
+        const eventKey = "xpEventKey-" + uniqueKey;
+
+        if (localStorage.getItem(eventKey) === "true") {
+            return false;
+        }
+
+        localStorage.setItem(eventKey, "true");
+    }
+
+    const history = getSafeArrayFromStorage("xpHistoryLog");
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : "";
+
+    const duplicate = history.some(function(item) {
+        return item.source === String(source || "XP") &&
+            Number(item.amount || 0) === xpAmount &&
+            item.detail === String(detail || "") &&
+            item.category === String(category || "General") &&
+            item.dateKey === todayKey;
+    });
+
+    if (duplicate && uniqueKey) {
+        return false;
+    }
+
+    history.unshift({
+        id: String(Date.now()) + "-" + String(Math.floor(Math.random() * 100000)),
+        source: String(source || "XP"),
+        amount: xpAmount,
+        detail: String(detail || ""),
+        category: String(category || "General"),
+        dateKey: todayKey,
+        createdAt: new Date().toISOString(),
+        uniqueKey: uniqueKey || null
+    });
+
+    localStorage.setItem("xpHistoryLog", JSON.stringify(history.slice(0, 200)));
+
+    if (typeof updateHomeXpHistory === "function") {
+        updateHomeXpHistory();
+    }
+
+    return true;
+}
+
+/* Override goal XP reward function with stable reward IDs */
+function awardGoalXpForCompletedGoals(goals) {
+    let totalNewXp = 0;
+    let rewardedGoalNames = [];
+
+    goals.forEach(function(goal) {
+        if (!goal.completed) {
+            return;
+        }
+
+        if (goal.xpRewarded === true) {
+            return;
+        }
+
+        const reward = calculateGoalXpReward(goal);
+        const rewardId = "goal-" + goal.id;
+
+        goal.xpRewarded = true;
+        goal.xpReward = reward;
+        goal.xpRewardId = rewardId;
+        goal.xpAwardedAt = new Date().toISOString();
+        goal.xpIgnoredForBalance = false;
+
+        totalNewXp += reward;
+        rewardedGoalNames.push(goal.title + " +" + reward + " XP");
+
+        addXpHistoryEvent(
+            "Goal Completed",
+            reward,
+            goal.title,
+            goal.category || "Goal",
+            rewardId
+        );
+    });
+
+    localStorage.setItem("goalXpTotal", String(getBalancedGoalXpTotal()));
+
+    return {
+        xp: totalNewXp,
+        names: rewardedGoalNames
+    };
+}
+
+/* Override mission streak bonus award with stronger daily protection */
+function awardMissionStreakBonusIfReady() {
+    const listeningWins = typeof getNumber === "function" ? getNumber("listeningCount") : 0;
+
+    if (listeningWins < 3) {
+        return false;
+    }
+
+    if (hasClaimedMissionStreakBonusToday()) {
+        return false;
+    }
+
+    const streak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    const safeStreak = Math.max(1, Number(streak || 1));
+    const bonusAmount = getMissionStreakBonusAmount(safeStreak);
+
+    if (bonusAmount <= 0) {
+        return false;
+    }
+
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : "";
+    const eventKey = "mission-streak-bonus-" + todayKey;
+
+    if (localStorage.getItem("xpEventKey-" + eventKey) === "true") {
+        markMissionStreakBonusClaimedToday();
+        return false;
+    }
+
+    markMissionStreakBonusClaimedToday();
+
+    let history = getSafeArrayFromStorage("missionStreakBonusHistory");
+
+    const existsForToday = history.some(function(item) {
+        return item.dateKey === todayKey;
+    });
+
+    if (!existsForToday) {
+        history.unshift({
+            dateKey: todayKey,
+            streak: safeStreak,
+            xp: bonusAmount,
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    localStorage.setItem("missionStreakBonusHistory", JSON.stringify(history.slice(0, 100)));
+    localStorage.setItem("missionStreakBonusXpTotal", String(getBalancedMissionStreakBonusXpTotal()));
+
+    addXpHistoryEvent(
+        "Mission Streak Bonus",
+        bonusAmount,
+        safeStreak + "-day mission streak bonus.",
+        "Streak",
+        eventKey
+    );
+
+    if (typeof updateHomeLevel === "function") {
+        updateHomeLevel();
+    }
+
+    if (typeof updateHomeXpHistory === "function") {
+        updateHomeXpHistory();
+    }
+
+    if (typeof updateHomeStreakBonus === "function") {
+        updateHomeStreakBonus();
+    }
+
+    if (typeof updateHomeXpBalance === "function") {
+        updateHomeXpBalance();
+    }
+
+    if (typeof checkLevelUp === "function") {
+        checkLevelUp();
+    }
+
+    setTimeout(function() {
+        showStreakBonusPopup(bonusAmount, safeStreak);
+    }, 1200);
+
+    return true;
+}
+
+/* Override total XP with balanced totals */
+function getTotalXp() {
+    const listeningXp = getNumber("totalListeningWins") * 5;
+    const focusXp = getNumber("focusSessions") * 10;
+    const concentrationXp = getNumber("concentrationSessions") * 10;
+    const reflectionXp = getReflectionCount() * 10;
+    const goalXp = getBalancedGoalXpTotal();
+    const streakBonusXp = getBalancedMissionStreakBonusXpTotal();
+
+    return listeningXp + focusXp + concentrationXp + reflectionXp + goalXp + streakBonusXp;
+}
+
+/* Override XP breakdown with balanced totals */
+function getXpBreakdownHtml() {
+    const listeningWins = getNumber("totalListeningWins");
+    const focusSessions = getNumber("focusSessions");
+    const concentrationSessions = getNumber("concentrationSessions");
+    const reflectionCount = getReflectionCount();
+    const goalXp = getBalancedGoalXpTotal();
+    const streakBonusXp = getBalancedMissionStreakBonusXpTotal();
+
+    const listeningXp = listeningWins * 5;
+    const focusXp = focusSessions * 10;
+    const concentrationXp = concentrationSessions * 10;
+    const reflectionXp = reflectionCount * 10;
+
+    return `
+        <div class="card">
+            <h2>XP Breakdown</h2>
+            <p><strong>Listening Wins:</strong> ${listeningWins} × 5 XP = ${listeningXp} XP</p>
+            <p><strong>Focus Sessions:</strong> ${focusSessions} × 10 XP = ${focusXp} XP</p>
+            <p><strong>Concentration Sessions:</strong> ${concentrationSessions} × 10 XP = ${concentrationXp} XP</p>
+            <p><strong>Daily Reflections:</strong> ${reflectionCount} × 10 XP = ${reflectionXp} XP</p>
+            <p><strong>Completed Goals:</strong> ${goalXp} XP</p>
+            <p><strong>Mission Streak Bonuses:</strong> ${streakBonusXp} XP</p>
+        </div>
+    `;
+}
+
+function getXpBalanceHtml() {
+    const info = getXpBalanceInfo();
+
+    return `
+        <div class="card xp-balance-card">
+            <h2>XP Balance Status</h2>
+            <h3>${escapeHtml(info.status)}</h3>
+            <p>${escapeHtml(info.message)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Balance Check</h2>
+            <p><strong>Legacy goal rewards:</strong> ${info.legacyGoalRewards}</p>
+            <p><strong>Duplicate XP history entries:</strong> ${info.duplicateHistoryCount}</p>
+            <p><strong>Stored Goal XP:</strong> ${info.storedGoalXp}</p>
+            <p><strong>Balanced Goal XP:</strong> ${info.balancedGoalXp}</p>
+            <p><strong>Stored Streak Bonus XP:</strong> ${info.storedStreakXp}</p>
+            <p><strong>Balanced Streak Bonus XP:</strong> ${info.balancedStreakXp}</p>
+            <p><strong>XP History Events:</strong> ${info.xpHistoryCount}</p>
+            <p><strong>Streak Bonus Records:</strong> ${info.bonusHistoryCount}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Repair Tool</h2>
+            <p>Use this after seeing duplicate XP, like old completed goals being rewarded again.</p>
+            <button id="runXpBalanceRepairBtn">Run XP Balance Repair</button>
+        </div>
+
+        <div class="card">
+            <h2>Protection Rules</h2>
+            <p><strong>Goal XP:</strong> Each goal can only reward XP once.</p>
+            <p><strong>Streak Bonus:</strong> Only one mission streak bonus per day.</p>
+            <p><strong>XP History:</strong> Duplicate history entries are cleaned during repair.</p>
+            <p><strong>Backup Restore:</strong> XP totals are recalculated from balanced records.</p>
+        </div>
+    `;
+}
+
+function openXpBalancePage() {
+    showPage(`
+        <h1>XP Balance</h1>
+
+        ${getXpBalanceHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("runXpBalanceRepairBtn").addEventListener("click", runXpBalanceRepair);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+
+
+const xpBalanceBtn = document.getElementById("xpBalanceBtn");
+
+if (xpBalanceBtn) {
+    xpBalanceBtn.addEventListener("click", function() {
+        openXpBalancePage();
+    });
+}
+
+
+setTimeout(updateHomeXpBalance, 1400);
 </script>
 
 </body>

@@ -1021,3 +1021,12 @@ textarea:focus {
     color: #fb923c;
     white-space: nowrap;
 }
+
+.xp-balance-card {
+    border: 1px solid rgba(99, 102, 241, 0.52);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(49, 46, 129, 0.36));
+}
+
+.xp-balance-card h3 {
+    color: #a5b4fc;
+}
