@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=smartcoachinstantrefresh1">
+    <link rel="stylesheet" href="style.css?v=phase3router1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(p3RefreshActionRouterSystem, 1000);
     setTimeout(refreshPhase3SmartCoachSystems, 900);
     setTimeout(refreshDailyOperatingSystemV2, 800);
     setTimeout(addXpBalanceButtonToQuickActions, 700);
@@ -13032,6 +13033,401 @@ if (!window.p3SmartCoachLiveRefreshIntervalStarted) {
 }
 
 p3ForceSmartCoachInstantRefresh();
+
+
+/* Phase 3 Smart Coach Action Router */
+function p3RouterCurrentHour() {
+    return new Date().getHours();
+}
+
+function p3GetNextCoachAction() {
+    const state = typeof p3GetSmartCoachState === "function"
+        ? p3GetSmartCoachState()
+        : {
+            score: 0,
+            morningSaved: false,
+            middaySaved: false,
+            goalSaved: false,
+            reflectionSaved: false,
+            endReviewSaved: false,
+            listening: 0,
+            mode: "Unknown",
+            priority: "Open Smart Coach."
+        };
+
+    const hour = p3RouterCurrentHour();
+
+    if (!state.morningSaved) {
+        return {
+            label: "Set Morning Command",
+            detail: "Start the day with direction before anything else.",
+            type: "page",
+            page: "morning"
+        };
+    }
+
+    if (state.listening < 3) {
+        return {
+            label: "Add Listening Win",
+            detail: "Complete the listening mission before the day escapes you.",
+            type: "listening"
+        };
+    }
+
+    if (hour >= 11 && !state.middaySaved) {
+        return {
+            label: "Run Midday Reset",
+            detail: "Stop the day from drifting and return to control.",
+            type: "page",
+            page: "midday"
+        };
+    }
+
+    if (!state.goalSaved) {
+        return {
+            label: "Create Goal Execution Plan",
+            detail: "Turn one goal into a clear next action.",
+            type: "page",
+            page: "goal"
+        };
+    }
+
+    if (state.score < 50) {
+        return {
+            label: "Enter Recovery Mode",
+            detail: "Stabilize the day with one small action.",
+            type: "page",
+            page: "recovery"
+        };
+    }
+
+    if (hour >= 18 && (!state.reflectionSaved || !state.endReviewSaved)) {
+        return {
+            label: "Close the Day",
+            detail: "Complete your reflection or night review.",
+            type: "page",
+            page: "night"
+        };
+    }
+
+    return {
+        label: "Open Daily OS",
+        detail: "Your system is stable. Review the full command center.",
+        type: "page",
+        page: "dailyos"
+    };
+}
+
+function p3OpenRoutePage(page) {
+    if (page === "morning" && typeof openMorningCommandCenterPage === "function") {
+        openMorningCommandCenterPage();
+        return;
+    }
+
+    if (page === "midday" && typeof openMiddayResetCheckPage === "function") {
+        openMiddayResetCheckPage();
+        return;
+    }
+
+    if (page === "goal" && typeof openGoalExecutionPlanPage === "function") {
+        openGoalExecutionPlanPage();
+        return;
+    }
+
+    if (page === "night" && typeof openNightReviewScorePage === "function") {
+        openNightReviewScorePage();
+        return;
+    }
+
+    if (page === "recovery" && typeof openSmartCoachRecoveryActionPage === "function") {
+        openSmartCoachRecoveryActionPage();
+        return;
+    }
+
+    if (typeof openDailyOperatingSystemPage === "function") {
+        openDailyOperatingSystemPage();
+        return;
+    }
+
+    if (typeof openSmartDailyCoachPage === "function") {
+        openSmartDailyCoachPage();
+    }
+}
+
+function p3ExecuteNextCoachAction() {
+    const action = p3GetNextCoachAction();
+
+    if (action.type === "listening") {
+        if (typeof masterAddListeningWin === "function") {
+            masterAddListeningWin();
+        }
+
+        if (typeof p3ForceSmartCoachInstantRefresh === "function") {
+            p3ForceSmartCoachInstantRefresh();
+        }
+
+        if (typeof p3RefreshSmartCoachPage === "function") {
+            p3RefreshSmartCoachPage();
+        }
+
+        return;
+    }
+
+    p3OpenRoutePage(action.page);
+}
+
+function p3GetActionRouterHtml() {
+    const action = p3GetNextCoachAction();
+
+    return `
+        <div class="card p3-action-router-card">
+            <h2>Coach Action Router</h2>
+            <h3>${p3Escape(action.label)}</h3>
+            <p>${p3Escape(action.detail)}</p>
+            <button id="p3DoNextActionBtn">Do Next Action</button>
+        </div>
+    `;
+}
+
+function openSmartCoachRecoveryActionPage() {
+    showPage(`
+        <h1>Recovery Mode</h1>
+
+        <div class="card p3-recovery-card">
+            <h2>Stabilize the Day</h2>
+            <p>The goal is not perfection. The goal is to stop the slide and return to control.</p>
+        </div>
+
+        <div class="card">
+            <h2>Recovery Steps</h2>
+            <p><strong>1.</strong> Pause for 10 seconds.</p>
+            <p><strong>2.</strong> Complete one listening win or one goal step.</p>
+            <p><strong>3.</strong> Save a reset or review.</p>
+        </div>
+
+        <div class="card p3-action-card">
+            <h2>Recovery Actions</h2>
+            <button id="p3RecoveryListeningBtn">+ Add Listening Win</button>
+            <button id="p3RecoveryMiddayBtn">Open Midday Reset</button>
+            <button id="p3RecoveryGoalBtn">Open Goal Execution Plan</button>
+            <button id="p3RecoveryNightBtn">Open Night Review</button>
+        </div>
+
+        <button id="backBtn">Back to Smart Coach</button>
+    `);
+
+    document.getElementById("p3RecoveryListeningBtn").addEventListener("click", function() {
+        if (typeof masterAddListeningWin === "function") {
+            masterAddListeningWin();
+        }
+
+        if (typeof p3ForceSmartCoachInstantRefresh === "function") {
+            p3ForceSmartCoachInstantRefresh();
+        }
+
+        openSmartDailyCoachPage();
+    });
+
+    document.getElementById("p3RecoveryMiddayBtn").addEventListener("click", function() {
+        p3OpenRoutePage("midday");
+    });
+
+    document.getElementById("p3RecoveryGoalBtn").addEventListener("click", function() {
+        p3OpenRoutePage("goal");
+    });
+
+    document.getElementById("p3RecoveryNightBtn").addEventListener("click", function() {
+        p3OpenRoutePage("night");
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openSmartDailyCoachPage);
+}
+
+/* Inject Action Router into Smart Coach page */
+if (typeof p3GetSmartCoachHtml === "function" && !window.p3ActionRouterHtmlWrapped) {
+    window.p3ActionRouterHtmlWrapped = true;
+
+    const oldP3GetSmartCoachHtmlRouter = p3GetSmartCoachHtml;
+
+    p3GetSmartCoachHtml = function() {
+        const html = oldP3GetSmartCoachHtmlRouter();
+
+        if (html.includes("p3-action-router-card")) {
+            return html;
+        }
+
+        return html + p3GetActionRouterHtml();
+    };
+}
+
+function p3AttachActionRouterButtons() {
+    const nextBtn = document.getElementById("p3DoNextActionBtn");
+
+    if (nextBtn) {
+        nextBtn.onclick = function(event) {
+            event.preventDefault();
+            p3ExecuteNextCoachAction();
+        };
+    }
+
+    const homeNextBtn = document.getElementById("p3HomeDoNextActionBtn");
+
+    if (homeNextBtn) {
+        homeNextBtn.onclick = function(event) {
+            event.preventDefault();
+            p3ExecuteNextCoachAction();
+        };
+    }
+}
+
+function p3EnsureHomeActionRouterButton() {
+    const card = document.getElementById("smartDailyCoachHomeCard");
+
+    if (!card) {
+        return;
+    }
+
+    if (document.getElementById("p3HomeDoNextActionBtn")) {
+        return;
+    }
+
+    const action = p3GetNextCoachAction();
+    const button = document.createElement("button");
+
+    button.id = "p3HomeDoNextActionBtn";
+    button.type = "button";
+    button.textContent = "Do Next Action";
+    button.className = "p3-router-home-btn";
+
+    const small = document.createElement("p");
+    small.id = "p3HomeNextActionText";
+    small.innerHTML = "<strong>Next:</strong> " + p3Escape(action.label);
+
+    card.appendChild(small);
+    card.appendChild(button);
+
+    p3AttachActionRouterButtons();
+}
+
+function p3RefreshHomeActionRouterText() {
+    const text = document.getElementById("p3HomeNextActionText");
+
+    if (!text) {
+        return;
+    }
+
+    const action = p3GetNextCoachAction();
+    text.innerHTML = "<strong>Next:</strong> " + p3Escape(action.label);
+}
+
+/* Wrap Smart Coach opening so the router button always attaches */
+if (typeof openSmartDailyCoachPage === "function" && !window.p3OpenSmartCoachRouterWrapped) {
+    window.p3OpenSmartCoachRouterWrapped = true;
+
+    const oldOpenSmartDailyCoachPageRouter = openSmartDailyCoachPage;
+
+    openSmartDailyCoachPage = function() {
+        oldOpenSmartDailyCoachPageRouter();
+
+        setTimeout(p3AttachActionRouterButtons, 100);
+        setTimeout(p3AttachActionRouterButtons, 300);
+        setTimeout(p3AttachActionRouterButtons, 700);
+    };
+}
+
+/* Wrap Smart Coach refresh so router stays live */
+if (typeof p3RefreshSmartCoachPage === "function" && !window.p3RefreshSmartCoachRouterWrapped) {
+    window.p3RefreshSmartCoachRouterWrapped = true;
+
+    const oldP3RefreshSmartCoachPageRouter = p3RefreshSmartCoachPage;
+
+    p3RefreshSmartCoachPage = function() {
+        oldP3RefreshSmartCoachPageRouter();
+
+        setTimeout(p3AttachActionRouterButtons, 100);
+        setTimeout(p3AttachActionRouterButtons, 300);
+    };
+}
+
+/* Wrap home card refresh */
+if (typeof refreshSmartCoachHomeCard === "function" && !window.p3HomeRouterWrapped) {
+    window.p3HomeRouterWrapped = true;
+
+    const oldRefreshSmartCoachHomeCardRouter = refreshSmartCoachHomeCard;
+
+    refreshSmartCoachHomeCard = function() {
+        oldRefreshSmartCoachHomeCardRouter();
+
+        setTimeout(p3EnsureHomeActionRouterButton, 500);
+        setTimeout(p3EnsureHomeActionRouterButton, 1200);
+        setTimeout(p3EnsureHomeActionRouterButton, 2400);
+        setTimeout(p3RefreshHomeActionRouterText, 2600);
+    };
+}
+
+/* Global click fallback */
+document.addEventListener("click", function(event) {
+    const button = event.target.closest("button");
+
+    if (!button) {
+        return;
+    }
+
+    if (button.id === "p3DoNextActionBtn" || button.id === "p3HomeDoNextActionBtn") {
+        event.preventDefault();
+        p3ExecuteNextCoachAction();
+    }
+
+    const text = button.textContent.trim().toLowerCase();
+
+    if (text.includes("add listening win")) {
+        setTimeout(function() {
+            p3RefreshHomeActionRouterText();
+            p3AttachActionRouterButtons();
+        }, 250);
+    }
+}, true);
+
+/* Add Action Router to System Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.p3ActionRouterHealthWrapped) {
+    window.p3ActionRouterHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksRouter = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksRouter();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Smart Coach Action Router";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Smart Coach Action Router",
+                "PASS",
+                "Coach can now route you to the next correct action.",
+                "Use Do Next Action when you are unsure what to do next."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function p3RefreshActionRouterSystem() {
+    setTimeout(p3EnsureHomeActionRouterButton, 500);
+    setTimeout(p3EnsureHomeActionRouterButton, 1500);
+    setTimeout(p3EnsureHomeActionRouterButton, 2500);
+    setTimeout(p3AttachActionRouterButtons, 500);
+    setTimeout(p3AttachActionRouterButtons, 1500);
+    setTimeout(p3RefreshHomeActionRouterText, 1800);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+p3RefreshActionRouterSystem();
 
 </script>
 
