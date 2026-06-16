@@ -1204,3 +1204,115 @@ textarea:focus {
     margin: 6px 0;
     color: #cbd5e1;
 }
+
+.dashboard-section-title {
+    margin: 28px 0 12px;
+    padding: 0 4px;
+}
+
+.dashboard-section-title h2 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 22px;
+}
+
+.dashboard-section-title p {
+    margin: 4px 0 0;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.priority-dashboard-card {
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.3);
+}
+
+.secondary-dashboard-card.dashboard-card-hidden {
+    display: none;
+}
+
+.dashboard-more-card {
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.5));
+}
+
+.dashboard-nav-upgrade {
+    margin-top: 28px;
+}
+
+.dashboard-button-group {
+    background: rgba(15, 23, 42, 0.76);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 22px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.dashboard-button-group h2 {
+    margin: 0 0 4px;
+    color: #f8fafc;
+    font-size: 18px;
+}
+
+.dashboard-button-group p {
+    margin: 0 0 14px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.dashboard-button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.upgraded-nav-button {
+    margin: 0 !important;
+    min-height: 48px;
+    font-size: 14px;
+    border-radius: 14px;
+}
+
+#progressBtn,
+#goalsBtn,
+#focusTimerBtn,
+#concentrationBtn,
+#reflectionBtn {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+#disciplineCoachBtn,
+#dailyReviewBtn,
+#weeklyReportBtn,
+#smartSuggestionsBtn,
+#weaknessBtn,
+#streakProtectionBtn {
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+}
+
+#levelBtn,
+#achievementsBtn,
+#statisticsBtn,
+#chartsDashboardBtn,
+#xpHistoryBtn,
+#streakBonusBtn,
+#xpBalanceBtn,
+#backupDataBtn,
+#reflectionHistoryBtn,
+#settingsBtn {
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+}
+
+@media (max-width: 420px) {
+    .dashboard-button-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.compact-details-card {
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.55));
+}
+
+.compact-details-card button {
+    background: linear-gradient(135deg, #64748b, #334155);
+}

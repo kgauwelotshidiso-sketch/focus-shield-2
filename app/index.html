@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=chartsdashboard1">
+    <link rel="stylesheet" href="style.css?v=compacthomefix1">
 </head>
 <body>
 
@@ -2476,6 +2476,8 @@ function showPage(content) {
 }
 
 function goHome() {
+    resetDashboardOrganizedFlag();
+    setTimeout(organizeHomeDashboard, 300);
     setTimeout(refreshPhase2DashboardCards, 80);
     location.reload();
 }
@@ -5977,6 +5979,415 @@ if (chartsDashboardBtn) {
 
 
 setTimeout(updateHomeChartsDashboard, 1600);
+
+/* Dashboard Cleanup / Navigation Upgrade */
+function getNearestCardByChildId(childId) {
+    const child = document.getElementById(childId);
+
+    if (!child) {
+        return null;
+    }
+
+    return child.closest(".card");
+}
+
+function createDashboardSectionTitle(title, subtitle) {
+    const section = document.createElement("div");
+    section.className = "dashboard-section-title";
+    section.innerHTML = `
+        <h2>${title}</h2>
+        <p>${subtitle}</p>
+    `;
+
+    return section;
+}
+
+function insertSectionBeforeCard(card, title, subtitle) {
+    if (!card) {
+        return;
+    }
+
+    const previous = card.previousElementSibling;
+
+    if (previous && previous.classList && previous.classList.contains("dashboard-section-title")) {
+        return;
+    }
+
+    card.parentNode.insertBefore(createDashboardSectionTitle(title, subtitle), card);
+}
+
+function organizeDashboardButtons() {
+    const buttonIds = [
+        "goalsBtn",
+        "focusTimerBtn",
+        "concentrationBtn",
+        "progressBtn",
+        "dailyReviewBtn",
+        "weeklyReportBtn",
+        "weaknessBtn",
+        "smartSuggestionsBtn",
+        "disciplineCoachBtn",
+        "streakProtectionBtn",
+        "levelBtn",
+        "achievementsBtn",
+        "statisticsBtn",
+        "chartsDashboardBtn",
+        "xpHistoryBtn",
+        "streakBonusBtn",
+        "xpBalanceBtn",
+        "backupDataBtn",
+        "reflectionBtn",
+        "reflectionHistoryBtn",
+        "settingsBtn"
+    ];
+
+    const existingButtons = buttonIds
+        .map(function(id) {
+            return document.getElementById(id);
+        })
+        .filter(function(button) {
+            return button !== null;
+        });
+
+    if (existingButtons.length === 0) {
+        return;
+    }
+
+    if (document.getElementById("dashboardNavUpgrade")) {
+        return;
+    }
+
+    const navWrapper = document.createElement("div");
+    navWrapper.id = "dashboardNavUpgrade";
+    navWrapper.className = "dashboard-nav-upgrade";
+
+    const primaryGroup = document.createElement("div");
+    primaryGroup.className = "dashboard-button-group";
+    primaryGroup.innerHTML = `
+        <h2>Core Actions</h2>
+        <p>Use these every day.</p>
+    `;
+
+    const coachGroup = document.createElement("div");
+    coachGroup.className = "dashboard-button-group";
+    coachGroup.innerHTML = `
+        <h2>Coach System</h2>
+        <p>Review your discipline direction.</p>
+    `;
+
+    const progressGroup = document.createElement("div");
+    progressGroup.className = "dashboard-button-group";
+    progressGroup.innerHTML = `
+        <h2>Progress & Data</h2>
+        <p>Track, analyze, and protect your data.</p>
+    `;
+
+    const primaryIds = [
+        "progressBtn",
+        "goalsBtn",
+        "focusTimerBtn",
+        "concentrationBtn",
+        "reflectionBtn"
+    ];
+
+    const coachIds = [
+        "disciplineCoachBtn",
+        "dailyReviewBtn",
+        "weeklyReportBtn",
+        "smartSuggestionsBtn",
+        "weaknessBtn",
+        "streakProtectionBtn"
+    ];
+
+    const progressIds = [
+        "levelBtn",
+        "achievementsBtn",
+        "statisticsBtn",
+        "chartsDashboardBtn",
+        "xpHistoryBtn",
+        "streakBonusBtn",
+        "xpBalanceBtn",
+        "backupDataBtn",
+        "reflectionHistoryBtn",
+        "settingsBtn"
+    ];
+
+    function moveButtons(ids, group) {
+        const grid = document.createElement("div");
+        grid.className = "dashboard-button-grid";
+
+        ids.forEach(function(id) {
+            const button = document.getElementById(id);
+
+            if (button) {
+                grid.appendChild(button);
+            }
+        });
+
+        group.appendChild(grid);
+    }
+
+    moveButtons(primaryIds, primaryGroup);
+    moveButtons(coachIds, coachGroup);
+    moveButtons(progressIds, progressGroup);
+
+    navWrapper.appendChild(primaryGroup);
+    navWrapper.appendChild(coachGroup);
+    navWrapper.appendChild(progressGroup);
+
+    const firstButton = existingButtons[0];
+    const oldParent = firstButton.parentNode;
+
+    oldParent.insertBefore(navWrapper, firstButton);
+
+    existingButtons.forEach(function(button) {
+        button.classList.add("upgraded-nav-button");
+    });
+}
+
+function createDashboardMoreToggle() {
+    if (document.getElementById("dashboardMoreToggleBtn")) {
+        return;
+    }
+
+    const secondaryCards = document.querySelectorAll(".secondary-dashboard-card");
+
+    if (secondaryCards.length === 0) {
+        return;
+    }
+
+    const toggleCard = document.createElement("div");
+    toggleCard.className = "card dashboard-more-card";
+    toggleCard.innerHTML = `
+        <h2>More Dashboard Details</h2>
+        <p>Show or hide the extra tracking cards on the home screen.</p>
+        <button id="dashboardMoreToggleBtn">Show More Details</button>
+    `;
+
+    const firstSecondary = secondaryCards[0];
+    firstSecondary.parentNode.insertBefore(toggleCard, firstSecondary);
+
+    let expanded = localStorage.getItem("dashboardMoreExpanded") === "true";
+
+    function applyMoreState() {
+        secondaryCards.forEach(function(card) {
+            if (expanded) {
+                card.classList.remove("dashboard-card-hidden");
+            } else {
+                card.classList.add("dashboard-card-hidden");
+            }
+        });
+
+        const button = document.getElementById("dashboardMoreToggleBtn");
+
+        if (button) {
+            button.textContent = expanded ? "Hide More Details" : "Show More Details";
+        }
+
+        localStorage.setItem("dashboardMoreExpanded", expanded ? "true" : "false");
+    }
+
+    document.getElementById("dashboardMoreToggleBtn").addEventListener("click", function() {
+        expanded = !expanded;
+        applyMoreState();
+    });
+
+    applyMoreState();
+}
+
+function organizeHomeDashboard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.body.dataset.dashboardOrganized === "true") {
+        return;
+    }
+
+    document.body.dataset.dashboardOrganized = "true";
+
+    const missionCard = getNearestCardByChildId("homeMissionProgress");
+    const dailyScoreCard = getNearestCardByChildId("homeDailyScore");
+    const coachCard = getNearestCardByChildId("homeCoachVerdict");
+    const statsCard = getNearestCardByChildId("homeStatisticsTitle");
+
+    insertSectionBeforeCard(missionCard, "Today", "Your immediate discipline mission.");
+    insertSectionBeforeCard(dailyScoreCard, "Coach Intelligence", "Scores, decisions, and next actions.");
+    insertSectionBeforeCard(coachCard, "Main Coach Command", "The instruction to follow next.");
+    insertSectionBeforeCard(statsCard, "Progress Overview", "Long-term growth, XP, charts, and data.");
+
+    const secondaryIds = [
+        "homeBadgeCount",
+        "homeLevel",
+        "homeWeeklyAverage",
+        "homeWeaknessTitle",
+        "homeBackupStatus",
+        "homeGoalSystemTitle",
+        "homeXpHistoryTitle",
+        "homeStreakBonusTitle",
+        "homeXpBalanceTitle",
+        "homeChartsTitle"
+    ];
+
+    secondaryIds.forEach(function(id) {
+        const card = getNearestCardByChildId(id);
+
+        if (card) {
+            card.classList.add("secondary-dashboard-card");
+        }
+    });
+
+    const priorityIds = [
+        "homeMissionProgress",
+        "dailyQuoteText",
+        "homeDailyScore",
+        "homeCoachVerdict",
+        "homeStreakProtectionTitle",
+        "homeSmartSuggestionTitle",
+        "homeStatisticsTitle"
+    ];
+
+    priorityIds.forEach(function(id) {
+        const card = getNearestCardByChildId(id);
+
+        if (card) {
+            card.classList.add("priority-dashboard-card");
+        }
+    });
+
+    organizeDashboardButtons();
+    createDashboardMoreToggle();
+}
+
+function resetDashboardOrganizedFlag() {
+    document.body.dataset.dashboardOrganized = "false";
+}
+
+setTimeout(organizeHomeDashboard, 400);
+setTimeout(organizeHomeDashboard, 1000);
+setTimeout(organizeHomeDashboard, 1800);
+
+
+/* Compact Home Dashboard Fix */
+function getCardByHeadingText(headingText) {
+    const cards = Array.from(document.querySelectorAll(".card"));
+
+    return cards.find(function(card) {
+        const heading = card.querySelector("h2");
+
+        if (!heading) {
+            return false;
+        }
+
+        return heading.textContent.trim().toLowerCase() === headingText.toLowerCase();
+    });
+}
+
+function getHomeCardsToHide() {
+    const hideHeadings = [
+        "Backup / Export Data",
+        "Goal System",
+        "XP History",
+        "XP Streak Bonus",
+        "XP Balance",
+        "Charts Dashboard",
+        "Current Streak",
+        "Longest Streak",
+        "Total Listening Wins",
+        "This Week's Wins",
+        "Achievement Badges",
+        "Discipline Level",
+        "Focus Sessions",
+        "Total Focus Time",
+        "Concentration Sessions",
+        "Total Concentration Time",
+        "Today's Affirmation",
+        "Daily Reflection"
+    ];
+
+    return hideHeadings
+        .map(getCardByHeadingText)
+        .filter(function(card) {
+            return card !== undefined && card !== null;
+        });
+}
+
+function rebuildCompactHomeDetailsToggle() {
+    const oldToggle = document.getElementById("compactHomeDetailsToggle");
+
+    if (oldToggle) {
+        oldToggle.remove();
+    }
+
+    const cardsToHide = getHomeCardsToHide();
+
+    if (cardsToHide.length === 0) {
+        return;
+    }
+
+    const toggleCard = document.createElement("div");
+    toggleCard.id = "compactHomeDetailsToggle";
+    toggleCard.className = "card compact-details-card";
+    toggleCard.innerHTML = `
+        <h2>Extra Dashboard Details</h2>
+        <p>Show badges, XP, goals, streaks, and full tracking cards.</p>
+        <button id="compactDetailsBtn">Show More Details</button>
+    `;
+
+    const progressOverview = Array.from(document.querySelectorAll(".dashboard-section-title"))
+        .find(function(section) {
+            const heading = section.querySelector("h2");
+            return heading && heading.textContent.trim() === "Progress Overview";
+        });
+
+    if (progressOverview) {
+        progressOverview.parentNode.insertBefore(toggleCard, progressOverview.nextSibling);
+    } else {
+        cardsToHide[0].parentNode.insertBefore(toggleCard, cardsToHide[0]);
+    }
+
+    let expanded = localStorage.getItem("compactHomeExpanded") === "true";
+
+    function applyState() {
+        cardsToHide.forEach(function(card) {
+            card.style.display = expanded ? "" : "none";
+        });
+
+        const button = document.getElementById("compactDetailsBtn");
+
+        if (button) {
+            button.textContent = expanded ? "Hide More Details" : "Show More Details";
+        }
+
+        localStorage.setItem("compactHomeExpanded", expanded ? "true" : "false");
+    }
+
+    document.getElementById("compactDetailsBtn").addEventListener("click", function() {
+        expanded = !expanded;
+        applyState();
+    });
+
+    applyState();
+}
+
+function compactHomeDashboardFix() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    rebuildCompactHomeDetailsToggle();
+
+    const oldMoreCard = document.querySelector(".dashboard-more-card");
+
+    if (oldMoreCard) {
+        oldMoreCard.style.display = "none";
+    }
+}
+
+setTimeout(compactHomeDashboardFix, 500);
+setTimeout(compactHomeDashboardFix, 1200);
+setTimeout(compactHomeDashboardFix, 2200);
+
 </script>
 
 </body>
