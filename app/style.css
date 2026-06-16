@@ -1542,3 +1542,61 @@ textarea:focus {
 .daily-end-review-card button {
     background: linear-gradient(135deg, #a855f7, #7c3aed);
 }
+
+.end-review-history-card {
+    border: 1px solid rgba(217, 70, 239, 0.48);
+    background:
+        radial-gradient(circle at top right, rgba(217, 70, 239, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(112, 26, 117, 0.32));
+}
+
+.end-review-history-card h3 {
+    color: #e879f9;
+}
+
+.end-review-history-card button {
+    background: linear-gradient(135deg, #d946ef, #9333ea);
+}
+
+.end-review-history-item {
+    border: 1px solid rgba(217, 70, 239, 0.26);
+}
+
+.end-review-history-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.end-review-history-top h2 {
+    margin: 0 0 5px;
+}
+
+.end-review-history-top p {
+    margin: 0;
+    color: #94a3b8;
+}
+
+.end-review-history-top strong {
+    color: #e879f9;
+    font-size: 20px;
+    white-space: nowrap;
+}
+
+.end-review-history-section {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.end-review-history-section h3 {
+    margin: 0 0 8px;
+    color: #cbd5e1;
+    font-size: 15px;
+}
+
+.end-review-history-section p {
+    margin: 6px 0;
+}

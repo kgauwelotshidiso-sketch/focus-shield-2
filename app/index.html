@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=dailyendreview1">
+    <link rel="stylesheet" href="style.css?v=endreviewhistory1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    refreshEndReviewHistoryHomeCard();
     refreshDailyEndReviewHomeCard();
     refreshDailyStartPlanHomeCard();
     refreshPremiumQuickActions();
@@ -8345,6 +8346,242 @@ function refreshDailyEndReviewHomeCard() {
 }
 
 refreshDailyEndReviewHomeCard();
+
+
+/* End Review History System */
+function safeEndHistoryEscape(value) {
+    if (typeof escapeHtml === "function") {
+        return escapeHtml(String(value || ""));
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getEndReviewHistoryEntries() {
+    const history = typeof getEndReviewHistory === "function"
+        ? getEndReviewHistory()
+        : {};
+
+    return Object.keys(history)
+        .map(function(dateKey) {
+            const item = history[dateKey] || {};
+            item.dateKey = item.dateKey || dateKey;
+            return item;
+        })
+        .sort(function(a, b) {
+            return String(b.dateKey || "").localeCompare(String(a.dateKey || ""));
+        });
+}
+
+function formatEndReviewDate(dateKey) {
+    if (!dateKey) {
+        return "Unknown date";
+    }
+
+    try {
+        const parts = String(dateKey).split("-");
+        const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+
+        return date.toLocaleDateString(undefined, {
+            weekday: "short",
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        });
+    } catch (error) {
+        return dateKey;
+    }
+}
+
+function getEndReviewHistorySummary() {
+    const entries = getEndReviewHistoryEntries();
+
+    const total = entries.length;
+    const strong = entries.filter(function(item) { return item.verdict === "Strong"; }).length;
+    const protectedDays = entries.filter(function(item) { return item.verdict === "Protected"; }).length;
+    const recoverable = entries.filter(function(item) { return item.verdict === "Recoverable"; }).length;
+    const weak = entries.filter(function(item) { return item.verdict === "Weak"; }).length;
+
+    let totalScore = 0;
+
+    entries.forEach(function(item) {
+        totalScore += Number(item.score || 0);
+    });
+
+    const averageScore = total > 0 ? Math.round(totalScore / total) : 0;
+
+    return {
+        total: total,
+        strong: strong,
+        protectedDays: protectedDays,
+        recoverable: recoverable,
+        weak: weak,
+        averageScore: averageScore
+    };
+}
+
+function getEndReviewHistoryItemsHtml() {
+    const entries = getEndReviewHistoryEntries();
+
+    if (entries.length === 0) {
+        return `
+            <div class="card">
+                <h2>No End Reviews Yet</h2>
+                <p>Save your first Daily End Review and it will appear here.</p>
+            </div>
+        `;
+    }
+
+    let html = "";
+
+    entries.forEach(function(item) {
+        const completed = Array.isArray(item.completed) && item.completed.length > 0
+            ? item.completed.map(function(action) {
+                return `<p>✅ ${safeEndHistoryEscape(action)}</p>`;
+            }).join("")
+            : `<p>None recorded.</p>`;
+
+        const missed = Array.isArray(item.missed) && item.missed.length > 0
+            ? item.missed.map(function(action) {
+                return `<p>⬜ ${safeEndHistoryEscape(action)}</p>`;
+            }).join("")
+            : `<p>✅ No major actions missed.</p>`;
+
+        html += `
+            <div class="card end-review-history-item">
+                <div class="end-review-history-top">
+                    <div>
+                        <h2>${safeEndHistoryEscape(formatEndReviewDate(item.dateKey))}</h2>
+                        <p>${safeEndHistoryEscape(item.dateKey)}</p>
+                    </div>
+                    <strong>${safeEndHistoryEscape(item.verdict || "Unknown")}</strong>
+                </div>
+
+                <p><strong>Daily Score:</strong> ${Number(item.score || 0)}%</p>
+
+                <div class="end-review-history-section">
+                    <h3>Completed</h3>
+                    ${completed}
+                </div>
+
+                <div class="end-review-history-section">
+                    <h3>Missed</h3>
+                    ${missed}
+                </div>
+
+                <div class="end-review-history-section">
+                    <h3>Biggest Win</h3>
+                    <p>${safeEndHistoryEscape(item.win || "Not written.")}</p>
+                </div>
+
+                <div class="end-review-history-section">
+                    <h3>Lesson</h3>
+                    <p>${safeEndHistoryEscape(item.lesson || "Not written.")}</p>
+                </div>
+
+                <div class="end-review-history-section">
+                    <h3>Correction</h3>
+                    <p>${safeEndHistoryEscape(item.correction || item.tomorrowCorrection || "Not written.")}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function getEndReviewHistoryHtml() {
+    const summary = getEndReviewHistorySummary();
+
+    return `
+        <div class="card end-review-history-card">
+            <h2>History Summary</h2>
+            <h3>${summary.total} Review${summary.total === 1 ? "" : "s"}</h3>
+            <p><strong>Average Score:</strong> ${summary.averageScore}%</p>
+            <p><strong>Strong:</strong> ${summary.strong}</p>
+            <p><strong>Protected:</strong> ${summary.protectedDays}</p>
+            <p><strong>Recoverable:</strong> ${summary.recoverable}</p>
+            <p><strong>Weak:</strong> ${summary.weak}</p>
+        </div>
+
+        <div class="card coach-card">
+            <h2>Purpose</h2>
+            <p>This page helps you notice patterns: what you keep completing, what you keep missing, and what tomorrow must correct.</p>
+        </div>
+
+        ${getEndReviewHistoryItemsHtml()}
+    `;
+}
+
+function openEndReviewHistoryPage() {
+    showPage(`
+        <h1>End Review History</h1>
+
+        ${getEndReviewHistoryHtml()}
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertEndReviewHistoryHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("endReviewHistoryHomeCard")) {
+        return;
+    }
+
+    const endReviewCard = document.getElementById("dailyEndReviewHomeCard");
+    const progressOverview = Array.from(document.querySelectorAll(".dashboard-section-title"))
+        .find(function(section) {
+            const heading = section.querySelector("h2");
+            return heading && heading.textContent.trim() === "Progress Overview";
+        });
+
+    const insertAfter = endReviewCard || progressOverview;
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const summary = getEndReviewHistorySummary();
+
+    const card = document.createElement("div");
+    card.id = "endReviewHistoryHomeCard";
+    card.className = "card end-review-history-card secondary-dashboard-card";
+    card.innerHTML = `
+        <h2>End Review History</h2>
+        <h3>${summary.total} Saved Review${summary.total === 1 ? "" : "s"}</h3>
+        <p>Average end review score: ${summary.averageScore}%</p>
+        <button id="openEndReviewHistoryBtn">Open History</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openEndReviewHistoryBtn").addEventListener("click", openEndReviewHistoryPage);
+}
+
+function refreshEndReviewHistoryHomeCard() {
+    const oldCard = document.getElementById("endReviewHistoryHomeCard");
+
+    if (oldCard) {
+        oldCard.remove();
+    }
+
+    setTimeout(insertEndReviewHistoryHomeCard, 400);
+    setTimeout(insertEndReviewHistoryHomeCard, 1100);
+    setTimeout(insertEndReviewHistoryHomeCard, 1900);
+}
+
+refreshEndReviewHistoryHomeCard();
 
 </script>
 
