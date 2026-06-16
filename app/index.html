@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=xphistory1">
+    <link rel="stylesheet" href="style.css?v=streakbonus1">
 </head>
 <body>
 
@@ -77,6 +77,12 @@
         <h2>XP History</h2>
         <h3 id="homeXpHistoryTitle">0 XP Logged</h3>
         <p id="homeXpHistoryText">Track where your XP comes from.</p>
+    </div>
+
+    <div class="card streak-bonus-card">
+        <h2>XP Streak Bonus</h2>
+        <h3 id="homeStreakBonusTitle">Not Claimed</h3>
+        <p id="homeStreakBonusText">Complete today’s mission to earn bonus XP.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -157,6 +163,7 @@
     <button id="disciplineCoachBtn">Discipline Coach</button>
     <button id="streakProtectionBtn">Streak Protection</button>
     <button id="xpHistoryBtn">XP History</button>
+    <button id="streakBonusBtn">Streak Bonus</button>
     <button id="backupDataBtn">Backup Data</button>
     <button id="levelBtn">Level</button>
     <button id="achievementsBtn">Achievements</button>
@@ -2842,6 +2849,7 @@ document.getElementById("progressBtn").addEventListener("click", function() {
         document.getElementById("weeklyHistory").innerHTML = getWeeklyHistoryHtml();
         autoProgressFocusShieldGoals("Listening", 1);
         addXpHistoryEvent("Listening Win", 5, "Added one listening win.", "Listening");
+        awardMissionStreakBonusIfReady();
 
         checkBadgeUnlocks();
         checkLevelUp();
@@ -4606,6 +4614,330 @@ if (xpHistoryBtn) {
 
 
 setTimeout(updateHomeXpHistory, 1200);
+
+/* XP Streak Bonus System */
+function getMissionStreakBonusXpTotal() {
+    return Number(localStorage.getItem("missionStreakBonusXpTotal") || 0);
+}
+
+function saveMissionStreakBonusXpTotal(amount) {
+    localStorage.setItem("missionStreakBonusXpTotal", Number(amount || 0));
+}
+
+function getMissionStreakBonusHistory() {
+    const saved = localStorage.getItem("missionStreakBonusHistory");
+
+    if (!saved) {
+        return [];
+    }
+
+    try {
+        const history = JSON.parse(saved);
+
+        if (Array.isArray(history)) {
+            return history;
+        }
+
+        return [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveMissionStreakBonusHistory(history) {
+    localStorage.setItem("missionStreakBonusHistory", JSON.stringify(history));
+}
+
+function getMissionStreakBonusAmount(streak) {
+    const streakValue = Math.max(0, Number(streak || 0));
+
+    if (streakValue >= 7) {
+        return 25;
+    }
+
+    if (streakValue >= 3) {
+        return 15;
+    }
+
+    if (streakValue >= 2) {
+        return 10;
+    }
+
+    if (streakValue >= 1) {
+        return 5;
+    }
+
+    return 0;
+}
+
+function hasClaimedMissionStreakBonusToday() {
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : "";
+    return localStorage.getItem("missionStreakBonusAwarded-" + todayKey) === "true";
+}
+
+function markMissionStreakBonusClaimedToday() {
+    const todayKey = typeof getLocalDateKey === "function" ? getLocalDateKey() : "";
+    localStorage.setItem("missionStreakBonusAwarded-" + todayKey, "true");
+}
+
+function showStreakBonusPopup(amount, streak) {
+    const oldPopup = document.getElementById("streakBonusPopupOverlay");
+
+    if (oldPopup) {
+        oldPopup.remove();
+    }
+
+    const popup = document.createElement("div");
+    popup.id = "streakBonusPopupOverlay";
+    popup.innerHTML = `
+        <div class="streak-bonus-popup">
+            <div class="streak-bonus-popup-icon">&#128293;</div>
+            <h2>Streak Bonus Earned!</h2>
+            <h3>+${amount} XP</h3>
+            <p>${streak}-day mission streak</p>
+            <button id="closeStreakBonusPopupBtn">Continue</button>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById("closeStreakBonusPopupBtn").addEventListener("click", function() {
+        popup.remove();
+    });
+}
+
+function awardMissionStreakBonusIfReady() {
+    const listeningWins = typeof getNumber === "function" ? getNumber("listeningCount") : 0;
+
+    if (listeningWins < 3) {
+        return false;
+    }
+
+    if (hasClaimedMissionStreakBonusToday()) {
+        return false;
+    }
+
+    const streak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    const safeStreak = Math.max(1, Number(streak || 1));
+    const bonusAmount = getMissionStreakBonusAmount(safeStreak);
+
+    if (bonusAmount <= 0) {
+        return false;
+    }
+
+    saveMissionStreakBonusXpTotal(getMissionStreakBonusXpTotal() + bonusAmount);
+    markMissionStreakBonusClaimedToday();
+
+    const history = getMissionStreakBonusHistory();
+
+    history.unshift({
+        dateKey: typeof getLocalDateKey === "function" ? getLocalDateKey() : "",
+        streak: safeStreak,
+        xp: bonusAmount,
+        createdAt: new Date().toISOString()
+    });
+
+    saveMissionStreakBonusHistory(history.slice(0, 100));
+
+    if (typeof addXpHistoryEvent === "function") {
+        addXpHistoryEvent(
+            "Mission Streak Bonus",
+            bonusAmount,
+            safeStreak + "-day mission streak bonus.",
+            "Streak"
+        );
+    }
+
+    if (typeof updateHomeLevel === "function") {
+        updateHomeLevel();
+    }
+
+    if (typeof updateHomeXpHistory === "function") {
+        updateHomeXpHistory();
+    }
+
+    if (typeof updateHomeStreakBonus === "function") {
+        updateHomeStreakBonus();
+    }
+
+    if (typeof checkLevelUp === "function") {
+        checkLevelUp();
+    }
+
+    setTimeout(function() {
+        showStreakBonusPopup(bonusAmount, safeStreak);
+    }, 1200);
+
+    return true;
+}
+
+function updateHomeStreakBonus() {
+    const titleElement = document.getElementById("homeStreakBonusTitle");
+    const textElement = document.getElementById("homeStreakBonusText");
+
+    if (!titleElement || !textElement) {
+        return;
+    }
+
+    const listeningWins = typeof getNumber === "function" ? getNumber("listeningCount") : 0;
+    const streak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    const safeStreak = Math.max(1, Number(streak || 1));
+    const possibleBonus = getMissionStreakBonusAmount(safeStreak);
+
+    if (hasClaimedMissionStreakBonusToday()) {
+        titleElement.textContent = "Claimed Today";
+        textElement.textContent = "+" + possibleBonus + " XP earned from your mission streak.";
+        return;
+    }
+
+    if (listeningWins >= 3) {
+        titleElement.textContent = "Ready";
+        textElement.textContent = "Bonus available: +" + possibleBonus + " XP.";
+        return;
+    }
+
+    const remaining = 3 - Math.min(listeningWins, 3);
+
+    titleElement.textContent = "Not Claimed";
+    textElement.textContent = "Get " + remaining + " more listening win" + (remaining === 1 ? "" : "s") + " to unlock +" + possibleBonus + " XP.";
+}
+
+/* Override XP total to include mission streak bonuses */
+function getTotalXp() {
+    const listeningXp = getNumber("totalListeningWins") * 5;
+    const focusXp = getNumber("focusSessions") * 10;
+    const concentrationXp = getNumber("concentrationSessions") * 10;
+    const reflectionXp = getReflectionCount() * 10;
+    const goalXp = typeof getGoalXpTotal === "function" ? getGoalXpTotal() : 0;
+    const streakBonusXp = getMissionStreakBonusXpTotal();
+
+    return listeningXp + focusXp + concentrationXp + reflectionXp + goalXp + streakBonusXp;
+}
+
+/* Override XP breakdown to include mission streak bonuses */
+function getXpBreakdownHtml() {
+    const listeningWins = getNumber("totalListeningWins");
+    const focusSessions = getNumber("focusSessions");
+    const concentrationSessions = getNumber("concentrationSessions");
+    const reflectionCount = getReflectionCount();
+    const goalXp = typeof getGoalXpTotal === "function" ? getGoalXpTotal() : 0;
+    const streakBonusXp = getMissionStreakBonusXpTotal();
+
+    const listeningXp = listeningWins * 5;
+    const focusXp = focusSessions * 10;
+    const concentrationXp = concentrationSessions * 10;
+    const reflectionXp = reflectionCount * 10;
+
+    return `
+        <div class="card">
+            <h2>XP Breakdown</h2>
+            <p><strong>Listening Wins:</strong> ${listeningWins} × 5 XP = ${listeningXp} XP</p>
+            <p><strong>Focus Sessions:</strong> ${focusSessions} × 10 XP = ${focusXp} XP</p>
+            <p><strong>Concentration Sessions:</strong> ${concentrationSessions} × 10 XP = ${concentrationXp} XP</p>
+            <p><strong>Daily Reflections:</strong> ${reflectionCount} × 10 XP = ${reflectionXp} XP</p>
+            <p><strong>Completed Goals:</strong> ${goalXp} XP</p>
+            <p><strong>Mission Streak Bonuses:</strong> ${streakBonusXp} XP</p>
+        </div>
+    `;
+}
+
+function getStreakBonusHistoryHtml() {
+    const history = getMissionStreakBonusHistory();
+
+    if (history.length === 0) {
+        return `<p>No streak bonuses claimed yet.</p>`;
+    }
+
+    let html = "";
+
+    history.slice(0, 30).forEach(function(item) {
+        let timeText = "";
+
+        try {
+            timeText = new Date(item.createdAt).toLocaleString(undefined, {
+                weekday: "short",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        } catch (error) {
+            timeText = item.dateKey || "";
+        }
+
+        html += `
+            <div class="streak-bonus-history-item">
+                <div>
+                    <h2>${item.streak}-day streak</h2>
+                    <p>${escapeHtml(timeText)}</p>
+                </div>
+                <strong>+${item.xp} XP</strong>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function getStreakBonusHtml() {
+    const streak = typeof getSmartCurrentStreakValue === "function"
+        ? getSmartCurrentStreakValue()
+        : getNumber("currentStreak");
+
+    const safeStreak = Math.max(1, Number(streak || 1));
+    const possibleBonus = getMissionStreakBonusAmount(safeStreak);
+    const totalBonusXp = getMissionStreakBonusXpTotal();
+    const listeningWins = getNumber("listeningCount");
+
+    return `
+        <div class="card streak-bonus-card">
+            <h2>Today's Streak Bonus</h2>
+            <h3>${hasClaimedMissionStreakBonusToday() ? "Claimed" : "Available After Mission"}</h3>
+            <p><strong>Current mission streak:</strong> ${safeStreak} day${safeStreak === 1 ? "" : "s"}</p>
+            <p><strong>Listening wins today:</strong> ${listeningWins} / 3</p>
+            <p><strong>Today's possible bonus:</strong> +${possibleBonus} XP</p>
+            <p><strong>Total streak bonus XP:</strong> ${totalBonusXp} XP</p>
+        </div>
+
+        <div class="card">
+            <h2>Bonus Rules</h2>
+            <p><strong>1-day streak:</strong> +5 XP</p>
+            <p><strong>2-day streak:</strong> +10 XP</p>
+            <p><strong>3–6 day streak:</strong> +15 XP</p>
+            <p><strong>7+ day streak:</strong> +25 XP</p>
+        </div>
+
+        <div class="card">
+            <h2>Bonus History</h2>
+            ${getStreakBonusHistoryHtml()}
+        </div>
+    `;
+}
+
+
+
+const streakBonusBtn = document.getElementById("streakBonusBtn");
+
+if (streakBonusBtn) {
+    streakBonusBtn.addEventListener("click", function() {
+        showPage(`
+            <h1>Streak Bonus</h1>
+
+            ${getStreakBonusHtml()}
+
+            <button id="backBtn">Back</button>
+        `);
+
+        document.getElementById("backBtn").addEventListener("click", goHome);
+    });
+}
+
+
+setTimeout(updateHomeStreakBonus, 1300);
 </script>
 
 </body>
