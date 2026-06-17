@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase2protectiondb1">
+    <link rel="stylesheet" href="style.css?v=phase2urlengine1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshUrlAnalysisEngineSystems, 1500);
     setTimeout(refreshProtectionDatabaseSystems, 1400);
     setTimeout(refreshDailyStartupCheckSystems, 1300);
     setTimeout(refreshSmartCoachWeeklyIntelligenceSystems, 1200);
@@ -16790,6 +16791,558 @@ if (typeof goHome === "function" && !window.fsProtectionGoHomeWrapped) {
 }
 
 refreshProtectionDatabaseSystems();
+
+
+/* Phase 2B URL Analysis Engine v1 */
+function fsUrlEngineEscape(value) {
+    if (typeof fsProtectionEscape === "function") {
+        return fsProtectionEscape(value);
+    }
+
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsUrlEngineNormalizeInput(input) {
+    let value = String(input || "").trim();
+
+    if (!value) {
+        return "";
+    }
+
+    value = value.replace(/\s+/g, "");
+
+    return value;
+}
+
+function fsUrlEngineExtractParts(input) {
+    const original = fsUrlEngineNormalizeInput(input);
+
+    let urlLike = original;
+
+    if (!/^https?:\/\//i.test(urlLike)) {
+        urlLike = "https://" + urlLike;
+    }
+
+    try {
+        const url = new URL(urlLike);
+        const domain = typeof fsProtectionNormalizeDomain === "function"
+            ? fsProtectionNormalizeDomain(url.hostname)
+            : url.hostname.toLowerCase().replace(/^www\./, "");
+
+        return {
+            original: original,
+            normalizedUrl: url.href,
+            protocol: url.protocol.replace(":", ""),
+            domain: domain,
+            path: url.pathname || "/",
+            query: url.search || "",
+            hash: url.hash || "",
+            valid: true
+        };
+    } catch (error) {
+        const domain = typeof fsProtectionExtractDomain === "function"
+            ? fsProtectionExtractDomain(original)
+            : original.toLowerCase();
+
+        return {
+            original: original,
+            normalizedUrl: original,
+            protocol: "",
+            domain: domain,
+            path: "",
+            query: "",
+            hash: "",
+            valid: Boolean(domain),
+            error: "Could not parse as full URL. Treated input as domain."
+        };
+    }
+}
+
+function fsUrlEngineRiskKeywords() {
+    return [
+        "blocked",
+        "temptation",
+        "risk",
+        "unsafe",
+        "bypass",
+        "trigger",
+        "test-risk",
+        "focus-risk"
+    ];
+}
+
+function fsUrlEngineFindKeyword(input) {
+    const value = String(input || "").toLowerCase();
+    const keywords = fsUrlEngineRiskKeywords();
+
+    return keywords.find(function(keyword) {
+        return value.includes(keyword);
+    }) || "";
+}
+
+function fsUrlEngineCategoryRisk(category) {
+    const value = String(category || "").toLowerCase();
+
+    if (!value) {
+        return {
+            risk: "unknown",
+            confidenceBoost: 0
+        };
+    }
+
+    if (
+        value.includes("manual-risk") ||
+        value.includes("test-risk") ||
+        value.includes("keyword-risk") ||
+        value.includes("focus-risk")
+    ) {
+        return {
+            risk: "high",
+            confidenceBoost: 0.1
+        };
+    }
+
+    return {
+        risk: "medium",
+        confidenceBoost: 0.04
+    };
+}
+
+function fsUrlEngineMakeStep(name, status, detail) {
+    return {
+        name: name,
+        status: status,
+        detail: detail
+    };
+}
+
+function fsUrlEngineAnalyze(input, options) {
+    const opts = options || {};
+    const parts = fsUrlEngineExtractParts(input);
+    const steps = [];
+
+    let decision = "ALLOW";
+    let reason = "No blocklist, keyword, or category risk match.";
+    let category = "safe";
+    let confidence = 0.1;
+    let matchedDomain = null;
+    let matchedKeyword = "";
+
+    if (!parts.original) {
+        steps.push(fsUrlEngineMakeStep(
+            "Input Check",
+            "WARN",
+            "No URL or domain was entered."
+        ));
+
+        return {
+            input: "",
+            domain: "",
+            decision: "ALLOW",
+            reason: "No input entered.",
+            category: "empty",
+            confidence: 0,
+            steps: steps,
+            checkedAt: new Date().toISOString()
+        };
+    }
+
+    steps.push(fsUrlEngineMakeStep(
+        "Input Normalization",
+        parts.valid ? "PASS" : "WARN",
+        parts.valid
+            ? "Input normalized successfully."
+            : "Input could not be fully parsed, but domain fallback was used."
+    ));
+
+    steps.push(fsUrlEngineMakeStep(
+        "Domain Extraction",
+        parts.domain ? "PASS" : "WARN",
+        parts.domain
+            ? "Extracted domain: " + parts.domain
+            : "No valid domain extracted."
+    ));
+
+    if (typeof fsProtectionDomainMatchesBlocked === "function") {
+        matchedDomain = fsProtectionDomainMatchesBlocked(parts.domain);
+    }
+
+    if (matchedDomain) {
+        const categoryRisk = fsUrlEngineCategoryRisk(matchedDomain.category);
+
+        decision = "BLOCK";
+        reason = "Domain matched the local blocklist.";
+        category = matchedDomain.category || "blocked-domain";
+        confidence = Math.min(0.99, 0.88 + categoryRisk.confidenceBoost);
+
+        steps.push(fsUrlEngineMakeStep(
+            "Domain Check",
+            "BLOCK",
+            "Matched local blocked domain: " + matchedDomain.domain
+        ));
+
+        steps.push(fsUrlEngineMakeStep(
+            "Category Check",
+            "BLOCK",
+            "Category risk level: " + categoryRisk.risk + "."
+        ));
+    } else {
+        steps.push(fsUrlEngineMakeStep(
+            "Domain Check",
+            "PASS",
+            "Domain was not found in the local blocklist."
+        ));
+    }
+
+    matchedKeyword = fsUrlEngineFindKeyword(parts.original + " " + parts.domain + " " + parts.path);
+
+    if (matchedKeyword && decision !== "BLOCK") {
+        decision = "BLOCK";
+        reason = "URL matched a local risk keyword.";
+        category = "keyword-risk";
+        confidence = 0.86;
+
+        steps.push(fsUrlEngineMakeStep(
+            "Keyword Check",
+            "BLOCK",
+            "Matched risk keyword: " + matchedKeyword + "."
+        ));
+    } else if (matchedKeyword && decision === "BLOCK") {
+        confidence = Math.min(0.99, confidence + 0.03);
+
+        steps.push(fsUrlEngineMakeStep(
+            "Keyword Check",
+            "BLOCK",
+            "Additional keyword signal detected: " + matchedKeyword + "."
+        ));
+    } else {
+        steps.push(fsUrlEngineMakeStep(
+            "Keyword Check",
+            "PASS",
+            "No local risk keyword matched."
+        ));
+    }
+
+    steps.push(fsUrlEngineMakeStep(
+        "Decision Engine",
+        decision === "BLOCK" ? "BLOCK" : "PASS",
+        decision === "BLOCK"
+            ? "Decision is BLOCK with " + Math.round(confidence * 100) + "% confidence."
+            : "Decision is ALLOW with no high-risk signal."
+    ));
+
+    steps.push(fsUrlEngineMakeStep(
+        "Privacy Layer",
+        "PASS",
+        "Attempt logging respects current privacy mode."
+    ));
+
+    const result = {
+        input: parts.original,
+        normalizedUrl: parts.normalizedUrl,
+        protocol: parts.protocol,
+        domain: parts.domain,
+        path: parts.path,
+        query: parts.query,
+        hash: parts.hash,
+        decision: decision,
+        reason: reason,
+        category: category,
+        confidence: confidence,
+        matchedKeyword: matchedKeyword,
+        matchedDomain: matchedDomain ? matchedDomain.domain : "",
+        steps: steps,
+        checkedAt: new Date().toISOString()
+    };
+
+    if (decision === "BLOCK" && opts.logAttempt !== false && typeof fsProtectionLogBlockedAttempt === "function") {
+        fsProtectionLogBlockedAttempt(result);
+    }
+
+    return result;
+}
+
+/* Upgrade the existing Protection Database checker to use the engine */
+if (!window.fsProtectionAnalyzeUrlEngineWrapped) {
+    window.fsProtectionAnalyzeUrlEngineWrapped = true;
+
+    fsProtectionAnalyzeUrl = function(input, options) {
+        return fsUrlEngineAnalyze(input, options);
+    };
+}
+
+function fsUrlEngineStatusClass(status) {
+    if (status === "BLOCK") return "fs-url-step-block";
+    if (status === "WARN") return "fs-url-step-warn";
+    return "fs-url-step-pass";
+}
+
+function fsUrlEngineResultHtml(result) {
+    const stepsHtml = (result.steps || []).map(function(step) {
+        return `
+            <div class="card fs-url-step-card ${fsUrlEngineStatusClass(step.status)}">
+                <h2>${fsUrlEngineEscape(step.name)}</h2>
+                <p><strong>Status:</strong> ${fsUrlEngineEscape(step.status)}</p>
+                <p>${fsUrlEngineEscape(step.detail)}</p>
+            </div>
+        `;
+    }).join("");
+
+    const summaryHtml = result.decision === "BLOCK" ? `
+        <div class="card fs-url-block-card">
+            <h2>Decision: BLOCK</h2>
+            <p><strong>Domain:</strong> ${fsUrlEngineEscape(result.domain)}</p>
+            <p><strong>Category:</strong> ${fsUrlEngineEscape(result.category)}</p>
+            <p><strong>Confidence:</strong> ${Math.round(result.confidence * 100)}%</p>
+            <p><strong>Reason:</strong> ${fsUrlEngineEscape(result.reason)}</p>
+        </div>
+    ` : `
+        <div class="card fs-url-allow-card">
+            <h2>Decision: ALLOW</h2>
+            <p><strong>Domain:</strong> ${fsUrlEngineEscape(result.domain)}</p>
+            <p><strong>Confidence:</strong> ${Math.round(result.confidence * 100)}%</p>
+            <p>${fsUrlEngineEscape(result.reason)}</p>
+        </div>
+    `;
+
+    const intervention = result.decision === "BLOCK" && typeof fsProtectionInterventionHtml === "function"
+        ? fsProtectionInterventionHtml(result)
+        : "";
+
+    return `
+        ${summaryHtml}
+
+        <div class="card">
+            <h2>Extracted URL Data</h2>
+            <p><strong>Input:</strong> ${fsUrlEngineEscape(result.input)}</p>
+            <p><strong>Normalized:</strong> ${fsUrlEngineEscape(result.normalizedUrl || result.input)}</p>
+            <p><strong>Protocol:</strong> ${fsUrlEngineEscape(result.protocol || "—")}</p>
+            <p><strong>Domain:</strong> ${fsUrlEngineEscape(result.domain || "—")}</p>
+            <p><strong>Path:</strong> ${fsUrlEngineEscape(result.path || "—")}</p>
+            <p><strong>Matched Keyword:</strong> ${fsUrlEngineEscape(result.matchedKeyword || "—")}</p>
+            <p><strong>Matched Domain:</strong> ${fsUrlEngineEscape(result.matchedDomain || "—")}</p>
+        </div>
+
+        <div class="card">
+            <h2>Analysis Pipeline</h2>
+            <p>Each step shows how the engine reached the final decision.</p>
+        </div>
+
+        ${stepsHtml}
+
+        ${intervention}
+    `;
+}
+
+function openUrlAnalysisEnginePage() {
+    showPage(`
+        <h1>URL Analysis Engine</h1>
+
+        <div class="card fs-url-engine-hero-card">
+            <h2>Phase 2B Protection Engine v1</h2>
+            <p>Test the decision flow before Android VPN filtering is built.</p>
+        </div>
+
+        <div class="card">
+            <h2>Analyze URL / Domain</h2>
+            <input id="fsUrlEngineInput" placeholder="example: blocked-example.com">
+            <button id="fsUrlEngineAnalyzeBtn">Analyze URL</button>
+            <button id="fsUrlEngineSafeTestBtn">Test Safe Domain</button>
+            <button id="fsUrlEngineBlockedTestBtn">Test Blocked Domain</button>
+        </div>
+
+        <div id="fsUrlEngineResultRoot"></div>
+
+        <div class="card">
+            <h2>Engine Rules</h2>
+            <p><strong>Rule 1:</strong> Block if domain exists in local blocklist.</p>
+            <p><strong>Rule 2:</strong> Block if URL contains a local risk keyword.</p>
+            <p><strong>Rule 3:</strong> Increase confidence when category risk is high.</p>
+            <p><strong>Rule 4:</strong> Show intervention when decision is BLOCK.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    function runAnalysis(value) {
+        const result = fsUrlEngineAnalyze(value);
+        const root = document.getElementById("fsUrlEngineResultRoot");
+
+        if (root) {
+            root.innerHTML = fsUrlEngineResultHtml(result);
+        }
+
+        if (typeof fsProtectionAttachInterventionButtons === "function") {
+            fsProtectionAttachInterventionButtons();
+        }
+    }
+
+    document.getElementById("fsUrlEngineAnalyzeBtn").addEventListener("click", function() {
+        runAnalysis(document.getElementById("fsUrlEngineInput").value.trim());
+    });
+
+    document.getElementById("fsUrlEngineSafeTestBtn").addEventListener("click", function() {
+        document.getElementById("fsUrlEngineInput").value = "normal-study-site.com";
+        runAnalysis("normal-study-site.com");
+    });
+
+    document.getElementById("fsUrlEngineBlockedTestBtn").addEventListener("click", function() {
+        document.getElementById("fsUrlEngineInput").value = "blocked-example.com";
+        runAnalysis("blocked-example.com");
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertUrlEngineIntoProtectionDatabasePage() {
+    const hero = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Phase 2A Local Blocklist";
+        });
+
+    if (!hero) {
+        return;
+    }
+
+    if (document.getElementById("openUrlAnalysisEngineFromDbBtn")) {
+        return;
+    }
+
+    const btn = document.createElement("button");
+    btn.id = "openUrlAnalysisEngineFromDbBtn";
+    btn.type = "button";
+    btn.textContent = "Open URL Analysis Engine";
+    btn.className = "fs-url-engine-btn";
+    btn.addEventListener("click", openUrlAnalysisEnginePage);
+
+    hero.appendChild(btn);
+}
+
+function insertUrlEngineHomeButton() {
+    const card = document.getElementById("protectionDatabaseHomeCard");
+
+    if (!card) {
+        return;
+    }
+
+    if (document.getElementById("openUrlAnalysisEngineHomeBtn")) {
+        return;
+    }
+
+    const btn = document.createElement("button");
+    btn.id = "openUrlAnalysisEngineHomeBtn";
+    btn.type = "button";
+    btn.textContent = "URL Analysis Engine";
+    btn.className = "fs-url-engine-btn";
+    btn.addEventListener("click", openUrlAnalysisEnginePage);
+
+    card.appendChild(btn);
+}
+
+function addUrlEngineQuickButton() {
+    const grid =
+        document.getElementById("premiumPrimaryGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumReviewGrid");
+
+    if (!grid) {
+        return;
+    }
+
+    if (document.getElementById("quickUrlEngineBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickUrlEngineBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">URL</span>
+        <span class="premium-quick-label">URL Engine</span>
+        <span class="premium-quick-sub">Decision flow</span>
+    `;
+
+    button.addEventListener("click", openUrlAnalysisEnginePage);
+
+    grid.appendChild(button);
+}
+
+/* Add URL Engine to System Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsUrlEngineHealthWrapped) {
+    window.fsUrlEngineHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksUrlEngine = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksUrlEngine();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "URL Analysis Engine";
+        });
+
+        if (!alreadyExists) {
+            const test = fsUrlEngineAnalyze("blocked-example.com", { logAttempt: false });
+
+            checks.push(makeHealthCheck(
+                "URL Analysis Engine",
+                test.decision === "BLOCK" ? "PASS" : "WARN",
+                "URL engine test decision for safe blocked test domain: " + test.decision + ".",
+                "Use URL Engine to test the protection decision flow."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshUrlAnalysisEngineSystems() {
+    setTimeout(insertUrlEngineHomeButton, 800);
+    setTimeout(insertUrlEngineHomeButton, 1800);
+    setTimeout(insertUrlEngineHomeButton, 3000);
+
+    setTimeout(addUrlEngineQuickButton, 900);
+    setTimeout(addUrlEngineQuickButton, 1900);
+    setTimeout(addUrlEngineQuickButton, 3100);
+
+    setTimeout(insertUrlEngineIntoProtectionDatabasePage, 500);
+    setTimeout(insertUrlEngineIntoProtectionDatabasePage, 1200);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof openProtectionDatabasePage === "function" && !window.fsUrlEngineProtectionPageWrapped) {
+    window.fsUrlEngineProtectionPageWrapped = true;
+
+    const oldOpenProtectionDatabasePageUrlEngine = openProtectionDatabasePage;
+
+    openProtectionDatabasePage = function() {
+        oldOpenProtectionDatabasePageUrlEngine.apply(this, arguments);
+        setTimeout(insertUrlEngineIntoProtectionDatabasePage, 400);
+        setTimeout(insertUrlEngineIntoProtectionDatabasePage, 1000);
+    };
+}
+
+if (typeof goHome === "function" && !window.fsUrlEngineGoHomeWrapped) {
+    window.fsUrlEngineGoHomeWrapped = true;
+
+    const oldGoHomeUrlEngine = goHome;
+
+    goHome = function() {
+        oldGoHomeUrlEngine.apply(this, arguments);
+        setTimeout(refreshUrlAnalysisEngineSystems, 1000);
+    };
+}
+
+refreshUrlAnalysisEngineSystems();
 
 </script>
 
