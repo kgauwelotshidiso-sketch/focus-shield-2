@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=weeklyconfidence1">
+    <link rel="stylesheet" href="style.css?v=dailyrollover1">
 </head>
 <body>
 
@@ -15316,6 +15316,291 @@ if (typeof p3WeeklyGetHtml === "function" && !window.p3WeeklyHtmlConfidenceWrapp
         `;
     };
 }
+
+
+/* Daily Rollover Guard Fix */
+function fsDailyRolloverTodayKey() {
+    if (typeof getLocalDateKey === "function") {
+        return getLocalDateKey();
+    }
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsDailyRolloverReadJson(key, fallback) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        return value || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsDailyRolloverSaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value || {}));
+}
+
+function fsDailyResetTodayOnly() {
+    const todayKey = fsDailyRolloverTodayKey();
+
+    localStorage.setItem("listeningCount", "0");
+    localStorage.setItem("todayListeningWins", "0");
+    localStorage.setItem("dailyListeningWins", "0");
+    localStorage.setItem("missionListeningWins", "0");
+
+    localStorage.setItem("listeningDate", todayKey);
+    localStorage.setItem("lastListeningDate", todayKey);
+    localStorage.setItem("currentListeningDate", todayKey);
+    localStorage.setItem("todayDate", todayKey);
+    localStorage.setItem("focusShieldDate", todayKey);
+
+    const dailyActionData = typeof getDailyActionData === "function"
+        ? getDailyActionData()
+        : fsDailyRolloverReadJson("dailyActionData", {});
+
+    if (!dailyActionData[todayKey]) {
+        dailyActionData[todayKey] = {};
+    }
+
+    dailyActionData[todayKey].listeningWins = 0;
+    dailyActionData[todayKey].updatedAt = new Date().toISOString();
+    dailyActionData[todayKey].dailyRolloverReset = true;
+
+    if (typeof saveDailyActionData === "function") {
+        saveDailyActionData(dailyActionData);
+    } else {
+        fsDailyRolloverSaveJson("dailyActionData", dailyActionData);
+    }
+
+    localStorage.setItem("focusShieldSystemDay", todayKey);
+    localStorage.setItem("focusShieldLastDailyResetAt", new Date().toISOString());
+}
+
+function fsDailyRolloverGuard() {
+    const todayKey = fsDailyRolloverTodayKey();
+    const storedDay = localStorage.getItem("focusShieldSystemDay");
+
+    if (!storedDay) {
+        fsDailyResetTodayOnly();
+        return true;
+    }
+
+    if (storedDay !== todayKey) {
+        fsDailyResetTodayOnly();
+        return true;
+    }
+
+    return false;
+}
+
+function fsDailyRolloverRefreshUi() {
+    fsDailyRolloverGuard();
+
+    const countText = "0 / 3";
+
+    const ids = [
+        "homeMissionProgress",
+        "forceProgressToday",
+        "quickProgressTodayCount",
+        "listeningCount"
+    ];
+
+    ids.forEach(function(id) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = countText;
+        }
+    });
+
+    const homeMission = document.getElementById("homeMissionProgress");
+
+    if (homeMission) {
+        const card = homeMission.closest(".card");
+        const paragraph = card ? card.querySelector("p") : null;
+
+        if (paragraph) {
+            paragraph.textContent = "Pause and fully listen before speaking at least 3 times today.";
+        }
+    }
+
+    if (typeof masterUpdateProgressDom === "function") {
+        masterUpdateProgressDom();
+    }
+
+    if (typeof updateHomeMissionUnified === "function") {
+        updateHomeMissionUnified();
+    }
+
+    if (typeof refreshDailyTimelineHomeCard === "function") {
+        refreshDailyTimelineHomeCard();
+    }
+
+    if (typeof refreshDailyOperatingSystemV2 === "function") {
+        refreshDailyOperatingSystemV2();
+    }
+
+    if (typeof refreshSmartCoachHomeCard === "function") {
+        refreshSmartCoachHomeCard();
+    }
+
+    if (typeof refreshSmartCoachQuickButton === "function") {
+        refreshSmartCoachQuickButton();
+    }
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+/* Wrap listening count readers so they cannot carry yesterday into today */
+if (typeof masterGetListeningCount === "function" && !window.fsDailyRolloverMasterGetWrapped) {
+    window.fsDailyRolloverMasterGetWrapped = true;
+
+    const oldMasterGetListeningCountDaily = masterGetListeningCount;
+
+    masterGetListeningCount = function() {
+        fsDailyRolloverGuard();
+        return oldMasterGetListeningCountDaily.apply(this, arguments);
+    };
+}
+
+if (typeof getUnifiedTodayListeningCount === "function" && !window.fsDailyRolloverUnifiedGetWrapped) {
+    window.fsDailyRolloverUnifiedGetWrapped = true;
+
+    const oldGetUnifiedTodayListeningCountDaily = getUnifiedTodayListeningCount;
+
+    getUnifiedTodayListeningCount = function() {
+        fsDailyRolloverGuard();
+        return oldGetUnifiedTodayListeningCountDaily.apply(this, arguments);
+    };
+}
+
+if (typeof forceGetTodayListeningCountFinal === "function" && !window.fsDailyRolloverForceGetWrapped) {
+    window.fsDailyRolloverForceGetWrapped = true;
+
+    const oldForceGetTodayListeningCountDaily = forceGetTodayListeningCountFinal;
+
+    forceGetTodayListeningCountFinal = function() {
+        fsDailyRolloverGuard();
+        return oldForceGetTodayListeningCountDaily.apply(this, arguments);
+    };
+}
+
+/* Wrap writers and add button so rollover happens before adding a new win */
+if (typeof masterAddListeningWin === "function" && !window.fsDailyRolloverAddWinWrapped) {
+    window.fsDailyRolloverAddWinWrapped = true;
+
+    const oldMasterAddListeningWinDaily = masterAddListeningWin;
+
+    masterAddListeningWin = function() {
+        fsDailyRolloverGuard();
+        const result = oldMasterAddListeningWinDaily.apply(this, arguments);
+
+        if (typeof p3ForceSmartCoachInstantRefresh === "function") {
+            p3ForceSmartCoachInstantRefresh();
+        }
+
+        return result;
+    };
+}
+
+if (typeof masterWriteListeningCount === "function" && !window.fsDailyRolloverWriteWrapped) {
+    window.fsDailyRolloverWriteWrapped = true;
+
+    const oldMasterWriteListeningCountDaily = masterWriteListeningCount;
+
+    masterWriteListeningCount = function(value) {
+        fsDailyRolloverGuard();
+        return oldMasterWriteListeningCountDaily.apply(this, arguments);
+    };
+}
+
+/* Wrap Progress page */
+if (typeof openMasterProgressPage === "function" && !window.fsDailyRolloverProgressWrapped) {
+    window.fsDailyRolloverProgressWrapped = true;
+
+    const oldOpenMasterProgressPageDaily = openMasterProgressPage;
+
+    openMasterProgressPage = function() {
+        fsDailyRolloverGuard();
+        oldOpenMasterProgressPageDaily.apply(this, arguments);
+        setTimeout(fsDailyRolloverRefreshUi, 150);
+    };
+}
+
+if (typeof openQuickProgressPage === "function" && !window.fsDailyRolloverQuickProgressWrapped) {
+    window.fsDailyRolloverQuickProgressWrapped = true;
+
+    const oldOpenQuickProgressPageDaily = openQuickProgressPage;
+
+    openQuickProgressPage = function() {
+        fsDailyRolloverGuard();
+
+        if (typeof openMasterProgressPage === "function") {
+            openMasterProgressPage();
+            return;
+        }
+
+        oldOpenQuickProgressPageDaily.apply(this, arguments);
+        setTimeout(fsDailyRolloverRefreshUi, 150);
+    };
+}
+
+/* Wrap Home */
+if (typeof goHome === "function" && !window.fsDailyRolloverGoHomeWrapped) {
+    window.fsDailyRolloverGoHomeWrapped = true;
+
+    const oldGoHomeDailyRollover = goHome;
+
+    goHome = function() {
+        fsDailyRolloverGuard();
+        oldGoHomeDailyRollover.apply(this, arguments);
+        setTimeout(fsDailyRolloverRefreshUi, 300);
+        setTimeout(fsDailyRolloverRefreshUi, 1000);
+    };
+}
+
+/* Add health check entry */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsDailyRolloverHealthWrapped) {
+    window.fsDailyRolloverHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksDaily = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksDaily();
+        const todayKey = fsDailyRolloverTodayKey();
+        const storedDay = localStorage.getItem("focusShieldSystemDay");
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Daily Rollover Guard";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Daily Rollover Guard",
+                storedDay === todayKey ? "PASS" : "WARN",
+                storedDay === todayKey
+                    ? "Today’s mission is using the current date: " + todayKey + "."
+                    : "Daily rollover date is not aligned with today.",
+                "Auto-Fix All or opening Home will reset today-only counters."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+/* Run immediately on app load */
+fsDailyRolloverGuard();
+
+setTimeout(fsDailyRolloverRefreshUi, 300);
+setTimeout(fsDailyRolloverRefreshUi, 1200);
+setTimeout(fsDailyRolloverRefreshUi, 2500);
 
 </script>
 
