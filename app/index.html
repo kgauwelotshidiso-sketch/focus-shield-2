@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase2protectionbackup1">
+    <link rel="stylesheet" href="style.css?v=phase2protectiondash1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshProtectionDashboardSystems, 1900);
     setTimeout(refreshProtectionBackupSystems, 1800);
     setTimeout(refreshProtectionBackupSystems, 1800);
     setTimeout(refreshProtectionLockSystems, 1700);
@@ -19211,6 +19212,469 @@ if (typeof goHome === "function" && !window.fsProtectionBackupGoHomeWrapped) {
 }
 
 refreshProtectionBackupSystems();
+
+
+/* Phase 2F Protection Dashboard Summary */
+function fsProtectionDashboardEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsProtectionDashboardTodayKey() {
+    if (typeof fsProtectionTodayKey === "function") return fsProtectionTodayKey();
+    if (typeof fsDailyRolloverTodayKey === "function") return fsDailyRolloverTodayKey();
+    if (typeof masterTodayKey === "function") return masterTodayKey();
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsProtectionDashboardSafeStats() {
+    const stats = typeof fsProtectionGetStats === "function"
+        ? fsProtectionGetStats()
+        : {
+            domains: 0,
+            attempts: 0,
+            todayAttempts: 0,
+            categories: {}
+        };
+
+    const attemptReport = typeof fsAttemptIntelGetReport === "function"
+        ? fsAttemptIntelGetReport()
+        : {
+            riskLevel: "Unknown",
+            weekAttempts: [],
+            todayAttempts: [],
+            weekRecoveries: [],
+            todayRecoveries: [],
+            recoveryRate: 100,
+            topCategory: "No trigger category yet",
+            peakTime: "No peak time yet",
+            command: "Open Protection Database."
+        };
+
+    const lockSettings = typeof fsLockGetSettings === "function"
+        ? fsLockGetSettings()
+        : {
+            pinHash: "",
+            lockEnabled: false,
+            protectionEnabled: true,
+            delayHours: 24,
+            disableRequestedAt: "",
+            disableAvailableAt: ""
+        };
+
+    const protectionEnabled = typeof fsLockProtectionIsEnabled === "function"
+        ? fsLockProtectionIsEnabled()
+        : lockSettings.protectionEnabled !== false;
+
+    const lastBackup = localStorage.getItem("fsProtectionLastBackupAt") || "";
+
+    return {
+        stats: stats,
+        report: attemptReport,
+        lock: lockSettings,
+        protectionEnabled: protectionEnabled,
+        lastBackup: lastBackup
+    };
+}
+
+function fsProtectionDashboardStatus() {
+    const data = fsProtectionDashboardSafeStats();
+    const stats = data.stats;
+    const report = data.report;
+    const lock = data.lock;
+
+    let status = "Protected";
+    let detail = "Protection system is active and stable.";
+    let className = "fs-protection-status-safe";
+
+    if (!data.protectionEnabled) {
+        status = "Protection Disabled";
+        detail = "Protection is disabled. Re-enable protection immediately.";
+        className = "fs-protection-status-danger";
+    } else if (!lock.pinHash) {
+        status = "Needs PIN Setup";
+        detail = "Protection works, but protected settings do not have a PIN yet.";
+        className = "fs-protection-status-warn";
+    } else if (report.todayAttempts.length >= 3) {
+        status = "High Risk Today";
+        detail = "Multiple blocked attempts happened today. Use recovery actions.";
+        className = "fs-protection-status-danger";
+    } else if (report.todayAttempts.length > 0) {
+        status = "Risk Detected";
+        detail = "A blocked attempt was detected today. Record recovery and continue.";
+        className = "fs-protection-status-warn";
+    } else if (!data.lastBackup) {
+        status = "Backup Needed";
+        detail = "Protection is stable, but no protection backup has been created yet.";
+        className = "fs-protection-status-warn";
+    } else if (stats.domains <= 0) {
+        status = "Blocklist Empty";
+        detail = "No blocked domains are stored. Add safe test domains first.";
+        className = "fs-protection-status-warn";
+    }
+
+    return {
+        status: status,
+        detail: detail,
+        className: className
+    };
+}
+
+function fsProtectionDashboardNextAction() {
+    const data = fsProtectionDashboardSafeStats();
+    const lock = data.lock;
+    const report = data.report;
+
+    if (!data.protectionEnabled) {
+        return {
+            label: "Enable Protection",
+            detail: "Protection is disabled. Turn it back on first.",
+            page: "lock"
+        };
+    }
+
+    if (!lock.pinHash) {
+        return {
+            label: "Set Protection PIN",
+            detail: "Protect blocklist edits, privacy settings, and disable requests.",
+            page: "lock"
+        };
+    }
+
+    if (report.todayAttempts.length > 0 && report.todayRecoveries.length === 0) {
+        return {
+            label: "Record Recovery Action",
+            detail: "A blocked attempt becomes useful when you recover properly.",
+            page: "attempts"
+        };
+    }
+
+    if (!data.lastBackup) {
+        return {
+            label: "Create Protection Backup",
+            detail: "Backup your protection database before bigger changes.",
+            page: "backup"
+        };
+    }
+
+    return {
+        label: "Test URL Engine",
+        detail: "Run a safe test to confirm protection logic is working.",
+        page: "url"
+    };
+}
+
+function fsProtectionDashboardOpenPage(page) {
+    if (page === "database" && typeof openProtectionDatabasePage === "function") {
+        openProtectionDatabasePage();
+        return;
+    }
+
+    if (page === "url" && typeof openUrlAnalysisEnginePage === "function") {
+        openUrlAnalysisEnginePage();
+        return;
+    }
+
+    if (page === "attempts" && typeof openBlockedAttemptIntelligencePage === "function") {
+        openBlockedAttemptIntelligencePage();
+        return;
+    }
+
+    if (page === "lock" && typeof openProtectionLockPage === "function") {
+        openProtectionLockPage();
+        return;
+    }
+
+    if (page === "backup" && typeof openProtectionBackupCenterPage === "function") {
+        openProtectionBackupCenterPage();
+        return;
+    }
+
+    if (typeof openProtectionDatabasePage === "function") {
+        openProtectionDatabasePage();
+    }
+}
+
+function fsProtectionDashboardHtml() {
+    const data = fsProtectionDashboardSafeStats();
+    const status = fsProtectionDashboardStatus();
+    const next = fsProtectionDashboardNextAction();
+    const stats = data.stats;
+    const report = data.report;
+    const lock = data.lock;
+
+    return `
+        <div class="card fs-protection-dashboard-card ${status.className}">
+            <h2>Protection Dashboard</h2>
+            <h3>${fsProtectionDashboardEscape(status.status)}</h3>
+            <p>${fsProtectionDashboardEscape(status.detail)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Protection Summary</h2>
+            <p><strong>Protection:</strong> ${data.protectionEnabled ? "Enabled" : "Disabled"}</p>
+            <p><strong>PIN:</strong> ${lock.pinHash ? "Set" : "Not set"}</p>
+            <p><strong>Lock:</strong> ${lock.lockEnabled ? "Enabled" : "Disabled"}</p>
+            <p><strong>Blocked Domains:</strong> ${stats.domains}</p>
+            <p><strong>Attempts Today:</strong> ${report.todayAttempts.length}</p>
+            <p><strong>Attempts This Week:</strong> ${report.weekAttempts.length}</p>
+            <p><strong>Recovery Rate:</strong> ${report.recoveryRate}%</p>
+            <p><strong>Last Backup:</strong> ${data.lastBackup ? fsProtectionDashboardEscape(data.lastBackup) : "Never"}</p>
+        </div>
+
+        <div class="card fs-protection-next-card">
+            <h2>Next Protection Action</h2>
+            <h3>${fsProtectionDashboardEscape(next.label)}</h3>
+            <p>${fsProtectionDashboardEscape(next.detail)}</p>
+            <button id="fsProtectionDashboardNextBtn">Do Protection Action</button>
+        </div>
+
+        <div class="card fs-protection-insight-card">
+            <h2>Protection Intelligence</h2>
+            <p><strong>Risk Level:</strong> ${fsProtectionDashboardEscape(report.riskLevel)}</p>
+            <p><strong>Top Trigger:</strong> ${fsProtectionDashboardEscape(report.topCategory)}</p>
+            <p><strong>Peak Risk Time:</strong> ${fsProtectionDashboardEscape(report.peakTime)}</p>
+            <p><strong>Command:</strong> ${fsProtectionDashboardEscape(report.command)}</p>
+        </div>
+
+        <div class="card p3-action-card">
+            <h2>Protection Modules</h2>
+            <button id="fsDashboardOpenDbBtn">Open Blocklist Database</button>
+            <button id="fsDashboardOpenUrlBtn">Open URL Engine</button>
+            <button id="fsDashboardOpenAttemptsBtn">Open Attempt Intelligence</button>
+            <button id="fsDashboardOpenLockBtn">Open Lock Layer</button>
+            <button id="fsDashboardOpenBackupBtn">Open Backup Center</button>
+            <button id="fsDashboardRefreshBtn">Refresh Dashboard</button>
+        </div>
+    `;
+}
+
+function openProtectionDashboardPage() {
+    showPage(`
+        <h1>Protection Dashboard</h1>
+
+        <div id="fsProtectionDashboardRoot">
+            ${fsProtectionDashboardHtml()}
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    fsProtectionDashboardAttachButtons();
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function fsProtectionDashboardAttachButtons() {
+    const next = fsProtectionDashboardNextAction();
+
+    const nextBtn = document.getElementById("fsProtectionDashboardNextBtn");
+    if (nextBtn) {
+        nextBtn.onclick = function() {
+            fsProtectionDashboardOpenPage(next.page);
+        };
+    }
+
+    const dbBtn = document.getElementById("fsDashboardOpenDbBtn");
+    if (dbBtn) dbBtn.onclick = function() { fsProtectionDashboardOpenPage("database"); };
+
+    const urlBtn = document.getElementById("fsDashboardOpenUrlBtn");
+    if (urlBtn) urlBtn.onclick = function() { fsProtectionDashboardOpenPage("url"); };
+
+    const attemptsBtn = document.getElementById("fsDashboardOpenAttemptsBtn");
+    if (attemptsBtn) attemptsBtn.onclick = function() { fsProtectionDashboardOpenPage("attempts"); };
+
+    const lockBtn = document.getElementById("fsDashboardOpenLockBtn");
+    if (lockBtn) lockBtn.onclick = function() { fsProtectionDashboardOpenPage("lock"); };
+
+    const backupBtn = document.getElementById("fsDashboardOpenBackupBtn");
+    if (backupBtn) backupBtn.onclick = function() { fsProtectionDashboardOpenPage("backup"); };
+
+    const refreshBtn = document.getElementById("fsDashboardRefreshBtn");
+    if (refreshBtn) {
+        refreshBtn.onclick = function() {
+            const root = document.getElementById("fsProtectionDashboardRoot");
+
+            if (root) {
+                root.innerHTML = fsProtectionDashboardHtml();
+                fsProtectionDashboardAttachButtons();
+            }
+        };
+    }
+}
+
+function insertProtectionDashboardHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("protectionDashboardHomeCard")) {
+        return;
+    }
+
+    const protectionCard = document.getElementById("protectionDatabaseHomeCard");
+    const insertAfter = protectionCard || document.getElementById("smartDailyCoachHomeCard") || document.querySelector(".card");
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const status = fsProtectionDashboardStatus();
+    const next = fsProtectionDashboardNextAction();
+
+    const card = document.createElement("div");
+    card.id = "protectionDashboardHomeCard";
+    card.className = "card fs-protection-dashboard-card " + status.className;
+    card.innerHTML = `
+        <h2>Protection Dashboard</h2>
+        <h3>${fsProtectionDashboardEscape(status.status)}</h3>
+        <p>${fsProtectionDashboardEscape(status.detail)}</p>
+        <p><strong>Next:</strong> ${fsProtectionDashboardEscape(next.label)}</p>
+        <button id="openProtectionDashboardHomeBtn">Open Protection Dashboard</button>
+        <button id="protectionDashboardNextHomeBtn">Do Protection Action</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openProtectionDashboardHomeBtn").addEventListener("click", openProtectionDashboardPage);
+    document.getElementById("protectionDashboardNextHomeBtn").addEventListener("click", function() {
+        fsProtectionDashboardOpenPage(next.page);
+    });
+}
+
+function refreshProtectionDashboardHomeCard() {
+    const card = document.getElementById("protectionDashboardHomeCard");
+
+    if (card) {
+        card.remove();
+    }
+
+    setTimeout(insertProtectionDashboardHomeCard, 600);
+    setTimeout(insertProtectionDashboardHomeCard, 1500);
+    setTimeout(insertProtectionDashboardHomeCard, 2800);
+}
+
+function addProtectionDashboardQuickButton() {
+    const grid =
+        document.getElementById("premiumPrimaryGrid") ||
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid");
+
+    if (!grid) return;
+
+    if (document.getElementById("quickProtectionDashboardBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickProtectionDashboardBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-main-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">SAFE</span>
+        <span class="premium-quick-label">Protect Dash</span>
+        <span class="premium-quick-sub">System summary</span>
+    `;
+
+    button.addEventListener("click", openProtectionDashboardPage);
+
+    grid.appendChild(button);
+}
+
+function insertProtectionDashboardIntoProtectionPage() {
+    const hero = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Phase 2A Local Blocklist";
+        });
+
+    if (!hero) return;
+
+    if (document.getElementById("openProtectionDashboardFromDbBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "openProtectionDashboardFromDbBtn";
+    btn.type = "button";
+    btn.textContent = "Protection Dashboard";
+    btn.className = "fs-protection-dashboard-btn";
+    btn.addEventListener("click", openProtectionDashboardPage);
+
+    hero.appendChild(btn);
+}
+
+/* Add Protection Dashboard to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsProtectionDashboardHealthWrapped) {
+    window.fsProtectionDashboardHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksDashboard = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksDashboard();
+        const status = fsProtectionDashboardStatus();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Protection Dashboard";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Protection Dashboard",
+                status.status === "Protected" ? "PASS" : "WARN",
+                "Protection dashboard status: " + status.status + ".",
+                "Open Protection Dashboard for one clean protection summary."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshProtectionDashboardSystems() {
+    refreshProtectionDashboardHomeCard();
+
+    setTimeout(addProtectionDashboardQuickButton, 700);
+    setTimeout(addProtectionDashboardQuickButton, 1600);
+    setTimeout(addProtectionDashboardQuickButton, 2800);
+
+    setTimeout(insertProtectionDashboardIntoProtectionPage, 500);
+    setTimeout(insertProtectionDashboardIntoProtectionPage, 1300);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof openProtectionDatabasePage === "function" && !window.fsProtectionDashboardProtectionPageWrapped) {
+    window.fsProtectionDashboardProtectionPageWrapped = true;
+
+    const oldOpenProtectionDatabasePageDashboard = openProtectionDatabasePage;
+
+    openProtectionDatabasePage = function() {
+        oldOpenProtectionDatabasePageDashboard.apply(this, arguments);
+        setTimeout(insertProtectionDashboardIntoProtectionPage, 500);
+        setTimeout(insertProtectionDashboardIntoProtectionPage, 1200);
+    };
+}
+
+if (typeof goHome === "function" && !window.fsProtectionDashboardGoHomeWrapped) {
+    window.fsProtectionDashboardGoHomeWrapped = true;
+
+    const oldGoHomeProtectionDashboard = goHome;
+
+    goHome = function() {
+        oldGoHomeProtectionDashboard.apply(this, arguments);
+        setTimeout(refreshProtectionDashboardSystems, 1400);
+    };
+}
+
+refreshProtectionDashboardSystems();
 
 </script>
 
