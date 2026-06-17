@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3ddatamigration1">
+    <link rel="stylesheet" href="style.css?v=phase3esqliteschema1">
 </head>
 <body>
 
@@ -20970,6 +20970,280 @@ if (typeof goHome === "function" && !window.fsDataMigrationGoHomeWrapped) {
 }
 
 refreshDataMigrationSystems();
+
+
+/* Phase 3E SQLite Schema Starter Upgrade */
+function fsSqliteSchemaEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsSqliteSchemaGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3EChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsSqliteSchemaSaveChecklist(data) {
+    localStorage.setItem("fsPhase3EChecklist", JSON.stringify(data || {}));
+}
+
+function fsSqliteSchemaToggleItem(key) {
+    const data = fsSqliteSchemaGetChecklist();
+    data[key] = !data[key];
+    fsSqliteSchemaSaveChecklist(data);
+    openSqliteSchemaUpgradePage();
+}
+
+function fsSqliteSchemaItems() {
+    return [
+        "protectionTables",
+        "disciplineTables",
+        "coachProgressTables",
+        "sessionTables",
+        "privacyFields",
+        "foreignKeys",
+        "createStatements",
+        "schemaDocs"
+    ];
+}
+
+function fsSqliteSchemaProgress() {
+    const items = fsSqliteSchemaItems();
+    const data = fsSqliteSchemaGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsSqliteSchemaCheckItem(key, label, detail) {
+    const data = fsSqliteSchemaGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-sqlite-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsSqliteSchemaEscape(label)}</strong>
+                <p>${fsSqliteSchemaEscape(detail)}</p>
+            </div>
+            <button data-sqlite-schema-key="${fsSqliteSchemaEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openSqliteSchemaUpgradePage() {
+    const progress = fsSqliteSchemaProgress();
+
+    showPage(`
+        <h1>Phase 3E SQLite Schema</h1>
+
+        <div class="card fs-sqlite-hero-card">
+            <h2>SQLite Schema Starter Upgrade</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This expands the Flutter starter database into a full first-version schema.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} schema groups confirmed.</p>
+        </div>
+
+        <div class="card fs-sqlite-warning-card">
+            <h2>Important</h2>
+            <p>This is still starter architecture. It defines database tables before we build live Flutter database operations.</p>
+        </div>
+
+        <div class="card fs-sqlite-protection-card">
+            <h2>Protection Tables</h2>
+            <p><strong>blocked_domains</strong> — stores domain, category, source, active state, created and updated dates.</p>
+            <p><strong>blocked_attempts</strong> — stores blocked request data, reason, confidence, privacy mode, recovery state.</p>
+            <p><strong>recovery_actions</strong> — stores recovery actions connected to blocked attempts.</p>
+            <p><strong>protection_settings</strong> — stores PIN hash, enabled state, lock state, privacy mode, delayed disable.</p>
+        </div>
+
+        <div class="card fs-sqlite-discipline-card">
+            <h2>Discipline Tables</h2>
+            <p><strong>goals</strong> — stores goal title, category, target, progress, completion state.</p>
+            <p><strong>daily_reflections</strong> — stores daily reflection answers.</p>
+            <p><strong>daily_end_reviews</strong> — stores day score, verdict, missed actions, corrections.</p>
+            <p><strong>timeline_events</strong> — stores daily activity events.</p>
+        </div>
+
+        <div class="card fs-sqlite-progress-card">
+            <h2>Coach / Progress Tables</h2>
+            <p><strong>coach_memory</strong> — stores recommendations, action taken, follow-through.</p>
+            <p><strong>xp_events</strong> — stores XP source, amount, reason, timestamp.</p>
+            <p><strong>badges</strong> — stores badge unlock state.</p>
+            <p><strong>streaks</strong> — stores current and longest streak values.</p>
+        </div>
+
+        <div class="card fs-sqlite-session-card">
+            <h2>Training Session Tables</h2>
+            <p><strong>focus_sessions</strong> — stores focus timer duration and completion.</p>
+            <p><strong>concentration_sessions</strong> — stores concentration duration, affirmation, completion.</p>
+        </div>
+
+        <div class="card fs-sqlite-privacy-card">
+            <h2>Privacy Fields Included</h2>
+            <p><strong>blocked_attempts.privacy_mode</strong> preserves stats-only or full-log mode.</p>
+            <p><strong>blocked_attempts.website</strong> may store [hidden] when privacy mode is stats-only.</p>
+            <p><strong>protection_settings.pin_hash</strong> stores only a hash, never plain PIN.</p>
+            <p><strong>protection_settings.delay_hours</strong> protects delayed disable logic.</p>
+        </div>
+
+        <div class="card fs-sqlite-files-card">
+            <h2>Created / Updated Files</h2>
+            <p><strong>flutter_starter/lib/database/app_database.dart</strong> — upgraded full schema.</p>
+            <p><strong>flutter_starter/lib/database/sqlite_schema_v1.dart</strong> — schema table groups.</p>
+            <p><strong>flutter_starter/docs/sqlite_schema_v1.md</strong> — schema documentation.</p>
+        </div>
+
+        <div class="card fs-sqlite-order-card">
+            <h2>Schema Build Rule</h2>
+            <p><strong>Version 1</strong> contains all starter tables.</p>
+            <p><strong>Future changes</strong> must increase databaseVersion and add migration logic.</p>
+            <p><strong>Never delete user data</strong> during future migrations unless the user intentionally resets it.</p>
+        </div>
+
+        <div class="card fs-sqlite-checklist-card">
+            <h2>Phase 3E Checklist</h2>
+            ${fsSqliteSchemaCheckItem("protectionTables", "Protection tables confirmed", "Domains, attempts, recovery actions, settings.")}
+            ${fsSqliteSchemaCheckItem("disciplineTables", "Discipline tables confirmed", "Goals, reflections, reviews, timeline.")}
+            ${fsSqliteSchemaCheckItem("coachProgressTables", "Coach/progress tables confirmed", "Coach memory, XP, badges, streaks.")}
+            ${fsSqliteSchemaCheckItem("sessionTables", "Session tables confirmed", "Focus and concentration sessions.")}
+            ${fsSqliteSchemaCheckItem("privacyFields", "Privacy fields confirmed", "Stats-only mode, hidden website field, PIN hash only.")}
+            ${fsSqliteSchemaCheckItem("foreignKeys", "Foreign key plan confirmed", "Recovery actions can connect to blocked attempts.")}
+            ${fsSqliteSchemaCheckItem("createStatements", "Create statements confirmed", "All starter SQL create statements are grouped.")}
+            ${fsSqliteSchemaCheckItem("schemaDocs", "Schema docs confirmed", "SQLite schema documentation file created.")}
+        </div>
+
+        <div class="card fs-sqlite-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3F: SQLite Repository / DAO Starters</h3>
+            <p>Next we create starter classes for reading and writing the SQLite tables.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-sqlite-schema-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsSqliteSchemaToggleItem(button.getAttribute("data-sqlite-schema-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertSqliteSchemaHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("sqliteSchemaHomeCard")) return;
+
+    const progress = fsSqliteSchemaProgress();
+
+    const insertAfter =
+        document.getElementById("dataMigrationHomeCard") ||
+        document.getElementById("flutterStarterHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "sqliteSchemaHomeCard";
+    card.className = "card fs-sqlite-home-card";
+    card.innerHTML = `
+        <h2>Phase 3E SQLite Schema</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Full starter database schema for the future Flutter Android app.</p>
+        <button id="openSqliteSchemaHomeBtn">Open SQLite Schema</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openSqliteSchemaHomeBtn").addEventListener("click", openSqliteSchemaUpgradePage);
+}
+
+function addSqliteSchemaQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickSqliteSchemaBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickSqliteSchemaBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3E</span>
+        <span class="premium-quick-label">SQLite</span>
+        <span class="premium-quick-sub">Schema v1</span>
+    `;
+
+    button.addEventListener("click", openSqliteSchemaUpgradePage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3E to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsSqliteSchemaHealthWrapped) {
+    window.fsSqliteSchemaHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksSqliteSchema = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksSqliteSchema();
+        const progress = fsSqliteSchemaProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3E SQLite Schema Starter Upgrade";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3E SQLite Schema Starter Upgrade",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "SQLite schema upgrade progress: " + progress.percent + "%.",
+                "Open Phase 3E SQLite Schema and confirm all schema groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshSqliteSchemaSystems() {
+    setTimeout(insertSqliteSchemaHomeCard, 1000);
+    setTimeout(insertSqliteSchemaHomeCard, 2100);
+    setTimeout(insertSqliteSchemaHomeCard, 3400);
+
+    setTimeout(addSqliteSchemaQuickButton, 1100);
+    setTimeout(addSqliteSchemaQuickButton, 2200);
+    setTimeout(addSqliteSchemaQuickButton, 3400);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsSqliteSchemaGoHomeWrapped) {
+    window.fsSqliteSchemaGoHomeWrapped = true;
+
+    const oldGoHomeSqliteSchema = goHome;
+
+    goHome = function() {
+        oldGoHomeSqliteSchema.apply(this, arguments);
+        setTimeout(refreshSqliteSchemaSystems, 1700);
+    };
+}
+
+refreshSqliteSchemaSystems();
 
 </script>
 

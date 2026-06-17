@@ -2752,3 +2752,91 @@ textarea:focus {
         width: 100%;
     }
 }
+
+
+/* Phase 3E SQLite Schema Starter Upgrade */
+.fs-sqlite-home-card,
+.fs-sqlite-hero-card {
+    border: 1px solid rgba(52, 211, 153, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(52, 211, 153, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(5, 150, 105, 0.24));
+}
+
+.fs-sqlite-home-card h3,
+.fs-sqlite-hero-card h3 {
+    color: #34d399;
+}
+
+.fs-sqlite-warning-card {
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.26));
+}
+
+.fs-sqlite-protection-card,
+.fs-sqlite-privacy-card {
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(248, 113, 113, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(127, 29, 29, 0.24));
+}
+
+.fs-sqlite-discipline-card,
+.fs-sqlite-session-card {
+    border: 1px solid rgba(96, 165, 250, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(96, 165, 250, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 64, 175, 0.24));
+}
+
+.fs-sqlite-progress-card,
+.fs-sqlite-files-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.25));
+}
+
+.fs-sqlite-order-card,
+.fs-sqlite-next-card {
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(45, 212, 191, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(13, 148, 136, 0.24));
+}
+
+.fs-sqlite-check-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fs-sqlite-check-row p {
+    margin: 6px 0 0;
+    opacity: 0.82;
+}
+
+.fs-sqlite-check-row button {
+    width: auto;
+    min-width: 110px;
+    padding: 10px 12px;
+}
+
+@media (max-width: 520px) {
+    .fs-sqlite-check-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fs-sqlite-check-row button {
+        width: 100%;
+    }
+}
