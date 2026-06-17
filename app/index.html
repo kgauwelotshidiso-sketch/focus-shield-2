@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3ahealthfix1">
+    <link rel="stylesheet" href="style.css?v=phase3bflutterblueprint1">
 </head>
 <body>
 
@@ -19962,6 +19962,429 @@ if (typeof goHome === "function" && !window.fsMigrationGoHomeWrapped) {
 }
 
 refreshAndroidMigrationSystems();
+
+
+/* Phase 3B Flutter Project Blueprint */
+function fsFlutterBlueprintEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsFlutterBlueprintGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3BChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsFlutterBlueprintSaveChecklist(data) {
+    localStorage.setItem("fsPhase3BChecklist", JSON.stringify(data || {}));
+}
+
+function fsFlutterBlueprintToggleItem(key) {
+    const data = fsFlutterBlueprintGetChecklist();
+    data[key] = !data[key];
+    fsFlutterBlueprintSaveChecklist(data);
+    openFlutterProjectBlueprintPage();
+}
+
+function fsFlutterBlueprintItems() {
+    return [
+        "folderStructure",
+        "screens",
+        "services",
+        "models",
+        "database",
+        "nativeBridge",
+        "buildSequence",
+        "migrationRules"
+    ];
+}
+
+function fsFlutterBlueprintProgress() {
+    const items = fsFlutterBlueprintItems();
+    const data = fsFlutterBlueprintGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsFlutterBlueprintCheckItem(key, label, detail) {
+    const data = fsFlutterBlueprintGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-flutter-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsFlutterBlueprintEscape(label)}</strong>
+                <p>${fsFlutterBlueprintEscape(detail)}</p>
+            </div>
+            <button data-flutter-blueprint-key="${fsFlutterBlueprintEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function fsFlutterBlueprintCodeBlock(content) {
+    return `
+        <pre class="fs-flutter-code-block"><code>${fsFlutterBlueprintEscape(content)}</code></pre>
+    `;
+}
+
+function openFlutterProjectBlueprintPage() {
+    const progress = fsFlutterBlueprintProgress();
+
+    const folderStructure = `lib/
+  main.dart
+
+  app/
+    app.dart
+    routes.dart
+    theme.dart
+
+  screens/
+    dashboard/
+      dashboard_screen.dart
+    smart_coach/
+      smart_coach_screen.dart
+    goals/
+      goals_screen.dart
+    focus_timer/
+      focus_timer_screen.dart
+    protection_dashboard/
+      protection_dashboard_screen.dart
+    blocklist/
+      blocklist_screen.dart
+    url_analysis/
+      url_analysis_screen.dart
+    intervention/
+      intervention_screen.dart
+    settings/
+      settings_screen.dart
+
+  services/
+    protection_engine.dart
+    blocklist_service.dart
+    attempt_logger.dart
+    smart_coach_service.dart
+    backup_service.dart
+    lock_service.dart
+
+  database/
+    app_database.dart
+    database_provider.dart
+
+  models/
+    blocked_domain.dart
+    blocked_attempt.dart
+    protection_decision.dart
+    goal.dart
+    affirmation.dart
+    streak.dart
+    protection_settings.dart
+    coach_memory_entry.dart
+
+  native/
+    vpn_bridge.dart`;
+
+    const protectionEngine = `class ProtectionEngine {
+  final BlocklistService blocklistService;
+  final AttemptLogger attemptLogger;
+
+  ProtectionEngine({
+    required this.blocklistService,
+    required this.attemptLogger,
+  });
+
+  Future<ProtectionDecision> analyzeUrl(String input) async {
+    final domain = extractDomain(input);
+    final match = await blocklistService.findDomain(domain);
+
+    if (match != null) {
+      return ProtectionDecision.block(
+        domain: domain,
+        category: match.category,
+        reason: 'Domain matched local blocklist',
+        confidence: 0.98,
+      );
+    }
+
+    return ProtectionDecision.allow(
+      domain: domain,
+      reason: 'No local protection signal found',
+    );
+  }
+}`;
+
+    const vpnBridge = `class VpnBridge {
+  static const MethodChannel _channel =
+      MethodChannel('focus_shield/vpn');
+
+  Future<void> startProtectionVpn() async {
+    await _channel.invokeMethod('startVpn');
+  }
+
+  Future<void> stopProtectionVpn() async {
+    await _channel.invokeMethod('stopVpn');
+  }
+
+  Future<bool> isVpnRunning() async {
+    return await _channel.invokeMethod('isVpnRunning');
+  }
+}`;
+
+    showPage(`
+        <h1>Phase 3B Flutter Blueprint</h1>
+
+        <div class="card fs-flutter-hero-card">
+            <h2>Flutter Project Blueprint</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This page converts the Focus Shield web prototype into a real Flutter Android app structure.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} blueprint sections confirmed.</p>
+        </div>
+
+        <div class="card fs-flutter-warning-card">
+            <h2>Important</h2>
+            <p>This is still preparation. We are not building the native VPN service yet. We are creating the correct Flutter blueprint first.</p>
+        </div>
+
+        <div class="card fs-flutter-folder-card">
+            <h2>Flutter Folder Structure</h2>
+            <p>This is the exact structure the future Flutter project should follow.</p>
+            ${fsFlutterBlueprintCodeBlock(folderStructure)}
+        </div>
+
+        <div class="card fs-flutter-screens-card">
+            <h2>Flutter Screens</h2>
+            <p><strong>DashboardScreen:</strong> main daily command center.</p>
+            <p><strong>SmartCoachScreen:</strong> daily coach, recovery mode, weekly intelligence.</p>
+            <p><strong>GoalsScreen:</strong> goal manager and progress tracking.</p>
+            <p><strong>FocusTimerScreen:</strong> focus and concentration timers.</p>
+            <p><strong>ProtectionDashboardScreen:</strong> protection status, attempts, recovery rate.</p>
+            <p><strong>BlocklistScreen:</strong> manage blocked domains and categories.</p>
+            <p><strong>UrlAnalysisScreen:</strong> test domain analysis before VPN stage.</p>
+            <p><strong>InterventionScreen:</strong> blocked attempt recovery screen.</p>
+            <p><strong>SettingsScreen:</strong> PIN, privacy mode, backup, delayed disable.</p>
+        </div>
+
+        <div class="card fs-flutter-services-card">
+            <h2>Dart Services</h2>
+            <p><strong>ProtectionEngine:</strong> decides BLOCK or ALLOW.</p>
+            <p><strong>BlocklistService:</strong> reads and writes blocked domains.</p>
+            <p><strong>AttemptLogger:</strong> records blocked attempts and recovery actions.</p>
+            <p><strong>SmartCoachService:</strong> converts behavior into coach commands.</p>
+            <p><strong>BackupService:</strong> export/import protection and discipline data.</p>
+            <p><strong>LockService:</strong> PIN, delayed disable, protected settings.</p>
+            <p><strong>VpnBridge:</strong> connects Flutter UI to native Android VPN layer.</p>
+        </div>
+
+        <div class="card fs-flutter-engine-card">
+            <h2>Protection Engine Blueprint</h2>
+            <p>The current JavaScript URL Analysis Engine becomes a Dart service.</p>
+            ${fsFlutterBlueprintCodeBlock(protectionEngine)}
+        </div>
+
+        <div class="card fs-flutter-models-card">
+            <h2>SQLite Models</h2>
+            <p><strong>BlockedDomain:</strong> id, domain, category, updatedAt.</p>
+            <p><strong>BlockedAttempt:</strong> id, website, category, reason, confidence, timestamp.</p>
+            <p><strong>ProtectionDecision:</strong> decision, domain, category, reason, confidence.</p>
+            <p><strong>Goal:</strong> id, title, description, completed, createdAt.</p>
+            <p><strong>Affirmation:</strong> id, text, favorite.</p>
+            <p><strong>Streak:</strong> currentStreak, longestStreak, updatedAt.</p>
+            <p><strong>ProtectionSettings:</strong> pinHash, enabled, delayHours, privacyMode.</p>
+            <p><strong>CoachMemoryEntry:</strong> recommendation, actionTaken, followThrough, date.</p>
+        </div>
+
+        <div class="card fs-flutter-db-card">
+            <h2>SQLite Database Plan</h2>
+            <p><strong>app_database.dart:</strong> creates tables and handles migrations.</p>
+            <p><strong>database_provider.dart:</strong> opens one shared database connection.</p>
+            <p><strong>Tables first:</strong> blocked_domains, blocked_attempts, goals, affirmations, streaks, protection_settings, coach_memory.</p>
+            <p><strong>Migration rule:</strong> every future schema change gets a database version number.</p>
+        </div>
+
+        <div class="card fs-flutter-native-card">
+            <h2>Native Android Bridge Plan</h2>
+            <p>Flutter alone is not enough for real traffic filtering. The future app needs a native Android layer.</p>
+            <p><strong>Flutter UI</strong> → <strong>MethodChannel</strong> → <strong>Kotlin VPN Service</strong> → <strong>DNS/domain filter</strong>.</p>
+            ${fsFlutterBlueprintCodeBlock(vpnBridge)}
+        </div>
+
+        <div class="card fs-flutter-build-card">
+            <h2>Build Sequence</h2>
+            <p><strong>1.</strong> Create Flutter project.</p>
+            <p><strong>2.</strong> Build app shell, theme, routes, dashboard.</p>
+            <p><strong>3.</strong> Add SQLite database.</p>
+            <p><strong>4.</strong> Build blocklist and protection dashboard screens.</p>
+            <p><strong>5.</strong> Build Dart URL Analysis Engine.</p>
+            <p><strong>6.</strong> Build intervention screen and attempt logger.</p>
+            <p><strong>7.</strong> Add PIN, delayed disable, privacy mode.</p>
+            <p><strong>8.</strong> Add backup/export/import.</p>
+            <p><strong>9.</strong> Build native VPN/DNS prototype.</p>
+            <p><strong>10.</strong> Connect VPN blocked events to intervention and Smart Coach.</p>
+        </div>
+
+        <div class="card fs-flutter-rules-card">
+            <h2>Migration Rules</h2>
+            <p><strong>Rule 1:</strong> Do not build VPN first.</p>
+            <p><strong>Rule 2:</strong> Database must exist before native filtering.</p>
+            <p><strong>Rule 3:</strong> Protection Engine must work in Dart before Kotlin VPN connects to it.</p>
+            <p><strong>Rule 4:</strong> Every blocked event must create a recovery path, not just a log.</p>
+            <p><strong>Rule 5:</strong> PIN and delayed disable must protect dangerous settings.</p>
+        </div>
+
+        <div class="card fs-flutter-checklist-card">
+            <h2>Phase 3B Checklist</h2>
+            ${fsFlutterBlueprintCheckItem("folderStructure", "Folder structure confirmed", "Main Flutter folders and files are mapped.")}
+            ${fsFlutterBlueprintCheckItem("screens", "Screens confirmed", "Dashboard, coach, goals, protection, intervention, settings.")}
+            ${fsFlutterBlueprintCheckItem("services", "Services confirmed", "Protection, blocklist, attempts, coach, backup, lock, VPN bridge.")}
+            ${fsFlutterBlueprintCheckItem("models", "Models confirmed", "Domain, attempt, decision, goal, streak, settings, coach memory.")}
+            ${fsFlutterBlueprintCheckItem("database", "Database plan confirmed", "SQLite provider, app database, tables, migrations.")}
+            ${fsFlutterBlueprintCheckItem("nativeBridge", "Native bridge confirmed", "Flutter MethodChannel to Android VPN service.")}
+            ${fsFlutterBlueprintCheckItem("buildSequence", "Build sequence confirmed", "UI and database first, VPN later.")}
+            ${fsFlutterBlueprintCheckItem("migrationRules", "Migration rules confirmed", "No messy jump into VPN before structure is ready.")}
+        </div>
+
+        <div class="card fs-flutter-next-card">
+            <h2>Next Real Step</h2>
+            <h3>Phase 3C: Flutter Project Starter Files</h3>
+            <p>After this blueprint is confirmed, the next step is to generate starter file templates for the future Flutter project.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-flutter-blueprint-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsFlutterBlueprintToggleItem(button.getAttribute("data-flutter-blueprint-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertFlutterBlueprintHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("flutterBlueprintHomeCard")) return;
+
+    const progress = fsFlutterBlueprintProgress();
+
+    const insertAfter =
+        document.getElementById("androidMigrationHomeCard") ||
+        document.getElementById("protectionDashboardHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "flutterBlueprintHomeCard";
+    card.className = "card fs-flutter-home-card";
+    card.innerHTML = `
+        <h2>Phase 3B Flutter Blueprint</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Plan the future Flutter screens, services, SQLite models, and native VPN bridge.</p>
+        <button id="openFlutterBlueprintHomeBtn">Open Flutter Blueprint</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openFlutterBlueprintHomeBtn").addEventListener("click", openFlutterProjectBlueprintPage);
+}
+
+function addFlutterBlueprintQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickFlutterBlueprintBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickFlutterBlueprintBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3B</span>
+        <span class="premium-quick-label">Flutter Plan</span>
+        <span class="premium-quick-sub">Project blueprint</span>
+    `;
+
+    button.addEventListener("click", openFlutterProjectBlueprintPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3B to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsFlutterBlueprintHealthWrapped) {
+    window.fsFlutterBlueprintHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksFlutterBlueprint = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksFlutterBlueprint();
+        const progress = fsFlutterBlueprintProgress();
+
+        const ready =
+            typeof openFlutterProjectBlueprintPage === "function" &&
+            typeof fsFlutterBlueprintProgress === "function" &&
+            typeof fsFlutterBlueprintGetChecklist === "function";
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3B Flutter Project Blueprint";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3B Flutter Project Blueprint",
+                ready && progress.percent >= 100 ? "PASS" : "WARN",
+                ready
+                    ? "Flutter blueprint progress: " + progress.percent + "%."
+                    : "Flutter blueprint module is missing or incomplete.",
+                ready
+                    ? "Open Phase 3B blueprint and confirm all sections."
+                    : "Reinstall Phase 3B Flutter Project Blueprint."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshFlutterBlueprintSystems() {
+    setTimeout(insertFlutterBlueprintHomeCard, 850);
+    setTimeout(insertFlutterBlueprintHomeCard, 1800);
+    setTimeout(insertFlutterBlueprintHomeCard, 3100);
+
+    setTimeout(addFlutterBlueprintQuickButton, 950);
+    setTimeout(addFlutterBlueprintQuickButton, 1900);
+    setTimeout(addFlutterBlueprintQuickButton, 3100);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsFlutterBlueprintGoHomeWrapped) {
+    window.fsFlutterBlueprintGoHomeWrapped = true;
+
+    const oldGoHomeFlutterBlueprint = goHome;
+
+    goHome = function() {
+        oldGoHomeFlutterBlueprint.apply(this, arguments);
+        setTimeout(refreshFlutterBlueprintSystems, 1550);
+    };
+}
+
+refreshFlutterBlueprintSystems();
 
 </script>
 
