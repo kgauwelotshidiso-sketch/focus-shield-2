@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase2attemptintel1">
+    <link rel="stylesheet" href="style.css?v=phase2locklayer1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshProtectionLockSystems, 1700);
     setTimeout(refreshBlockedAttemptIntelligenceSystems, 1600);
     setTimeout(refreshUrlAnalysisEngineSystems, 1500);
     setTimeout(refreshProtectionDatabaseSystems, 1400);
@@ -17955,6 +17956,672 @@ if (typeof goHome === "function" && !window.fsAttemptIntelGoHomeWrapped) {
 }
 
 refreshBlockedAttemptIntelligenceSystems();
+
+
+/* Phase 2D Protection Settings + Lock Layer Prototype */
+function fsLockEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLockGetSettings() {
+    try {
+        const settings = JSON.parse(localStorage.getItem("fsProtectionLockSettings") || "{}");
+
+        return {
+            pinHash: settings.pinHash || "",
+            lockEnabled: settings.lockEnabled || false,
+            protectionEnabled: settings.protectionEnabled !== false,
+            blocklistEditLocked: settings.blocklistEditLocked !== false,
+            privacySettingsLocked: settings.privacySettingsLocked !== false,
+            delayHours: Math.max(1, Number(settings.delayHours || 24)),
+            disableRequestedAt: settings.disableRequestedAt || "",
+            disableAvailableAt: settings.disableAvailableAt || ""
+        };
+    } catch (error) {
+        return {
+            pinHash: "",
+            lockEnabled: false,
+            protectionEnabled: true,
+            blocklistEditLocked: true,
+            privacySettingsLocked: true,
+            delayHours: 24,
+            disableRequestedAt: "",
+            disableAvailableAt: ""
+        };
+    }
+}
+
+function fsLockSaveSettings(settings) {
+    localStorage.setItem("fsProtectionLockSettings", JSON.stringify(settings));
+}
+
+function fsLockFallbackHash(value) {
+    let hash = 0;
+    const text = "focus-shield-lock-" + String(value || "");
+
+    for (let i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(i);
+        hash |= 0;
+    }
+
+    return "fallback-" + Math.abs(hash).toString(16);
+}
+
+async function fsLockHashPin(pin) {
+    const value = String(pin || "");
+
+    if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode("focus-shield-lock-" + value);
+        const digest = await crypto.subtle.digest("SHA-256", data);
+        const bytes = Array.from(new Uint8Array(digest));
+
+        return bytes.map(function(byte) {
+            return byte.toString(16).padStart(2, "0");
+        }).join("");
+    }
+
+    return fsLockFallbackHash(value);
+}
+
+function fsLockIsUnlocked() {
+    const until = Number(localStorage.getItem("fsProtectionUnlockedUntil") || 0);
+    return Date.now() < until;
+}
+
+function fsLockUnlockForMinutes(minutes) {
+    const until = Date.now() + Math.max(1, Number(minutes || 15)) * 60 * 1000;
+    localStorage.setItem("fsProtectionUnlockedUntil", String(until));
+}
+
+function fsLockLockNow() {
+    localStorage.removeItem("fsProtectionUnlockedUntil");
+}
+
+async function fsLockVerifyPin(pin) {
+    const settings = fsLockGetSettings();
+
+    if (!settings.pinHash) {
+        return true;
+    }
+
+    const hash = await fsLockHashPin(pin);
+    return hash === settings.pinHash;
+}
+
+async function fsLockSetupPin(pin, confirmPin) {
+    const cleanPin = String(pin || "").trim();
+    const cleanConfirm = String(confirmPin || "").trim();
+
+    if (cleanPin.length < 4) {
+        alert("Use at least 4 digits for the PIN.");
+        return false;
+    }
+
+    if (cleanPin !== cleanConfirm) {
+        alert("PINs do not match.");
+        return false;
+    }
+
+    const settings = fsLockGetSettings();
+    settings.pinHash = await fsLockHashPin(cleanPin);
+    settings.lockEnabled = true;
+    settings.protectionEnabled = true;
+
+    fsLockSaveSettings(settings);
+    fsLockUnlockForMinutes(15);
+
+    return true;
+}
+
+function fsLockApplyPendingDisable() {
+    const settings = fsLockGetSettings();
+
+    if (!settings.disableAvailableAt) {
+        return settings;
+    }
+
+    const availableTime = new Date(settings.disableAvailableAt).getTime();
+
+    if (Date.now() >= availableTime) {
+        settings.protectionEnabled = false;
+        settings.disableRequestedAt = "";
+        settings.disableAvailableAt = "";
+        fsLockSaveSettings(settings);
+    }
+
+    return settings;
+}
+
+function fsLockProtectionIsEnabled() {
+    const settings = fsLockApplyPendingDisable();
+    return settings.protectionEnabled !== false;
+}
+
+function fsLockRequiresUnlock(action) {
+    const settings = fsLockGetSettings();
+
+    if (!settings.lockEnabled || !settings.pinHash) {
+        return false;
+    }
+
+    if (fsLockIsUnlocked()) {
+        return false;
+    }
+
+    if (action === "blocklist" && settings.blocklistEditLocked) {
+        return true;
+    }
+
+    if (action === "privacy" && settings.privacySettingsLocked) {
+        return true;
+    }
+
+    if (action === "disable") {
+        return true;
+    }
+
+    if (action === "settings") {
+        return true;
+    }
+
+    return false;
+}
+
+function fsLockFormatDate(value) {
+    if (!value) {
+        return "None";
+    }
+
+    return new Date(value).toLocaleString();
+}
+
+function fsLockStatusHtml() {
+    const settings = fsLockApplyPendingDisable();
+    const unlocked = fsLockIsUnlocked();
+
+    return `
+        <div class="card fs-lock-hero-card">
+            <h2>Protection Lock Layer</h2>
+            <h3>${settings.protectionEnabled ? "Protection Enabled" : "Protection Disabled"}</h3>
+            <p><strong>PIN:</strong> ${settings.pinHash ? "Set" : "Not set"}</p>
+            <p><strong>Lock:</strong> ${settings.lockEnabled ? "Enabled" : "Disabled"}</p>
+            <p><strong>Session:</strong> ${unlocked ? "Unlocked temporarily" : "Locked"}</p>
+            <p><strong>Delay:</strong> ${settings.delayHours} hour${settings.delayHours === 1 ? "" : "s"}</p>
+        </div>
+
+        <div class="card fs-lock-delay-card">
+            <h2>Delayed Disable</h2>
+            <p><strong>Requested:</strong> ${fsLockFormatDate(settings.disableRequestedAt)}</p>
+            <p><strong>Available:</strong> ${fsLockFormatDate(settings.disableAvailableAt)}</p>
+            <p>Disabling protection should never be instant. The delay gives you time to return to your goals.</p>
+        </div>
+    `;
+}
+
+function fsLockSetupHtml() {
+    const settings = fsLockGetSettings();
+
+    if (settings.pinHash) {
+        return "";
+    }
+
+    return `
+        <div class="card">
+            <h2>Set Protection PIN</h2>
+            <p>This protects blocklist edits, privacy settings, and disable requests.</p>
+            <input id="fsLockNewPin" type="password" inputmode="numeric" placeholder="New PIN">
+            <input id="fsLockConfirmPin" type="password" inputmode="numeric" placeholder="Confirm PIN">
+            <button id="fsLockSetPinBtn">Set PIN</button>
+        </div>
+    `;
+}
+
+function fsLockUnlockHtml() {
+    const settings = fsLockGetSettings();
+
+    if (!settings.pinHash) {
+        return "";
+    }
+
+    return `
+        <div class="card">
+            <h2>Unlock Protected Settings</h2>
+            <input id="fsLockUnlockPin" type="password" inputmode="numeric" placeholder="Enter PIN">
+            <button id="fsLockUnlockBtn">Unlock for 15 Minutes</button>
+            <button id="fsLockNowBtn">Lock Now</button>
+        </div>
+    `;
+}
+
+function fsLockControlsHtml() {
+    const settings = fsLockGetSettings();
+
+    return `
+        <div class="card">
+            <h2>Protected Settings</h2>
+
+            <label>Disable Delay Hours</label>
+            <input id="fsLockDelayHoursInput" type="number" min="1" value="${settings.delayHours}">
+
+            <button id="fsLockSaveDelayBtn">Save Delay Hours</button>
+            <button id="fsLockRequestDisableBtn">Request Protection Disable</button>
+            <button id="fsLockCancelDisableBtn">Cancel Disable Request</button>
+            <button id="fsLockEnableProtectionBtn">Enable Protection</button>
+        </div>
+
+        <div class="card">
+            <h2>Lock Options</h2>
+            <button id="fsLockToggleBlocklistBtn">${settings.blocklistEditLocked ? "Unlock Blocklist Edits Setting" : "Lock Blocklist Edits Setting"}</button>
+            <button id="fsLockTogglePrivacyBtn">${settings.privacySettingsLocked ? "Unlock Privacy Settings Option" : "Lock Privacy Settings Option"}</button>
+            <button id="fsLockClearPinBtn">Clear PIN</button>
+        </div>
+    `;
+}
+
+function openProtectionLockPage() {
+    showPage(`
+        <h1>Protection Lock Layer</h1>
+
+        ${fsLockStatusHtml()}
+
+        ${fsLockSetupHtml()}
+
+        ${fsLockUnlockHtml()}
+
+        ${fsLockControlsHtml()}
+
+        <div class="card fs-lock-warning-card">
+            <h2>Prototype Notice</h2>
+            <p>This is a web prototype lock. Real system-wide protection will require the future Android/VPN app.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    const setPinBtn = document.getElementById("fsLockSetPinBtn");
+
+    if (setPinBtn) {
+        setPinBtn.addEventListener("click", async function() {
+            const pin = document.getElementById("fsLockNewPin").value;
+            const confirm = document.getElementById("fsLockConfirmPin").value;
+
+            if (await fsLockSetupPin(pin, confirm)) {
+                alert("Protection PIN set.");
+                openProtectionLockPage();
+            }
+        });
+    }
+
+    const unlockBtn = document.getElementById("fsLockUnlockBtn");
+
+    if (unlockBtn) {
+        unlockBtn.addEventListener("click", async function() {
+            const pin = document.getElementById("fsLockUnlockPin").value;
+
+            if (await fsLockVerifyPin(pin)) {
+                fsLockUnlockForMinutes(15);
+                alert("Unlocked for 15 minutes.");
+                openProtectionLockPage();
+            } else {
+                alert("Incorrect PIN.");
+            }
+        });
+    }
+
+    const lockBtn = document.getElementById("fsLockNowBtn");
+
+    if (lockBtn) {
+        lockBtn.addEventListener("click", function() {
+            fsLockLockNow();
+            openProtectionLockPage();
+        });
+    }
+
+    document.getElementById("fsLockSaveDelayBtn").addEventListener("click", function() {
+        if (fsLockRequiresUnlock("settings")) {
+            alert("Unlock with PIN before changing protected settings.");
+            openProtectionLockPage();
+            return;
+        }
+
+        const settings = fsLockGetSettings();
+        settings.delayHours = Math.max(1, Number(document.getElementById("fsLockDelayHoursInput").value || 24));
+        fsLockSaveSettings(settings);
+        openProtectionLockPage();
+    });
+
+    document.getElementById("fsLockRequestDisableBtn").addEventListener("click", function() {
+        if (fsLockRequiresUnlock("disable")) {
+            alert("Unlock with PIN before requesting protection disable.");
+            openProtectionLockPage();
+            return;
+        }
+
+        const settings = fsLockGetSettings();
+        const now = new Date();
+        const available = new Date(now.getTime() + settings.delayHours * 60 * 60 * 1000);
+
+        settings.disableRequestedAt = now.toISOString();
+        settings.disableAvailableAt = available.toISOString();
+        fsLockSaveSettings(settings);
+
+        alert("Disable request started. Protection remains active until the delay is complete.");
+        openProtectionLockPage();
+    });
+
+    document.getElementById("fsLockCancelDisableBtn").addEventListener("click", function() {
+        const settings = fsLockGetSettings();
+        settings.disableRequestedAt = "";
+        settings.disableAvailableAt = "";
+        settings.protectionEnabled = true;
+        fsLockSaveSettings(settings);
+        openProtectionLockPage();
+    });
+
+    document.getElementById("fsLockEnableProtectionBtn").addEventListener("click", function() {
+        const settings = fsLockGetSettings();
+        settings.protectionEnabled = true;
+        settings.disableRequestedAt = "";
+        settings.disableAvailableAt = "";
+        fsLockSaveSettings(settings);
+        openProtectionLockPage();
+    });
+
+    document.getElementById("fsLockToggleBlocklistBtn").addEventListener("click", function() {
+        if (fsLockRequiresUnlock("settings")) {
+            alert("Unlock with PIN before changing lock options.");
+            openProtectionLockPage();
+            return;
+        }
+
+        const settings = fsLockGetSettings();
+        settings.blocklistEditLocked = !settings.blocklistEditLocked;
+        fsLockSaveSettings(settings);
+        openProtectionLockPage();
+    });
+
+    document.getElementById("fsLockTogglePrivacyBtn").addEventListener("click", function() {
+        if (fsLockRequiresUnlock("settings")) {
+            alert("Unlock with PIN before changing lock options.");
+            openProtectionLockPage();
+            return;
+        }
+
+        const settings = fsLockGetSettings();
+        settings.privacySettingsLocked = !settings.privacySettingsLocked;
+        fsLockSaveSettings(settings);
+        openProtectionLockPage();
+    });
+
+    document.getElementById("fsLockClearPinBtn").addEventListener("click", function() {
+        if (fsLockRequiresUnlock("settings")) {
+            alert("Unlock with PIN before clearing the PIN.");
+            openProtectionLockPage();
+            return;
+        }
+
+        const settings = fsLockGetSettings();
+        settings.pinHash = "";
+        settings.lockEnabled = false;
+        fsLockSaveSettings(settings);
+        fsLockLockNow();
+        openProtectionLockPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+/* Protect blocklist edits */
+if (typeof fsProtectionAddDomain === "function" && !window.fsLockAddDomainWrapped) {
+    window.fsLockAddDomainWrapped = true;
+
+    const oldFsProtectionAddDomainLock = fsProtectionAddDomain;
+
+    fsProtectionAddDomain = function(domain, category) {
+        if (fsLockRequiresUnlock("blocklist")) {
+            alert("Blocklist editing is protected. Unlock with PIN first.");
+            openProtectionLockPage();
+            return false;
+        }
+
+        return oldFsProtectionAddDomainLock.apply(this, arguments);
+    };
+}
+
+if (typeof fsProtectionRemoveDomain === "function" && !window.fsLockRemoveDomainWrapped) {
+    window.fsLockRemoveDomainWrapped = true;
+
+    const oldFsProtectionRemoveDomainLock = fsProtectionRemoveDomain;
+
+    fsProtectionRemoveDomain = function(domain) {
+        if (fsLockRequiresUnlock("blocklist")) {
+            alert("Blocklist editing is protected. Unlock with PIN first.");
+            openProtectionLockPage();
+            return false;
+        }
+
+        return oldFsProtectionRemoveDomainLock.apply(this, arguments);
+    };
+}
+
+/* Protect privacy buttons and clear log */
+document.addEventListener("click", function(event) {
+    const button = event.target.closest("button");
+
+    if (!button) {
+        return;
+    }
+
+    const protectedIds = [
+        "fsProtectionStatsOnlyBtn",
+        "fsProtectionFullLogBtn",
+        "fsProtectionClearAttemptsBtn"
+    ];
+
+    if (protectedIds.includes(button.id) && fsLockRequiresUnlock("privacy")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        alert("Privacy/protection settings are protected. Unlock with PIN first.");
+        openProtectionLockPage();
+    }
+}, true);
+
+/* Apply protection enabled/disabled state to URL analysis */
+if (typeof fsUrlEngineAnalyze === "function" && !window.fsLockUrlEngineWrapped) {
+    window.fsLockUrlEngineWrapped = true;
+
+    const oldFsUrlEngineAnalyzeLock = fsUrlEngineAnalyze;
+
+    fsUrlEngineAnalyze = function(input, options) {
+        const opts = options || {};
+
+        if (!opts.ignoreProtectionDisabled && !fsLockProtectionIsEnabled()) {
+            const parts = typeof fsUrlEngineExtractParts === "function"
+                ? fsUrlEngineExtractParts(input)
+                : { original: input, domain: input, normalizedUrl: input };
+
+            return {
+                input: parts.original || String(input || ""),
+                normalizedUrl: parts.normalizedUrl || String(input || ""),
+                protocol: parts.protocol || "",
+                domain: parts.domain || "",
+                path: parts.path || "",
+                query: parts.query || "",
+                hash: parts.hash || "",
+                decision: "ALLOW",
+                reason: "Protection is currently disabled by delayed-disable setting.",
+                category: "protection-disabled",
+                confidence: 0,
+                matchedKeyword: "",
+                matchedDomain: "",
+                steps: [
+                    {
+                        name: "Protection State",
+                        status: "WARN",
+                        detail: "Protection is disabled in the prototype lock layer."
+                    }
+                ],
+                checkedAt: new Date().toISOString()
+            };
+        }
+
+        return oldFsUrlEngineAnalyzeLock.apply(this, arguments);
+    };
+}
+
+/* Add Lock Layer buttons */
+function insertProtectionLockHomeButton() {
+    const card = document.getElementById("protectionDatabaseHomeCard");
+
+    if (!card) {
+        return;
+    }
+
+    if (document.getElementById("openProtectionLockHomeBtn")) {
+        return;
+    }
+
+    const settings = fsLockApplyPendingDisable();
+
+    const note = document.createElement("p");
+    note.id = "fsProtectionLockHomeNote";
+    note.innerHTML = "<strong>Lock Layer:</strong> " + (settings.pinHash ? "PIN set" : "PIN not set");
+
+    const btn = document.createElement("button");
+    btn.id = "openProtectionLockHomeBtn";
+    btn.type = "button";
+    btn.textContent = "Protection Lock Layer";
+    btn.className = "fs-lock-btn";
+    btn.addEventListener("click", openProtectionLockPage);
+
+    card.appendChild(note);
+    card.appendChild(btn);
+}
+
+function insertProtectionLockIntoProtectionPage() {
+    const hero = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Phase 2A Local Blocklist";
+        });
+
+    if (!hero) return;
+
+    if (document.getElementById("openProtectionLockFromDbBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "openProtectionLockFromDbBtn";
+    btn.type = "button";
+    btn.textContent = "Protection Lock Layer";
+    btn.className = "fs-lock-btn";
+    btn.addEventListener("click", openProtectionLockPage);
+
+    hero.appendChild(btn);
+}
+
+function addProtectionLockQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPrimaryGrid") ||
+        document.getElementById("premiumPlanGrid");
+
+    if (!grid) return;
+
+    if (document.getElementById("quickProtectionLockBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickProtectionLockBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">PIN</span>
+        <span class="premium-quick-label">Lock Layer</span>
+        <span class="premium-quick-sub">Protected settings</span>
+    `;
+
+    button.addEventListener("click", openProtectionLockPage);
+
+    grid.appendChild(button);
+}
+
+/* Add Lock Layer to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsLockHealthWrapped) {
+    window.fsLockHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksLock = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksLock();
+        const settings = fsLockApplyPendingDisable();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Protection Lock Layer";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Protection Lock Layer",
+                settings.pinHash ? "PASS" : "WARN",
+                settings.pinHash
+                    ? "PIN protection is set for protected settings."
+                    : "PIN protection is not set yet.",
+                "Set a PIN before relying on protected settings."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshProtectionLockSystems() {
+    fsLockApplyPendingDisable();
+
+    setTimeout(insertProtectionLockHomeButton, 700);
+    setTimeout(insertProtectionLockHomeButton, 1700);
+    setTimeout(insertProtectionLockHomeButton, 3000);
+
+    setTimeout(insertProtectionLockIntoProtectionPage, 500);
+    setTimeout(insertProtectionLockIntoProtectionPage, 1300);
+
+    setTimeout(addProtectionLockQuickButton, 800);
+    setTimeout(addProtectionLockQuickButton, 1800);
+    setTimeout(addProtectionLockQuickButton, 3000);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof openProtectionDatabasePage === "function" && !window.fsLockProtectionPageWrapped) {
+    window.fsLockProtectionPageWrapped = true;
+
+    const oldOpenProtectionDatabasePageLock = openProtectionDatabasePage;
+
+    openProtectionDatabasePage = function() {
+        oldOpenProtectionDatabasePageLock.apply(this, arguments);
+        setTimeout(insertProtectionLockIntoProtectionPage, 500);
+        setTimeout(insertProtectionLockIntoProtectionPage, 1200);
+    };
+}
+
+if (typeof goHome === "function" && !window.fsLockGoHomeWrapped) {
+    window.fsLockGoHomeWrapped = true;
+
+    const oldGoHomeLock = goHome;
+
+    goHome = function() {
+        oldGoHomeLock.apply(this, arguments);
+        setTimeout(refreshProtectionLockSystems, 1200);
+    };
+}
+
+refreshProtectionLockSystems();
 
 </script>
 

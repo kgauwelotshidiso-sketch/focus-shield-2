@@ -2244,3 +2244,33 @@ textarea:focus {
     background: linear-gradient(135deg, #ef4444, #f97316) !important;
     border: 1px solid rgba(253, 186, 116, 0.45);
 }
+
+.fs-lock-hero-card {
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.32));
+}
+
+.fs-lock-hero-card h3 {
+    color: #c084fc;
+}
+
+.fs-lock-delay-card {
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.25));
+}
+
+.fs-lock-warning-card {
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(248, 113, 113, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(127, 29, 29, 0.25));
+}
+
+.fs-lock-btn {
+    background: linear-gradient(135deg, #a855f7, #2563eb) !important;
+    border: 1px solid rgba(196, 181, 253, 0.45);
+}
