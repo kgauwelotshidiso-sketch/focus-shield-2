@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=dailystartup1">
+    <link rel="stylesheet" href="style.css?v=phase2protectiondb1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshProtectionDatabaseSystems, 1400);
     setTimeout(refreshDailyStartupCheckSystems, 1300);
     setTimeout(refreshSmartCoachWeeklyIntelligenceSystems, 1200);
     setTimeout(refreshSmartCoachMemorySystems, 1100);
@@ -16088,6 +16089,707 @@ if (typeof goHome === "function" && !window.fsStartupGoHomeWrapped) {
 }
 
 refreshDailyStartupCheckSystems();
+
+
+/* Phase 2A Local Protection Database */
+function fsProtectionTodayKey() {
+    if (typeof fsDailyRolloverTodayKey === "function") return fsDailyRolloverTodayKey();
+    if (typeof p3TodayKey === "function") return p3TodayKey();
+    if (typeof masterTodayKey === "function") return masterTodayKey();
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsProtectionEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsProtectionGetJson(key, fallback) {
+    try {
+        const data = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        return data || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsProtectionSaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function fsProtectionNormalizeDomain(input) {
+    let value = String(input || "").trim().toLowerCase();
+
+    if (!value) return "";
+
+    value = value.replace(/^https?:\/\//, "");
+    value = value.replace(/^www\./, "");
+    value = value.split("/")[0];
+    value = value.split("?")[0];
+    value = value.split("#")[0];
+    value = value.split(":")[0];
+
+    return value;
+}
+
+function fsProtectionExtractDomain(input) {
+    let value = String(input || "").trim();
+
+    if (!value) return "";
+
+    try {
+        if (!/^https?:\/\//i.test(value)) {
+            value = "https://" + value;
+        }
+
+        const url = new URL(value);
+        return fsProtectionNormalizeDomain(url.hostname);
+    } catch (error) {
+        return fsProtectionNormalizeDomain(value);
+    }
+}
+
+function fsProtectionSeedDatabase() {
+    const seeded = localStorage.getItem("fsProtectionSeededV1");
+
+    if (seeded) {
+        return;
+    }
+
+    const database = [
+        {
+            id: "domain-" + Date.now() + "-1",
+            domain: "blocked-example.com",
+            category: "test-risk",
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: "domain-" + Date.now() + "-2",
+            domain: "temptation-test.net",
+            category: "test-risk",
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: "domain-" + Date.now() + "-3",
+            domain: "focus-risk.org",
+            category: "test-risk",
+            updatedAt: new Date().toISOString()
+        }
+    ];
+
+    fsProtectionSaveJson("fsProtectionBlockedDomains", database);
+    localStorage.setItem("fsProtectionSeededV1", "true");
+}
+
+function fsProtectionGetBlockedDomains() {
+    fsProtectionSeedDatabase();
+
+    const data = fsProtectionGetJson("fsProtectionBlockedDomains", []);
+
+    return Array.isArray(data) ? data : [];
+}
+
+function fsProtectionSaveBlockedDomains(domains) {
+    const clean = [];
+
+    const seen = {};
+
+    (domains || []).forEach(function(item) {
+        const domain = fsProtectionNormalizeDomain(item.domain);
+
+        if (!domain || seen[domain]) {
+            return;
+        }
+
+        seen[domain] = true;
+
+        clean.push({
+            id: item.id || "domain-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+            domain: domain,
+            category: item.category || "manual",
+            updatedAt: item.updatedAt || new Date().toISOString()
+        });
+    });
+
+    fsProtectionSaveJson("fsProtectionBlockedDomains", clean);
+}
+
+function fsProtectionAddDomain(domain, category) {
+    const normalized = fsProtectionNormalizeDomain(domain);
+
+    if (!normalized) {
+        alert("Enter a valid domain first.");
+        return false;
+    }
+
+    const domains = fsProtectionGetBlockedDomains();
+    const exists = domains.some(function(item) {
+        return item.domain === normalized;
+    });
+
+    if (exists) {
+        alert("This domain already exists in the blocklist.");
+        return false;
+    }
+
+    domains.push({
+        id: "domain-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        domain: normalized,
+        category: category || "manual",
+        updatedAt: new Date().toISOString()
+    });
+
+    fsProtectionSaveBlockedDomains(domains);
+    return true;
+}
+
+function fsProtectionRemoveDomain(domain) {
+    const normalized = fsProtectionNormalizeDomain(domain);
+    const domains = fsProtectionGetBlockedDomains().filter(function(item) {
+        return item.domain !== normalized;
+    });
+
+    fsProtectionSaveBlockedDomains(domains);
+}
+
+function fsProtectionKeywordList() {
+    return [
+        "adult",
+        "explicit",
+        "xxx",
+        "temptation",
+        "risk"
+    ];
+}
+
+function fsProtectionContainsRiskKeyword(input) {
+    const value = String(input || "").toLowerCase();
+    const keywords = fsProtectionKeywordList();
+
+    const match = keywords.find(function(keyword) {
+        return value.includes(keyword);
+    });
+
+    return match || "";
+}
+
+function fsProtectionDomainMatchesBlocked(domain) {
+    const normalized = fsProtectionNormalizeDomain(domain);
+    const domains = fsProtectionGetBlockedDomains();
+
+    return domains.find(function(item) {
+        return normalized === item.domain || normalized.endsWith("." + item.domain);
+    }) || null;
+}
+
+function fsProtectionAnalyzeUrl(input, options) {
+    const opts = options || {};
+    const original = String(input || "").trim();
+    const domain = fsProtectionExtractDomain(original);
+    const keyword = fsProtectionContainsRiskKeyword(original);
+    const blockedDomain = fsProtectionDomainMatchesBlocked(domain);
+
+    let decision = "ALLOW";
+    let reason = "No blocklist or keyword match.";
+    let category = "safe";
+    let confidence = 0.1;
+
+    if (blockedDomain) {
+        decision = "BLOCK";
+        reason = "Domain exists in local blocklist.";
+        category = blockedDomain.category || "blocked";
+        confidence = 0.98;
+    } else if (keyword) {
+        decision = "BLOCK";
+        reason = "URL contains a risk keyword: " + keyword + ".";
+        category = "keyword-risk";
+        confidence = 0.86;
+    }
+
+    const result = {
+        input: original,
+        domain: domain,
+        decision: decision,
+        reason: reason,
+        category: category,
+        confidence: confidence,
+        checkedAt: new Date().toISOString()
+    };
+
+    if (decision === "BLOCK" && opts.logAttempt !== false) {
+        fsProtectionLogBlockedAttempt(result);
+    }
+
+    return result;
+}
+
+function fsProtectionGetAttempts() {
+    const attempts = fsProtectionGetJson("fsProtectionBlockedAttempts", []);
+    return Array.isArray(attempts) ? attempts : [];
+}
+
+function fsProtectionSaveAttempts(attempts) {
+    fsProtectionSaveJson("fsProtectionBlockedAttempts", (attempts || []).slice(-200));
+}
+
+function fsProtectionLogBlockedAttempt(result) {
+    const privacyMode = localStorage.getItem("fsProtectionPrivacyMode") || "stats-only";
+    const attempts = fsProtectionGetAttempts();
+
+    attempts.push({
+        id: "attempt-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        dateKey: fsProtectionTodayKey(),
+        timestamp: new Date().toISOString(),
+        website: privacyMode === "full" ? result.domain : "[hidden]",
+        category: result.category,
+        reason: result.reason,
+        confidence: result.confidence,
+        privacyMode: privacyMode
+    });
+
+    fsProtectionSaveAttempts(attempts);
+}
+
+function fsProtectionClearAttempts() {
+    fsProtectionSaveAttempts([]);
+}
+
+function fsProtectionGetStats() {
+    const domains = fsProtectionGetBlockedDomains();
+    const attempts = fsProtectionGetAttempts();
+    const todayKey = fsProtectionTodayKey();
+
+    const todayAttempts = attempts.filter(function(item) {
+        return item.dateKey === todayKey;
+    });
+
+    const categoryCounts = {};
+
+    attempts.forEach(function(item) {
+        const category = item.category || "unknown";
+        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+    });
+
+    return {
+        domains: domains.length,
+        attempts: attempts.length,
+        todayAttempts: todayAttempts.length,
+        categories: categoryCounts
+    };
+}
+
+function fsProtectionInterventionHtml(result) {
+    return `
+        <div class="card fs-protection-intervention-card">
+            <h2>⚠ Temptation Detected</h2>
+            <p><strong>Decision:</strong> ${fsProtectionEscape(result.decision)}</p>
+            <p><strong>Category:</strong> ${fsProtectionEscape(result.category)}</p>
+            <p><strong>Confidence:</strong> ${Math.round(result.confidence * 100)}%</p>
+            <p><strong>Reason:</strong> ${fsProtectionEscape(result.reason)}</p>
+
+            <div class="fs-protection-affirmation">
+                <p>I pause, I listen, and I follow my dreams.</p>
+            </div>
+
+            <p>Your future is worth more than this moment.</p>
+
+            <button id="fsProtectionReadGoalsBtn">Read Goals</button>
+            <button id="fsProtectionStartFocusBtn">Start Focus Session</button>
+            <button id="fsProtectionJournalBtn">Journal Thoughts</button>
+            <button id="fsProtectionBreathingBtn">Breathing Reset</button>
+        </div>
+    `;
+}
+
+function fsProtectionAttachInterventionButtons() {
+    const goalsBtn = document.getElementById("fsProtectionReadGoalsBtn");
+    const focusBtn = document.getElementById("fsProtectionStartFocusBtn");
+    const journalBtn = document.getElementById("fsProtectionJournalBtn");
+    const breathingBtn = document.getElementById("fsProtectionBreathingBtn");
+
+    if (goalsBtn) {
+        goalsBtn.onclick = function() {
+            if (typeof openFocusShieldGoalsPage === "function") {
+                openFocusShieldGoalsPage();
+            } else if (typeof openGoalsPage === "function") {
+                openGoalsPage();
+            }
+        };
+    }
+
+    if (focusBtn) {
+        focusBtn.onclick = function() {
+            if (typeof openFocusTimerPage === "function") {
+                openFocusTimerPage();
+            } else if (typeof openFocusPage === "function") {
+                openFocusPage();
+            }
+        };
+    }
+
+    if (journalBtn) {
+        journalBtn.onclick = function() {
+            if (typeof openDailyReflectionPage === "function") {
+                openDailyReflectionPage();
+            } else if (typeof openReflectionPage === "function") {
+                openReflectionPage();
+            }
+        };
+    }
+
+    if (breathingBtn) {
+        breathingBtn.onclick = function() {
+            alert("Breathing reset: pause, inhale slowly, exhale slowly, and return to your goal.");
+        };
+    }
+}
+
+function fsProtectionDatabaseListHtml(searchTerm) {
+    const query = String(searchTerm || "").trim().toLowerCase();
+
+    const domains = fsProtectionGetBlockedDomains().filter(function(item) {
+        if (!query) return true;
+
+        return item.domain.includes(query) || String(item.category || "").toLowerCase().includes(query);
+    });
+
+    if (!domains.length) {
+        return `
+            <div class="card">
+                <h2>Blocked Domains</h2>
+                <p>No domains found.</p>
+            </div>
+        `;
+    }
+
+    const rows = domains.map(function(item) {
+        return `
+            <div class="card fs-protection-domain-row">
+                <h2>${fsProtectionEscape(item.domain)}</h2>
+                <p><strong>Category:</strong> ${fsProtectionEscape(item.category)}</p>
+                <p><strong>Updated:</strong> ${new Date(item.updatedAt).toLocaleString()}</p>
+                <button class="fsRemoveBlockedDomainBtn" data-domain="${fsProtectionEscape(item.domain)}">Remove Domain</button>
+            </div>
+        `;
+    }).join("");
+
+    return `
+        <div class="card">
+            <h2>Blocked Domains</h2>
+            <p>${domains.length} domain${domains.length === 1 ? "" : "s"} shown.</p>
+        </div>
+        ${rows}
+    `;
+}
+
+function fsProtectionAttemptsHtml() {
+    const attempts = fsProtectionGetAttempts().slice(-10).reverse();
+
+    if (!attempts.length) {
+        return `
+            <div class="card">
+                <h2>Blocked Attempts Log</h2>
+                <p>No blocked attempts logged yet.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="card">
+            <h2>Blocked Attempts Log</h2>
+            <p>Latest 10 attempts. Privacy mode can hide exact domains.</p>
+        </div>
+        ${attempts.map(function(item) {
+            return `
+                <div class="card fs-protection-attempt-row">
+                    <h2>${fsProtectionEscape(item.category)}</h2>
+                    <p><strong>Website:</strong> ${fsProtectionEscape(item.website)}</p>
+                    <p><strong>Reason:</strong> ${fsProtectionEscape(item.reason)}</p>
+                    <p><strong>Time:</strong> ${new Date(item.timestamp).toLocaleString()}</p>
+                </div>
+            `;
+        }).join("")}
+    `;
+}
+
+function fsProtectionStatsHtml() {
+    const stats = fsProtectionGetStats();
+
+    return `
+        <div class="card fs-protection-stats-card">
+            <h2>Protection Stats</h2>
+            <p><strong>Blocked Domains:</strong> ${stats.domains}</p>
+            <p><strong>Blocked Attempts Today:</strong> ${stats.todayAttempts}</p>
+            <p><strong>Total Blocked Attempts:</strong> ${stats.attempts}</p>
+            <p><strong>Privacy Mode:</strong> ${fsProtectionEscape(localStorage.getItem("fsProtectionPrivacyMode") || "stats-only")}</p>
+        </div>
+    `;
+}
+
+function openProtectionDatabasePage(searchTerm) {
+    fsProtectionSeedDatabase();
+
+    showPage(`
+        <h1>Protection Database</h1>
+
+        <div class="card fs-protection-hero-card">
+            <h2>Phase 2A Local Blocklist</h2>
+            <p>This is the web prototype for the protection database. It tests the logic before Android VPN filtering.</p>
+        </div>
+
+        ${fsProtectionStatsHtml()}
+
+        <div class="card">
+            <h2>Add Blocked Domain</h2>
+            <label>Domain</label>
+            <input id="fsNewBlockedDomainInput" placeholder="example: blocked-example.com">
+
+            <label>Category</label>
+            <select id="fsNewBlockedDomainCategory">
+                <option value="manual-risk">manual-risk</option>
+                <option value="test-risk">test-risk</option>
+                <option value="keyword-risk">keyword-risk</option>
+                <option value="focus-risk">focus-risk</option>
+            </select>
+
+            <button id="fsAddBlockedDomainBtn">Add Domain</button>
+        </div>
+
+        <div class="card">
+            <h2>Test URL / Domain</h2>
+            <input id="fsProtectionTestUrlInput" placeholder="example: blocked-example.com">
+            <button id="fsProtectionCheckUrlBtn">Check URL</button>
+            <div id="fsProtectionTestResult"></div>
+        </div>
+
+        <div class="card">
+            <h2>Search Blocklist</h2>
+            <input id="fsProtectionSearchInput" placeholder="Search domain or category" value="${fsProtectionEscape(searchTerm || "")}">
+            <button id="fsProtectionSearchBtn">Search</button>
+            <button id="fsProtectionClearSearchBtn">Clear Search</button>
+        </div>
+
+        <div class="card">
+            <h2>Privacy Settings</h2>
+            <p>Stats-only mode hides exact websites in blocked attempt logs.</p>
+            <button id="fsProtectionStatsOnlyBtn">Use Stats-Only Privacy</button>
+            <button id="fsProtectionFullLogBtn">Use Full Domain Log</button>
+            <button id="fsProtectionClearAttemptsBtn">Clear Attempt Log</button>
+        </div>
+
+        <div id="fsProtectionDomainListRoot">
+            ${fsProtectionDatabaseListHtml(searchTerm || "")}
+        </div>
+
+        <div id="fsProtectionAttemptsRoot">
+            ${fsProtectionAttemptsHtml()}
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("fsAddBlockedDomainBtn").addEventListener("click", function() {
+        const domain = document.getElementById("fsNewBlockedDomainInput").value.trim();
+        const category = document.getElementById("fsNewBlockedDomainCategory").value;
+
+        if (fsProtectionAddDomain(domain, category)) {
+            openProtectionDatabasePage();
+        }
+    });
+
+    document.getElementById("fsProtectionCheckUrlBtn").addEventListener("click", function() {
+        const input = document.getElementById("fsProtectionTestUrlInput").value.trim();
+        const result = fsProtectionAnalyzeUrl(input);
+
+        const resultRoot = document.getElementById("fsProtectionTestResult");
+
+        if (result.decision === "BLOCK") {
+            resultRoot.innerHTML = fsProtectionInterventionHtml(result);
+            fsProtectionAttachInterventionButtons();
+        } else {
+            resultRoot.innerHTML = `
+                <div class="card fs-protection-allow-card">
+                    <h2>✅ Allowed</h2>
+                    <p><strong>Domain:</strong> ${fsProtectionEscape(result.domain)}</p>
+                    <p>${fsProtectionEscape(result.reason)}</p>
+                </div>
+            `;
+        }
+
+        const attemptsRoot = document.getElementById("fsProtectionAttemptsRoot");
+
+        if (attemptsRoot) {
+            attemptsRoot.innerHTML = fsProtectionAttemptsHtml();
+        }
+    });
+
+    document.getElementById("fsProtectionSearchBtn").addEventListener("click", function() {
+        const query = document.getElementById("fsProtectionSearchInput").value.trim();
+        openProtectionDatabasePage(query);
+    });
+
+    document.getElementById("fsProtectionClearSearchBtn").addEventListener("click", function() {
+        openProtectionDatabasePage("");
+    });
+
+    document.getElementById("fsProtectionStatsOnlyBtn").addEventListener("click", function() {
+        localStorage.setItem("fsProtectionPrivacyMode", "stats-only");
+        openProtectionDatabasePage(searchTerm || "");
+    });
+
+    document.getElementById("fsProtectionFullLogBtn").addEventListener("click", function() {
+        localStorage.setItem("fsProtectionPrivacyMode", "full");
+        openProtectionDatabasePage(searchTerm || "");
+    });
+
+    document.getElementById("fsProtectionClearAttemptsBtn").addEventListener("click", function() {
+        fsProtectionClearAttempts();
+        openProtectionDatabasePage(searchTerm || "");
+    });
+
+    document.querySelectorAll(".fsRemoveBlockedDomainBtn").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const domain = button.getAttribute("data-domain");
+            fsProtectionRemoveDomain(domain);
+            openProtectionDatabasePage(searchTerm || "");
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertProtectionHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("protectionDatabaseHomeCard")) {
+        return;
+    }
+
+    const smartCoachCard = document.getElementById("smartDailyCoachHomeCard");
+    const startupCard = document.getElementById("dailyStartupCheckHomeCard");
+    const insertAfter = smartCoachCard || startupCard || document.querySelector(".card");
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const stats = fsProtectionGetStats();
+
+    const card = document.createElement("div");
+    card.id = "protectionDatabaseHomeCard";
+    card.className = "card fs-protection-hero-card";
+    card.innerHTML = `
+        <h2>Protection Database</h2>
+        <h3>Phase 2A Local Blocklist</h3>
+        <p><strong>Blocked Domains:</strong> ${stats.domains}</p>
+        <p><strong>Attempts Today:</strong> ${stats.todayAttempts}</p>
+        <button id="openProtectionDatabaseBtn">Open Protection Database</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openProtectionDatabaseBtn").addEventListener("click", function() {
+        openProtectionDatabasePage();
+    });
+}
+
+function addProtectionQuickButton() {
+    const grid =
+        document.getElementById("premiumPrimaryGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumReviewGrid");
+
+    if (!grid) {
+        return;
+    }
+
+    if (document.getElementById("quickProtectionDatabaseBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickProtectionDatabaseBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-main-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">BLK</span>
+        <span class="premium-quick-label">Blocklist</span>
+        <span class="premium-quick-sub">Protection DB</span>
+    `;
+
+    button.addEventListener("click", function() {
+        openProtectionDatabasePage();
+    });
+
+    grid.appendChild(button);
+}
+
+/* Add Protection Database to System Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsProtectionHealthWrapped) {
+    window.fsProtectionHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksProtection = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksProtection();
+        const stats = fsProtectionGetStats();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Protection Database";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Protection Database",
+                stats.domains > 0 ? "PASS" : "WARN",
+                "Local blocklist contains " + stats.domains + " domain" + (stats.domains === 1 ? "" : "s") + ".",
+                "Use safe test domains first. Android VPN filtering comes later."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshProtectionDatabaseSystems() {
+    fsProtectionSeedDatabase();
+
+    setTimeout(insertProtectionHomeCard, 700);
+    setTimeout(insertProtectionHomeCard, 1600);
+    setTimeout(insertProtectionHomeCard, 2800);
+
+    setTimeout(addProtectionQuickButton, 800);
+    setTimeout(addProtectionQuickButton, 1800);
+    setTimeout(addProtectionQuickButton, 3000);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsProtectionGoHomeWrapped) {
+    window.fsProtectionGoHomeWrapped = true;
+
+    const oldGoHomeProtection = goHome;
+
+    goHome = function() {
+        oldGoHomeProtection.apply(this, arguments);
+        setTimeout(refreshProtectionDatabaseSystems, 900);
+    };
+}
+
+refreshProtectionDatabaseSystems();
 
 </script>
 
