@@ -2599,3 +2599,61 @@ textarea:focus {
         width: 100%;
     }
 }
+
+
+/* Phase 3C Flutter Starter Files */
+.fs-starter-home-card,
+.fs-starter-hero-card {
+    border: 1px solid rgba(96, 165, 250, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(96, 165, 250, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 64, 175, 0.28));
+}
+
+.fs-starter-home-card h3,
+.fs-starter-hero-card h3 {
+    color: #60a5fa;
+}
+
+.fs-starter-warning-card {
+    border: 1px solid rgba(250, 204, 21, 0.5);
+}
+
+.fs-starter-files-card,
+.fs-starter-next-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+}
+
+.fs-starter-check-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fs-starter-check-row p {
+    margin: 6px 0 0;
+    opacity: 0.82;
+}
+
+.fs-starter-check-row button {
+    width: auto;
+    min-width: 110px;
+    padding: 10px 12px;
+}
+
+@media (max-width: 520px) {
+    .fs-starter-check-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fs-starter-check-row button {
+        width: 100%;
+    }
+}

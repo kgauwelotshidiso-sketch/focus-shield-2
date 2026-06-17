@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3bflutterblueprint1">
+    <link rel="stylesheet" href="style.css?v=phase3cflutterstarterfix1">
 </head>
 <body>
 
@@ -20385,6 +20385,231 @@ if (typeof goHome === "function" && !window.fsFlutterBlueprintGoHomeWrapped) {
 }
 
 refreshFlutterBlueprintSystems();
+
+
+/* Phase 3C Flutter Starter Files */
+function fsFlutterStarterEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsFlutterStarterGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3CChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsFlutterStarterSaveChecklist(data) {
+    localStorage.setItem("fsPhase3CChecklist", JSON.stringify(data || {}));
+}
+
+function fsFlutterStarterToggleItem(key) {
+    const data = fsFlutterStarterGetChecklist();
+    data[key] = !data[key];
+    fsFlutterStarterSaveChecklist(data);
+    openFlutterStarterFilesPage();
+}
+
+function fsFlutterStarterItems() {
+    return ["mainApp", "routesTheme", "screens", "models", "database", "services", "nativeBridge", "readme"];
+}
+
+function fsFlutterStarterProgress() {
+    const items = fsFlutterStarterItems();
+    const data = fsFlutterStarterGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsFlutterStarterCheckItem(key, label, detail) {
+    const data = fsFlutterStarterGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-starter-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsFlutterStarterEscape(label)}</strong>
+                <p>${fsFlutterStarterEscape(detail)}</p>
+            </div>
+            <button data-flutter-starter-key="${fsFlutterStarterEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openFlutterStarterFilesPage() {
+    const progress = fsFlutterStarterProgress();
+
+    showPage(`
+        <h1>Phase 3C Flutter Starter Files</h1>
+
+        <div class="card fs-starter-hero-card">
+            <h2>Flutter Starter Files</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>Starter templates have been created under:</p>
+            <p><strong>/workspaces/focus-shield-2/flutter_starter</strong></p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} starter groups confirmed.</p>
+        </div>
+
+        <div class="card fs-starter-warning-card">
+            <h2>Important</h2>
+            <p>This is not a compiled Flutter app yet. These are starter templates for the future Android project.</p>
+        </div>
+
+        <div class="card fs-starter-files-card">
+            <h2>Created Starter Groups</h2>
+            <p><strong>Main App:</strong> main.dart, app.dart</p>
+            <p><strong>Routing:</strong> routes.dart</p>
+            <p><strong>Theme:</strong> theme.dart</p>
+            <p><strong>Screens:</strong> dashboard, protection, blocklist, URL analysis, intervention, settings</p>
+            <p><strong>Models:</strong> blocked domain, attempt, decision, goal, settings</p>
+            <p><strong>Database:</strong> app database and provider placeholders</p>
+            <p><strong>Services:</strong> protection, blocklist, attempts, backup, lock, smart coach</p>
+            <p><strong>Native:</strong> VPN bridge placeholder</p>
+        </div>
+
+        <div class="card fs-starter-checklist-card">
+            <h2>Phase 3C Checklist</h2>
+            ${fsFlutterStarterCheckItem("mainApp", "Main app files confirmed", "main.dart and app.dart starter files created.")}
+            ${fsFlutterStarterCheckItem("routesTheme", "Routes and theme confirmed", "routes.dart and theme.dart created.")}
+            ${fsFlutterStarterCheckItem("screens", "Screens confirmed", "Dashboard, protection, blocklist, URL analysis, intervention, settings.")}
+            ${fsFlutterStarterCheckItem("models", "Models confirmed", "Domain, attempt, decision, goal, settings.")}
+            ${fsFlutterStarterCheckItem("database", "Database templates confirmed", "SQLite table strings and provider placeholder.")}
+            ${fsFlutterStarterCheckItem("services", "Services confirmed", "Protection, blocklist, attempts, backup, lock, coach.")}
+            ${fsFlutterStarterCheckItem("nativeBridge", "Native bridge confirmed", "vpn_bridge.dart MethodChannel placeholder.")}
+            ${fsFlutterStarterCheckItem("readme", "README confirmed", "Flutter starter README created.")}
+        </div>
+
+        <div class="card fs-starter-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3D: Flutter Data Migration Specification</h3>
+            <p>Next we map each localStorage key from the web app into a future SQLite table and migration rule.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-flutter-starter-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsFlutterStarterToggleItem(button.getAttribute("data-flutter-starter-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertFlutterStarterHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("flutterStarterHomeCard")) return;
+
+    const progress = fsFlutterStarterProgress();
+
+    const insertAfter =
+        document.getElementById("flutterBlueprintHomeCard") ||
+        document.getElementById("androidMigrationHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "flutterStarterHomeCard";
+    card.className = "card fs-starter-home-card";
+    card.innerHTML = `
+        <h2>Phase 3C Flutter Starter</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Starter templates for the future Flutter Android version have been generated.</p>
+        <button id="openFlutterStarterHomeBtn">Open Starter Files</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openFlutterStarterHomeBtn").addEventListener("click", openFlutterStarterFilesPage);
+}
+
+function addFlutterStarterQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickFlutterStarterBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickFlutterStarterBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3C</span>
+        <span class="premium-quick-label">Starter Files</span>
+        <span class="premium-quick-sub">Flutter templates</span>
+    `;
+
+    button.addEventListener("click", openFlutterStarterFilesPage);
+    grid.appendChild(button);
+}
+
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsFlutterStarterHealthWrapped) {
+    window.fsFlutterStarterHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksFlutterStarter = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksFlutterStarter();
+        const progress = fsFlutterStarterProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3C Flutter Starter Files";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3C Flutter Starter Files",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Flutter starter files progress: " + progress.percent + "%.",
+                "Open Phase 3C Starter Files and confirm all starter groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshFlutterStarterSystems() {
+    setTimeout(insertFlutterStarterHomeCard, 900);
+    setTimeout(insertFlutterStarterHomeCard, 1900);
+    setTimeout(insertFlutterStarterHomeCard, 3200);
+
+    setTimeout(addFlutterStarterQuickButton, 1000);
+    setTimeout(addFlutterStarterQuickButton, 2000);
+    setTimeout(addFlutterStarterQuickButton, 3200);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsFlutterStarterGoHomeWrapped) {
+    window.fsFlutterStarterGoHomeWrapped = true;
+
+    const oldGoHomeFlutterStarter = goHome;
+
+    goHome = function() {
+        oldGoHomeFlutterStarter.apply(this, arguments);
+        setTimeout(refreshFlutterStarterSystems, 1600);
+    };
+}
+
+refreshFlutterStarterSystems();
 
 </script>
 
