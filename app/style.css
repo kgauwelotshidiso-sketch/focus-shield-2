@@ -2418,3 +2418,88 @@ textarea:focus {
     background: linear-gradient(135deg, #22c55e, #2563eb) !important;
     border: 1px solid rgba(125, 211, 252, 0.45);
 }
+
+
+/* Phase 3A Android Migration Roadmap */
+.fs-migration-home-card,
+.fs-migration-hero-card {
+    border: 1px solid rgba(56, 189, 248, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.3));
+}
+
+.fs-migration-home-card h3,
+.fs-migration-hero-card h3 {
+    color: #38bdf8;
+}
+
+.fs-migration-warning-card {
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.26));
+}
+
+.fs-migration-architecture-card,
+.fs-migration-flow-card {
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(20, 83, 45, 0.25));
+}
+
+.fs-migration-map-card,
+.fs-migration-sql-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.25));
+}
+
+.fs-migration-build-card,
+.fs-migration-next-card {
+    border: 1px solid rgba(14, 165, 233, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.27));
+}
+
+.fs-migration-checklist-card {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.fs-migration-check-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fs-migration-check-row p {
+    margin: 6px 0 0;
+    opacity: 0.82;
+}
+
+.fs-migration-check-row button {
+    width: auto;
+    min-width: 110px;
+    padding: 10px 12px;
+    white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+    .fs-migration-check-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fs-migration-check-row button {
+        width: 100%;
+    }
+}
