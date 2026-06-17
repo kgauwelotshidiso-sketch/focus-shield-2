@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase2locklayer1">
+    <link rel="stylesheet" href="style.css?v=phase2protectionbackup1">
 </head>
 <body>
 
@@ -2476,6 +2476,8 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshProtectionBackupSystems, 1800);
+    setTimeout(refreshProtectionBackupSystems, 1800);
     setTimeout(refreshProtectionLockSystems, 1700);
     setTimeout(refreshBlockedAttemptIntelligenceSystems, 1600);
     setTimeout(refreshUrlAnalysisEngineSystems, 1500);
@@ -18622,6 +18624,593 @@ if (typeof goHome === "function" && !window.fsLockGoHomeWrapped) {
 }
 
 refreshProtectionLockSystems();
+
+
+/* Phase 2E Protection Backup + Export Import */
+function fsProtectionBackupEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsProtectionBackupGetJson(key, fallback) {
+    try {
+        const data = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        return data || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsProtectionBackupSaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function fsProtectionBackupTodayKey() {
+    if (typeof fsProtectionTodayKey === "function") return fsProtectionTodayKey();
+    if (typeof fsDailyRolloverTodayKey === "function") return fsDailyRolloverTodayKey();
+    if (typeof masterTodayKey === "function") return masterTodayKey();
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsProtectionBackupGetBlockedDomains() {
+    if (typeof fsProtectionGetBlockedDomains === "function") {
+        return fsProtectionGetBlockedDomains();
+    }
+
+    return fsProtectionBackupGetJson("fsProtectionBlockedDomains", []);
+}
+
+function fsProtectionBackupGetAttempts() {
+    if (typeof fsProtectionGetAttempts === "function") {
+        return fsProtectionGetAttempts();
+    }
+
+    return fsProtectionBackupGetJson("fsProtectionBlockedAttempts", []);
+}
+
+function fsProtectionBackupGetRecoveryLog() {
+    if (typeof fsAttemptIntelGetRecoveryLog === "function") {
+        return fsAttemptIntelGetRecoveryLog();
+    }
+
+    return fsProtectionBackupGetJson("fsProtectionRecoveryLog", []);
+}
+
+function fsProtectionBackupGetLockSettingsSafe() {
+    const settings = typeof fsLockGetSettings === "function"
+        ? fsLockGetSettings()
+        : fsProtectionBackupGetJson("fsProtectionLockSettings", {});
+
+    return {
+        pinSet: Boolean(settings.pinHash),
+        pinHashIncluded: false,
+        lockEnabled: Boolean(settings.lockEnabled),
+        protectionEnabled: settings.protectionEnabled !== false,
+        blocklistEditLocked: settings.blocklistEditLocked !== false,
+        privacySettingsLocked: settings.privacySettingsLocked !== false,
+        delayHours: Math.max(1, Number(settings.delayHours || 24)),
+        disableRequestedAt: settings.disableRequestedAt || "",
+        disableAvailableAt: settings.disableAvailableAt || ""
+    };
+}
+
+function fsProtectionBackupSanitizeAttempts(attempts, mode) {
+    return (attempts || []).map(function(item) {
+        return {
+            id: item.id || "",
+            dateKey: item.dateKey || "",
+            timestamp: item.timestamp || "",
+            website: mode === "full" ? (item.website || "[hidden]") : "[hidden]",
+            category: item.category || "unknown",
+            reason: item.reason || "",
+            confidence: Number(item.confidence || 0),
+            privacyMode: mode === "full" ? "full" : "stats-only"
+        };
+    });
+}
+
+function fsProtectionBackupCreate(mode) {
+    const exportMode = mode || "safe";
+    const includeFullAttempts = exportMode === "full";
+
+    const blockedDomains = fsProtectionBackupGetBlockedDomains();
+    const attempts = fsProtectionBackupGetAttempts();
+    const recoveryLog = fsProtectionBackupGetRecoveryLog();
+    const privacyMode = localStorage.getItem("fsProtectionPrivacyMode") || "stats-only";
+
+    const backup = {
+        app: "Focus Shield",
+        backupType: "protection-system",
+        backupVersion: 1,
+        exportMode: exportMode,
+        createdAt: new Date().toISOString(),
+        dateKey: fsProtectionBackupTodayKey(),
+        note: "Protection backup for local blocklist prototype. PIN hash is not exported by default.",
+        data: {
+            blockedDomains: blockedDomains,
+            blockedAttempts: fsProtectionBackupSanitizeAttempts(
+                attempts,
+                includeFullAttempts ? "full" : "stats-only"
+            ),
+            recoveryLog: recoveryLog,
+            privacyMode: includeFullAttempts ? privacyMode : "stats-only",
+            lockSettings: fsProtectionBackupGetLockSettingsSafe()
+        },
+        stats: {
+            blockedDomains: blockedDomains.length,
+            blockedAttempts: attempts.length,
+            recoveryActions: recoveryLog.length,
+            pinSet: fsProtectionBackupGetLockSettingsSafe().pinSet
+        }
+    };
+
+    localStorage.setItem("fsProtectionLastBackupAt", backup.createdAt);
+    localStorage.setItem("fsProtectionLastBackupMode", exportMode);
+
+    return backup;
+}
+
+function fsProtectionBackupDownload(filename, text) {
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    setTimeout(function() {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 300);
+}
+
+async function fsProtectionBackupCopyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        alert("Backup text copied.");
+    } catch (error) {
+        alert("Copy failed. Long-press the backup text and copy manually.");
+    }
+}
+
+function fsProtectionBackupValidateImport(data) {
+    if (!data || typeof data !== "object") {
+        return {
+            ok: false,
+            message: "Backup is not a valid object."
+        };
+    }
+
+    if (data.app !== "Focus Shield") {
+        return {
+            ok: false,
+            message: "Backup does not belong to Focus Shield."
+        };
+    }
+
+    if (data.backupType !== "protection-system") {
+        return {
+            ok: false,
+            message: "Backup is not a protection-system backup."
+        };
+    }
+
+    if (!data.data || typeof data.data !== "object") {
+        return {
+            ok: false,
+            message: "Backup data section is missing."
+        };
+    }
+
+    return {
+        ok: true,
+        message: "Backup is valid."
+    };
+}
+
+function fsProtectionBackupRestore(data) {
+    const validation = fsProtectionBackupValidateImport(data);
+
+    if (!validation.ok) {
+        alert(validation.message);
+        return false;
+    }
+
+    if (typeof fsLockRequiresUnlock === "function" && fsLockRequiresUnlock("settings")) {
+        alert("Protection restore is locked. Unlock with PIN first.");
+        if (typeof openProtectionLockPage === "function") {
+            openProtectionLockPage();
+        }
+        return false;
+    }
+
+    const backupData = data.data || {};
+
+    if (Array.isArray(backupData.blockedDomains)) {
+        if (typeof fsProtectionSaveBlockedDomains === "function") {
+            fsProtectionSaveBlockedDomains(backupData.blockedDomains);
+        } else {
+            fsProtectionBackupSaveJson("fsProtectionBlockedDomains", backupData.blockedDomains);
+        }
+    }
+
+    if (Array.isArray(backupData.blockedAttempts)) {
+        if (typeof fsProtectionSaveAttempts === "function") {
+            fsProtectionSaveAttempts(backupData.blockedAttempts);
+        } else {
+            fsProtectionBackupSaveJson("fsProtectionBlockedAttempts", backupData.blockedAttempts);
+        }
+    }
+
+    if (Array.isArray(backupData.recoveryLog)) {
+        if (typeof fsAttemptIntelSaveRecoveryLog === "function") {
+            fsAttemptIntelSaveRecoveryLog(backupData.recoveryLog);
+        } else {
+            fsProtectionBackupSaveJson("fsProtectionRecoveryLog", backupData.recoveryLog);
+        }
+    }
+
+    if (backupData.privacyMode) {
+        localStorage.setItem("fsProtectionPrivacyMode", backupData.privacyMode);
+    }
+
+    if (backupData.lockSettings) {
+        const currentSettings = typeof fsLockGetSettings === "function"
+            ? fsLockGetSettings()
+            : fsProtectionBackupGetJson("fsProtectionLockSettings", {});
+
+        const importedSettings = backupData.lockSettings;
+
+        const restoredSettings = {
+            ...currentSettings,
+            lockEnabled: Boolean(importedSettings.lockEnabled),
+            protectionEnabled: importedSettings.protectionEnabled !== false,
+            blocklistEditLocked: importedSettings.blocklistEditLocked !== false,
+            privacySettingsLocked: importedSettings.privacySettingsLocked !== false,
+            delayHours: Math.max(1, Number(importedSettings.delayHours || 24)),
+            disableRequestedAt: importedSettings.disableRequestedAt || "",
+            disableAvailableAt: importedSettings.disableAvailableAt || ""
+        };
+
+        if (typeof fsLockSaveSettings === "function") {
+            fsLockSaveSettings(restoredSettings);
+        } else {
+            fsProtectionBackupSaveJson("fsProtectionLockSettings", restoredSettings);
+        }
+    }
+
+    localStorage.setItem("fsProtectionLastRestoreAt", new Date().toISOString());
+    localStorage.setItem("fsProtectionLastRestoreSource", data.createdAt || "unknown");
+
+    if (typeof refreshProtectionDatabaseSystems === "function") {
+        refreshProtectionDatabaseSystems();
+    }
+
+    if (typeof refreshBlockedAttemptIntelligenceSystems === "function") {
+        refreshBlockedAttemptIntelligenceSystems();
+    }
+
+    if (typeof refreshProtectionLockSystems === "function") {
+        refreshProtectionLockSystems();
+    }
+
+    alert("Protection backup restored.");
+    return true;
+}
+
+function fsProtectionBackupSummaryHtml() {
+    const domains = fsProtectionBackupGetBlockedDomains();
+    const attempts = fsProtectionBackupGetAttempts();
+    const recoveryLog = fsProtectionBackupGetRecoveryLog();
+    const lastBackup = localStorage.getItem("fsProtectionLastBackupAt") || "Never";
+    const lastRestore = localStorage.getItem("fsProtectionLastRestoreAt") || "Never";
+
+    return `
+        <div class="card fs-protection-backup-hero-card">
+            <h2>Protection Backup Center</h2>
+            <h3>Export / Import</h3>
+            <p>Backup your protection database before bigger changes.</p>
+        </div>
+
+        <div class="card">
+            <h2>Backup Summary</h2>
+            <p><strong>Blocked Domains:</strong> ${domains.length}</p>
+            <p><strong>Blocked Attempts:</strong> ${attempts.length}</p>
+            <p><strong>Recovery Actions:</strong> ${recoveryLog.length}</p>
+            <p><strong>Last Backup:</strong> ${fsProtectionBackupEscape(lastBackup)}</p>
+            <p><strong>Last Restore:</strong> ${fsProtectionBackupEscape(lastRestore)}</p>
+        </div>
+    `;
+}
+
+function fsProtectionBackupOutputHtml(text) {
+    return `
+        <div class="card">
+            <h2>Backup Text</h2>
+            <p>Keep this text private. It may contain your blocklist and protection history.</p>
+            <textarea id="fsProtectionBackupOutput" rows="12">${fsProtectionBackupEscape(text)}</textarea>
+            <button id="fsProtectionCopyBackupBtn">Copy Backup Text</button>
+            <button id="fsProtectionDownloadBackupBtn">Download Backup File</button>
+        </div>
+    `;
+}
+
+function openProtectionBackupCenterPage() {
+    showPage(`
+        <h1>Protection Backup Center</h1>
+
+        ${fsProtectionBackupSummaryHtml()}
+
+        <div class="card fs-protection-backup-safe-card">
+            <h2>Create Backup</h2>
+            <p><strong>Safe Backup:</strong> hides attempt websites and does not export PIN hash.</p>
+            <p><strong>Full Attempt Backup:</strong> keeps exact attempt websites only if your current logs contain them.</p>
+            <button id="fsProtectionCreateSafeBackupBtn">Create Safe Backup</button>
+            <button id="fsProtectionCreateFullBackupBtn">Create Full Attempt Backup</button>
+        </div>
+
+        <div id="fsProtectionBackupOutputRoot"></div>
+
+        <div class="card fs-protection-restore-card">
+            <h2>Restore Backup</h2>
+            <p>Paste a protection backup JSON below. Restoring replaces protection data.</p>
+            <textarea id="fsProtectionRestoreInput" rows="10" placeholder="Paste protection backup JSON here"></textarea>
+            <button id="fsProtectionValidateRestoreBtn">Validate Backup</button>
+            <button id="fsProtectionRestoreBackupBtn">Restore Backup</button>
+        </div>
+
+        <div class="card fs-protection-backup-warning-card">
+            <h2>Important</h2>
+            <p>PIN hash is not exported by default. After restoring to another device, set a new PIN in Protection Lock Layer.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    function showBackup(mode) {
+        const backup = fsProtectionBackupCreate(mode);
+        const text = JSON.stringify(backup, null, 2);
+        const root = document.getElementById("fsProtectionBackupOutputRoot");
+
+        root.innerHTML = fsProtectionBackupOutputHtml(text);
+
+        document.getElementById("fsProtectionCopyBackupBtn").addEventListener("click", function() {
+            fsProtectionBackupCopyText(text);
+        });
+
+        document.getElementById("fsProtectionDownloadBackupBtn").addEventListener("click", function() {
+            const dateKey = fsProtectionBackupTodayKey();
+            fsProtectionBackupDownload("focus-shield-protection-backup-" + dateKey + ".json", text);
+        });
+    }
+
+    document.getElementById("fsProtectionCreateSafeBackupBtn").addEventListener("click", function() {
+        showBackup("safe");
+    });
+
+    document.getElementById("fsProtectionCreateFullBackupBtn").addEventListener("click", function() {
+        showBackup("full");
+    });
+
+    document.getElementById("fsProtectionValidateRestoreBtn").addEventListener("click", function() {
+        try {
+            const data = JSON.parse(document.getElementById("fsProtectionRestoreInput").value || "{}");
+            const validation = fsProtectionBackupValidateImport(data);
+            alert(validation.message);
+        } catch (error) {
+            alert("Invalid JSON backup text.");
+        }
+    });
+
+    document.getElementById("fsProtectionRestoreBackupBtn").addEventListener("click", function() {
+        try {
+            const data = JSON.parse(document.getElementById("fsProtectionRestoreInput").value || "{}");
+            const validation = fsProtectionBackupValidateImport(data);
+
+            if (!validation.ok) {
+                alert(validation.message);
+                return;
+            }
+
+            if (!confirm("Restore this protection backup? This will replace current protection data.")) {
+                return;
+            }
+
+            if (fsProtectionBackupRestore(data)) {
+                openProtectionBackupCenterPage();
+            }
+        } catch (error) {
+            alert("Invalid JSON backup text.");
+        }
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertProtectionBackupHomeButton() {
+    const card = document.getElementById("protectionDatabaseHomeCard");
+
+    if (!card) {
+        return;
+    }
+
+    if (document.getElementById("openProtectionBackupHomeBtn")) {
+        return;
+    }
+
+    const btn = document.createElement("button");
+    btn.id = "openProtectionBackupHomeBtn";
+    btn.type = "button";
+    btn.textContent = "Protection Backup";
+    btn.className = "fs-protection-backup-btn";
+    btn.addEventListener("click", openProtectionBackupCenterPage);
+
+    card.appendChild(btn);
+}
+
+function insertProtectionBackupIntoProtectionPage() {
+    const hero = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Phase 2A Local Blocklist";
+        });
+
+    if (!hero) return;
+
+    if (document.getElementById("openProtectionBackupFromDbBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "openProtectionBackupFromDbBtn";
+    btn.type = "button";
+    btn.textContent = "Protection Backup";
+    btn.className = "fs-protection-backup-btn";
+    btn.addEventListener("click", openProtectionBackupCenterPage);
+
+    hero.appendChild(btn);
+}
+
+function insertProtectionBackupIntoLockPage() {
+    const hero = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Protection Lock Layer";
+        });
+
+    if (!hero) return;
+
+    if (document.getElementById("openProtectionBackupFromLockBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "openProtectionBackupFromLockBtn";
+    btn.type = "button";
+    btn.textContent = "Protection Backup";
+    btn.className = "fs-protection-backup-btn";
+    btn.addEventListener("click", openProtectionBackupCenterPage);
+
+    hero.appendChild(btn);
+}
+
+function addProtectionBackupQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPrimaryGrid") ||
+        document.getElementById("premiumPlanGrid");
+
+    if (!grid) return;
+
+    if (document.getElementById("quickProtectionBackupBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickProtectionBackupBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">BKP</span>
+        <span class="premium-quick-label">Protect Backup</span>
+        <span class="premium-quick-sub">Export / import</span>
+    `;
+
+    button.addEventListener("click", openProtectionBackupCenterPage);
+
+    grid.appendChild(button);
+}
+
+/* Add Protection Backup to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsProtectionBackupHealthWrapped) {
+    window.fsProtectionBackupHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksBackup = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksBackup();
+        const lastBackup = localStorage.getItem("fsProtectionLastBackupAt") || "";
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Protection Backup Center";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Protection Backup Center",
+                lastBackup ? "PASS" : "WARN",
+                lastBackup
+                    ? "Last protection backup created: " + lastBackup + "."
+                    : "No protection backup has been created yet.",
+                "Create a safe backup before major protection changes."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshProtectionBackupSystems() {
+    setTimeout(insertProtectionBackupHomeButton, 700);
+    setTimeout(insertProtectionBackupHomeButton, 1700);
+    setTimeout(insertProtectionBackupHomeButton, 3000);
+
+    setTimeout(addProtectionBackupQuickButton, 800);
+    setTimeout(addProtectionBackupQuickButton, 1800);
+    setTimeout(addProtectionBackupQuickButton, 3000);
+
+    setTimeout(insertProtectionBackupIntoProtectionPage, 500);
+    setTimeout(insertProtectionBackupIntoProtectionPage, 1300);
+
+    setTimeout(insertProtectionBackupIntoLockPage, 500);
+    setTimeout(insertProtectionBackupIntoLockPage, 1300);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof openProtectionDatabasePage === "function" && !window.fsProtectionBackupProtectionPageWrapped) {
+    window.fsProtectionBackupProtectionPageWrapped = true;
+
+    const oldOpenProtectionDatabasePageBackup = openProtectionDatabasePage;
+
+    openProtectionDatabasePage = function() {
+        oldOpenProtectionDatabasePageBackup.apply(this, arguments);
+        setTimeout(insertProtectionBackupIntoProtectionPage, 500);
+        setTimeout(insertProtectionBackupIntoProtectionPage, 1200);
+    };
+}
+
+if (typeof openProtectionLockPage === "function" && !window.fsProtectionBackupLockPageWrapped) {
+    window.fsProtectionBackupLockPageWrapped = true;
+
+    const oldOpenProtectionLockPageBackup = openProtectionLockPage;
+
+    openProtectionLockPage = function() {
+        oldOpenProtectionLockPageBackup.apply(this, arguments);
+        setTimeout(insertProtectionBackupIntoLockPage, 500);
+        setTimeout(insertProtectionBackupIntoLockPage, 1200);
+    };
+}
+
+if (typeof goHome === "function" && !window.fsProtectionBackupGoHomeWrapped) {
+    window.fsProtectionBackupGoHomeWrapped = true;
+
+    const oldGoHomeProtectionBackup = goHome;
+
+    goHome = function() {
+        oldGoHomeProtectionBackup.apply(this, arguments);
+        setTimeout(refreshProtectionBackupSystems, 1300);
+    };
+}
+
+refreshProtectionBackupSystems();
 
 </script>
 
