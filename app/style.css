@@ -2209,3 +2209,38 @@ textarea:focus {
     background: linear-gradient(135deg, #06b6d4, #2563eb) !important;
     border: 1px solid rgba(125, 211, 252, 0.45);
 }
+
+.fs-attempt-intel-hero-card {
+    border: 1px solid rgba(248, 113, 113, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(248, 113, 113, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(127, 29, 29, 0.32));
+}
+
+.fs-attempt-intel-hero-card h3 {
+    color: #f87171;
+}
+
+.fs-attempt-command-card {
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.26));
+}
+
+.fs-attempt-diagnosis-card {
+    border: 1px solid rgba(14, 165, 233, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(12, 74, 110, 0.27));
+}
+
+.fs-attempt-daily-row,
+.fs-attempt-recent-card {
+    border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.fs-attempt-intel-btn {
+    background: linear-gradient(135deg, #ef4444, #f97316) !important;
+    border: 1px solid rgba(253, 186, 116, 0.45);
+}

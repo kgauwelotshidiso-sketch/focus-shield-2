@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase2urlengine1">
+    <link rel="stylesheet" href="style.css?v=phase2attemptintel1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshBlockedAttemptIntelligenceSystems, 1600);
     setTimeout(refreshUrlAnalysisEngineSystems, 1500);
     setTimeout(refreshProtectionDatabaseSystems, 1400);
     setTimeout(refreshDailyStartupCheckSystems, 1300);
@@ -17343,6 +17344,617 @@ if (typeof goHome === "function" && !window.fsUrlEngineGoHomeWrapped) {
 }
 
 refreshUrlAnalysisEngineSystems();
+
+
+/* Phase 2C Blocked Attempt Intelligence */
+function fsAttemptIntelTodayKey() {
+    if (typeof fsProtectionTodayKey === "function") return fsProtectionTodayKey();
+    if (typeof fsDailyRolloverTodayKey === "function") return fsDailyRolloverTodayKey();
+    if (typeof masterTodayKey === "function") return masterTodayKey();
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsAttemptIntelEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsAttemptIntelGetAttempts() {
+    if (typeof fsProtectionGetAttempts === "function") {
+        return fsProtectionGetAttempts();
+    }
+
+    try {
+        const data = JSON.parse(localStorage.getItem("fsProtectionBlockedAttempts") || "[]");
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function fsAttemptIntelGetJson(key, fallback) {
+    try {
+        const data = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        return data || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsAttemptIntelSaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function fsAttemptIntelTimeBucket(timestamp) {
+    const d = new Date(timestamp);
+    const hour = d.getHours();
+
+    if (hour >= 5 && hour < 12) return "Morning";
+    if (hour >= 12 && hour < 17) return "Afternoon";
+    if (hour >= 17 && hour < 21) return "Evening";
+    return "Night";
+}
+
+function fsAttemptIntelLast7Keys() {
+    const keys = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+
+        keys.push(
+            d.getFullYear() + "-" +
+            String(d.getMonth() + 1).padStart(2, "0") + "-" +
+            String(d.getDate()).padStart(2, "0")
+        );
+    }
+
+    return keys;
+}
+
+function fsAttemptIntelCountMap(items, getter) {
+    const counts = {};
+
+    (items || []).forEach(function(item) {
+        const key = getter(item) || "unknown";
+        counts[key] = (counts[key] || 0) + 1;
+    });
+
+    return Object.entries(counts).sort(function(a, b) {
+        return b[1] - a[1];
+    });
+}
+
+function fsAttemptIntelGetRecoveryLog() {
+    const data = fsAttemptIntelGetJson("fsProtectionRecoveryLog", []);
+    return Array.isArray(data) ? data : [];
+}
+
+function fsAttemptIntelSaveRecoveryLog(log) {
+    fsAttemptIntelSaveJson("fsProtectionRecoveryLog", (log || []).slice(-200));
+}
+
+function fsAttemptIntelLogRecovery(actionLabel, detail) {
+    const log = fsAttemptIntelGetRecoveryLog();
+
+    log.push({
+        id: "recovery-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        dateKey: fsAttemptIntelTodayKey(),
+        timestamp: new Date().toISOString(),
+        action: actionLabel,
+        detail: detail || "Recovery action completed."
+    });
+
+    fsAttemptIntelSaveRecoveryLog(log);
+
+    if (typeof p3MemoryLogFollowThrough === "function") {
+        p3MemoryLogFollowThrough(
+            "Protection Recovery: " + actionLabel,
+            detail || "Recovered after a blocked attempt.",
+            "Protection Intelligence"
+        );
+    }
+}
+
+function fsAttemptIntelGetReport() {
+    const attempts = fsAttemptIntelGetAttempts();
+    const recoveryLog = fsAttemptIntelGetRecoveryLog();
+    const todayKey = fsAttemptIntelTodayKey();
+    const weekKeys = fsAttemptIntelLast7Keys();
+
+    const todayAttempts = attempts.filter(function(item) {
+        return item.dateKey === todayKey;
+    });
+
+    const weekAttempts = attempts.filter(function(item) {
+        return weekKeys.includes(item.dateKey);
+    });
+
+    const todayRecoveries = recoveryLog.filter(function(item) {
+        return item.dateKey === todayKey;
+    });
+
+    const weekRecoveries = recoveryLog.filter(function(item) {
+        return weekKeys.includes(item.dateKey);
+    });
+
+    const categories = fsAttemptIntelCountMap(weekAttempts, function(item) {
+        return item.category || "unknown";
+    });
+
+    const timeBuckets = fsAttemptIntelCountMap(weekAttempts, function(item) {
+        return fsAttemptIntelTimeBucket(item.timestamp);
+    });
+
+    const dailyCounts = weekKeys.map(function(key) {
+        return {
+            key: key,
+            attempts: weekAttempts.filter(function(item) {
+                return item.dateKey === key;
+            }).length,
+            recoveries: weekRecoveries.filter(function(item) {
+                return item.dateKey === key;
+            }).length
+        };
+    });
+
+    const topCategory = categories.length ? categories[0][0] : "No trigger category yet";
+    const peakTime = timeBuckets.length ? timeBuckets[0][0] : "No peak time yet";
+
+    let riskLevel = "Protected";
+    let diagnosis = "No blocked attempts recorded today.";
+    let command = "Keep your system active. Do not wait for temptation to appear.";
+
+    if (todayAttempts.length >= 3) {
+        riskLevel = "High Risk";
+        diagnosis = "Multiple blocked attempts happened today. This is a pattern, not a random moment.";
+        command = "Enter recovery mode now: pause, leave the trigger, and complete one focus action.";
+    } else if (todayAttempts.length === 2) {
+        riskLevel = "Warning";
+        diagnosis = "Two blocked attempts today. Your risk is rising.";
+        command = "Do a reset before the next trigger. Open Smart Coach or start a focus session.";
+    } else if (todayAttempts.length === 1) {
+        riskLevel = "Recovered Risk";
+        diagnosis = "One blocked attempt today. The system detected it before it became a bigger problem.";
+        command = "Record a recovery action so the attempt becomes a win.";
+    }
+
+    const recoveryRate = weekAttempts.length
+        ? Math.round((weekRecoveries.length / weekAttempts.length) * 100)
+        : 100;
+
+    return {
+        attempts: attempts,
+        recoveryLog: recoveryLog,
+        todayAttempts: todayAttempts,
+        weekAttempts: weekAttempts,
+        todayRecoveries: todayRecoveries,
+        weekRecoveries: weekRecoveries,
+        categories: categories,
+        timeBuckets: timeBuckets,
+        dailyCounts: dailyCounts,
+        topCategory: topCategory,
+        peakTime: peakTime,
+        riskLevel: riskLevel,
+        diagnosis: diagnosis,
+        command: command,
+        recoveryRate: recoveryRate
+    };
+}
+
+function fsAttemptIntelPatternHtml(title, patterns, emptyText) {
+    if (!patterns.length) {
+        return `
+            <div class="card">
+                <h2>${fsAttemptIntelEscape(title)}</h2>
+                <p>${fsAttemptIntelEscape(emptyText)}</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="card">
+            <h2>${fsAttemptIntelEscape(title)}</h2>
+            ${patterns.slice(0, 6).map(function(item) {
+                return `<p><strong>${fsAttemptIntelEscape(item[0])}:</strong> ${item[1]} time${item[1] === 1 ? "" : "s"}</p>`;
+            }).join("")}
+        </div>
+    `;
+}
+
+function fsAttemptIntelDailyBreakdownHtml(rows) {
+    return rows.map(function(row) {
+        return `
+            <div class="card fs-attempt-daily-row">
+                <h2>${fsAttemptIntelEscape(row.key)}</h2>
+                <p><strong>Blocked Attempts:</strong> ${row.attempts}</p>
+                <p><strong>Recovery Actions:</strong> ${row.recoveries}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+function fsAttemptIntelRecentAttemptsHtml(attempts) {
+    const recent = attempts.slice(-10).reverse();
+
+    if (!recent.length) {
+        return `
+            <div class="card">
+                <h2>Recent Blocked Attempts</h2>
+                <p>No blocked attempts recorded yet.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="card">
+            <h2>Recent Blocked Attempts</h2>
+            <p>Privacy mode may hide exact websites.</p>
+        </div>
+
+        ${recent.map(function(item) {
+            return `
+                <div class="card fs-attempt-recent-card">
+                    <h2>${fsAttemptIntelEscape(item.category || "unknown")}</h2>
+                    <p><strong>Website:</strong> ${fsAttemptIntelEscape(item.website || "[hidden]")}</p>
+                    <p><strong>Reason:</strong> ${fsAttemptIntelEscape(item.reason || "No reason recorded.")}</p>
+                    <p><strong>Time:</strong> ${new Date(item.timestamp).toLocaleString()}</p>
+                </div>
+            `;
+        }).join("")}
+    `;
+}
+
+function fsAttemptIntelRecoveryHtml(recoveries) {
+    const recent = recoveries.slice(-10).reverse();
+
+    if (!recent.length) {
+        return `
+            <div class="card">
+                <h2>Recovery Actions</h2>
+                <p>No recovery actions recorded yet.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="card">
+            <h2>Recovery Actions</h2>
+            ${recent.map(function(item) {
+                return `<p>✅ <strong>${fsAttemptIntelEscape(item.action)}</strong><br><small>${new Date(item.timestamp).toLocaleString()}</small></p>`;
+            }).join("")}
+        </div>
+    `;
+}
+
+function fsAttemptIntelGetHtml() {
+    const report = fsAttemptIntelGetReport();
+
+    return `
+        <div class="card fs-attempt-intel-hero-card">
+            <h2>Blocked Attempt Intelligence</h2>
+            <h3>${fsAttemptIntelEscape(report.riskLevel)}</h3>
+            <p>${fsAttemptIntelEscape(report.diagnosis)}</p>
+        </div>
+
+        <div class="card fs-attempt-command-card">
+            <h2>Protection Command</h2>
+            <p>${fsAttemptIntelEscape(report.command)}</p>
+        </div>
+
+        <div class="card">
+            <h2>Protection Numbers</h2>
+            <p><strong>Blocked Attempts Today:</strong> ${report.todayAttempts.length}</p>
+            <p><strong>Blocked Attempts This Week:</strong> ${report.weekAttempts.length}</p>
+            <p><strong>Recovery Actions Today:</strong> ${report.todayRecoveries.length}</p>
+            <p><strong>Recovery Actions This Week:</strong> ${report.weekRecoveries.length}</p>
+            <p><strong>Recovery Rate:</strong> ${report.recoveryRate}%</p>
+        </div>
+
+        <div class="card fs-attempt-diagnosis-card">
+            <h2>Pattern Diagnosis</h2>
+            <p><strong>Top Trigger Category:</strong> ${fsAttemptIntelEscape(report.topCategory)}</p>
+            <p><strong>Peak Risk Time:</strong> ${fsAttemptIntelEscape(report.peakTime)}</p>
+            <p>When a risk repeats, build a rule before it becomes a habit loop.</p>
+        </div>
+
+        ${fsAttemptIntelPatternHtml("Trigger Categories", report.categories, "No categories recorded yet.")}
+        ${fsAttemptIntelPatternHtml("Risk Time Patterns", report.timeBuckets, "No time patterns recorded yet.")}
+
+        <div class="card">
+            <h2>7-Day Protection Breakdown</h2>
+            <p>Blocked attempts and recovery actions for each day.</p>
+        </div>
+
+        ${fsAttemptIntelDailyBreakdownHtml(report.dailyCounts)}
+
+        ${fsAttemptIntelRecentAttemptsHtml(report.todayAttempts.length ? report.todayAttempts : report.weekAttempts)}
+
+        ${fsAttemptIntelRecoveryHtml(report.weekRecoveries)}
+    `;
+}
+
+function openBlockedAttemptIntelligencePage() {
+    showPage(`
+        <h1>Blocked Attempt Intelligence</h1>
+
+        <div id="fsAttemptIntelRoot">
+            ${fsAttemptIntelGetHtml()}
+        </div>
+
+        <div class="card p3-action-card">
+            <h2>Recovery Actions</h2>
+            <button id="fsAttemptIntelFocusBtn">Start Focus Session</button>
+            <button id="fsAttemptIntelCoachBtn">Open Smart Coach</button>
+            <button id="fsAttemptIntelJournalBtn">Journal Thoughts</button>
+            <button id="fsAttemptIntelBreathingBtn">Breathing Reset</button>
+            <button id="fsAttemptIntelRefreshBtn">Refresh Intelligence</button>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("fsAttemptIntelFocusBtn").addEventListener("click", function() {
+        fsAttemptIntelLogRecovery("Focus Session Started", "Started a focus recovery after a blocked attempt.");
+
+        if (typeof openFocusTimerPage === "function") {
+            openFocusTimerPage();
+        } else if (typeof openFocusPage === "function") {
+            openFocusPage();
+        } else {
+            openBlockedAttemptIntelligencePage();
+        }
+    });
+
+    document.getElementById("fsAttemptIntelCoachBtn").addEventListener("click", function() {
+        fsAttemptIntelLogRecovery("Smart Coach Opened", "Opened Smart Coach after a blocked attempt.");
+
+        if (typeof openSmartDailyCoachPage === "function") {
+            openSmartDailyCoachPage();
+        } else {
+            openBlockedAttemptIntelligencePage();
+        }
+    });
+
+    document.getElementById("fsAttemptIntelJournalBtn").addEventListener("click", function() {
+        fsAttemptIntelLogRecovery("Journal Opened", "Opened reflection after a blocked attempt.");
+
+        if (typeof openDailyReflectionPage === "function") {
+            openDailyReflectionPage();
+        } else if (typeof openReflectionPage === "function") {
+            openReflectionPage();
+        } else {
+            openBlockedAttemptIntelligencePage();
+        }
+    });
+
+    document.getElementById("fsAttemptIntelBreathingBtn").addEventListener("click", function() {
+        fsAttemptIntelLogRecovery("Breathing Reset Completed", "Completed a breathing reset after a blocked attempt.");
+        alert("Breathing reset completed. Return to your goal.");
+        openBlockedAttemptIntelligencePage();
+    });
+
+    document.getElementById("fsAttemptIntelRefreshBtn").addEventListener("click", function() {
+        const root = document.getElementById("fsAttemptIntelRoot");
+
+        if (root) {
+            root.innerHTML = fsAttemptIntelGetHtml();
+        }
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertAttemptIntelIntoProtectionPage() {
+    const hero = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Phase 2A Local Blocklist";
+        });
+
+    if (!hero) return;
+
+    if (document.getElementById("openAttemptIntelFromProtectionBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "openAttemptIntelFromProtectionBtn";
+    btn.type = "button";
+    btn.textContent = "Blocked Attempt Intelligence";
+    btn.className = "fs-attempt-intel-btn";
+    btn.addEventListener("click", openBlockedAttemptIntelligencePage);
+
+    hero.appendChild(btn);
+}
+
+function insertAttemptIntelIntoUrlEnginePage() {
+    const hero = Array.from(document.querySelectorAll(".card"))
+        .find(function(card) {
+            const heading = card.querySelector("h2");
+            return heading && heading.textContent.trim() === "Phase 2B Protection Engine v1";
+        });
+
+    if (!hero) return;
+
+    if (document.getElementById("openAttemptIntelFromUrlBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "openAttemptIntelFromUrlBtn";
+    btn.type = "button";
+    btn.textContent = "Blocked Attempt Intelligence";
+    btn.className = "fs-attempt-intel-btn";
+    btn.addEventListener("click", openBlockedAttemptIntelligencePage);
+
+    hero.appendChild(btn);
+}
+
+function insertAttemptIntelHomeButton() {
+    const card = document.getElementById("protectionDatabaseHomeCard");
+
+    if (!card) return;
+
+    if (document.getElementById("openAttemptIntelHomeBtn")) return;
+
+    const report = fsAttemptIntelGetReport();
+
+    const note = document.createElement("p");
+    note.id = "fsAttemptIntelHomeNote";
+    note.innerHTML = "<strong>Protection Risk:</strong> " + fsAttemptIntelEscape(report.riskLevel);
+
+    const btn = document.createElement("button");
+    btn.id = "openAttemptIntelHomeBtn";
+    btn.type = "button";
+    btn.textContent = "Blocked Attempt Intelligence";
+    btn.className = "fs-attempt-intel-btn";
+    btn.addEventListener("click", openBlockedAttemptIntelligencePage);
+
+    card.appendChild(note);
+    card.appendChild(btn);
+}
+
+function addAttemptIntelQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPrimaryGrid") ||
+        document.getElementById("premiumPlanGrid");
+
+    if (!grid) return;
+
+    if (document.getElementById("quickAttemptIntelBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickAttemptIntelBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">RISK</span>
+        <span class="premium-quick-label">Attempt Intel</span>
+        <span class="premium-quick-sub">Protection report</span>
+    `;
+
+    button.addEventListener("click", openBlockedAttemptIntelligencePage);
+
+    grid.appendChild(button);
+}
+
+/* Wrap blocked attempt logging to connect with Smart Coach Memory */
+if (typeof fsProtectionLogBlockedAttempt === "function" && !window.fsAttemptIntelLogWrapped) {
+    window.fsAttemptIntelLogWrapped = true;
+
+    const oldFsProtectionLogBlockedAttemptIntel = fsProtectionLogBlockedAttempt;
+
+    fsProtectionLogBlockedAttempt = function(result) {
+        const output = oldFsProtectionLogBlockedAttemptIntel.apply(this, arguments);
+
+        if (typeof p3MemoryAddEntry === "function") {
+            p3MemoryAddEntry(
+                "Protection Block",
+                "Blocked Attempt Detected",
+                "Protection engine blocked a risk attempt.",
+                {
+                    category: result.category || "unknown",
+                    confidence: result.confidence || 0
+                }
+            );
+        }
+
+        setTimeout(refreshBlockedAttemptIntelligenceSystems, 500);
+
+        return output;
+    };
+}
+
+/* Add Attempt Intelligence to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsAttemptIntelHealthWrapped) {
+    window.fsAttemptIntelHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksAttemptIntel = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksAttemptIntel();
+        const report = fsAttemptIntelGetReport();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Blocked Attempt Intelligence";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Blocked Attempt Intelligence",
+                "PASS",
+                "Attempt intelligence can read " + report.weekAttempts.length + " weekly blocked attempt" + (report.weekAttempts.length === 1 ? "" : "s") + ".",
+                "Use Attempt Intelligence after blocks to record recovery actions."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshBlockedAttemptIntelligenceSystems() {
+    setTimeout(insertAttemptIntelHomeButton, 700);
+    setTimeout(insertAttemptIntelHomeButton, 1600);
+    setTimeout(insertAttemptIntelHomeButton, 3000);
+
+    setTimeout(addAttemptIntelQuickButton, 800);
+    setTimeout(addAttemptIntelQuickButton, 1800);
+    setTimeout(addAttemptIntelQuickButton, 3000);
+
+    setTimeout(insertAttemptIntelIntoProtectionPage, 500);
+    setTimeout(insertAttemptIntelIntoProtectionPage, 1200);
+
+    setTimeout(insertAttemptIntelIntoUrlEnginePage, 500);
+    setTimeout(insertAttemptIntelIntoUrlEnginePage, 1200);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof openProtectionDatabasePage === "function" && !window.fsAttemptIntelProtectionPageWrapped) {
+    window.fsAttemptIntelProtectionPageWrapped = true;
+
+    const oldOpenProtectionDatabasePageAttemptIntel = openProtectionDatabasePage;
+
+    openProtectionDatabasePage = function() {
+        oldOpenProtectionDatabasePageAttemptIntel.apply(this, arguments);
+        setTimeout(insertAttemptIntelIntoProtectionPage, 400);
+        setTimeout(insertAttemptIntelIntoProtectionPage, 1000);
+    };
+}
+
+if (typeof openUrlAnalysisEnginePage === "function" && !window.fsAttemptIntelUrlPageWrapped) {
+    window.fsAttemptIntelUrlPageWrapped = true;
+
+    const oldOpenUrlAnalysisEnginePageAttemptIntel = openUrlAnalysisEnginePage;
+
+    openUrlAnalysisEnginePage = function() {
+        oldOpenUrlAnalysisEnginePageAttemptIntel.apply(this, arguments);
+        setTimeout(insertAttemptIntelIntoUrlEnginePage, 400);
+        setTimeout(insertAttemptIntelIntoUrlEnginePage, 1000);
+    };
+}
+
+if (typeof goHome === "function" && !window.fsAttemptIntelGoHomeWrapped) {
+    window.fsAttemptIntelGoHomeWrapped = true;
+
+    const oldGoHomeAttemptIntel = goHome;
+
+    goHome = function() {
+        oldGoHomeAttemptIntel.apply(this, arguments);
+        setTimeout(refreshBlockedAttemptIntelligenceSystems, 1100);
+    };
+}
+
+refreshBlockedAttemptIntelligenceSystems();
 
 </script>
 
