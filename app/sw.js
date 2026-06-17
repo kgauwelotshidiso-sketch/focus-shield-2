@@ -1,9 +1,9 @@
-const CACHE_NAME = "focus-shield-v169";
+const CACHE_NAME = "focus-shield-v170";
 
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css?v=phase3cflutterstarterfix1",
+  "./style.css?v=phase3ddatamigration1",
   "./manifest.json",
   "./icon.svg"
 ];

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3cflutterstarterfix1">
+    <link rel="stylesheet" href="style.css?v=phase3ddatamigration1">
 </head>
 <body>
 
@@ -20610,6 +20610,366 @@ if (typeof goHome === "function" && !window.fsFlutterStarterGoHomeWrapped) {
 }
 
 refreshFlutterStarterSystems();
+
+
+/* Phase 3D Flutter Data Migration Specification */
+function fsDataMigrationEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsDataMigrationGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3DChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsDataMigrationSaveChecklist(data) {
+    localStorage.setItem("fsPhase3DChecklist", JSON.stringify(data || {}));
+}
+
+function fsDataMigrationToggleItem(key) {
+    const data = fsDataMigrationGetChecklist();
+    data[key] = !data[key];
+    fsDataMigrationSaveChecklist(data);
+    openDataMigrationSpecPage();
+}
+
+function fsDataMigrationItems() {
+    return [
+        "inventory",
+        "protectionMap",
+        "disciplineMap",
+        "coachMap",
+        "privacyRules",
+        "backupCompatibility",
+        "migrationOrder",
+        "validationRules"
+    ];
+}
+
+function fsDataMigrationProgress() {
+    const items = fsDataMigrationItems();
+    const data = fsDataMigrationGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsDataMigrationCheckItem(key, label, detail) {
+    const data = fsDataMigrationGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-data-migration-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsDataMigrationEscape(label)}</strong>
+                <p>${fsDataMigrationEscape(detail)}</p>
+            </div>
+            <button data-data-migration-key="${fsDataMigrationEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function fsDataMigrationStorageInventory() {
+    const keys = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) keys.push(key);
+    }
+
+    keys.sort();
+
+    const grouped = {
+        protection: [],
+        coach: [],
+        goals: [],
+        daily: [],
+        xp: [],
+        phase: [],
+        other: []
+    };
+
+    keys.forEach(function(key) {
+        const lower = key.toLowerCase();
+
+        if (lower.includes("protection") || lower.includes("blocked") || lower.includes("lock")) {
+            grouped.protection.push(key);
+        } else if (lower.includes("coach") || lower.includes("memory")) {
+            grouped.coach.push(key);
+        } else if (lower.includes("goal")) {
+            grouped.goals.push(key);
+        } else if (lower.includes("daily") || lower.includes("review") || lower.includes("reflection") || lower.includes("timeline")) {
+            grouped.daily.push(key);
+        } else if (lower.includes("xp") || lower.includes("badge") || lower.includes("streak")) {
+            grouped.xp.push(key);
+        } else if (lower.includes("phase") || lower.includes("migration") || lower.includes("flutter")) {
+            grouped.phase.push(key);
+        } else {
+            grouped.other.push(key);
+        }
+    });
+
+    return grouped;
+}
+
+function fsDataMigrationInventoryHtml(title, keys) {
+    if (!keys || keys.length === 0) {
+        return `<p><strong>${fsDataMigrationEscape(title)}:</strong> No keys found yet.</p>`;
+    }
+
+    return `
+        <p><strong>${fsDataMigrationEscape(title)}:</strong></p>
+        <ul>
+            ${keys.map(function(key) {
+                return `<li>${fsDataMigrationEscape(key)}</li>`;
+            }).join("")}
+        </ul>
+    `;
+}
+
+function openDataMigrationSpecPage() {
+    const progress = fsDataMigrationProgress();
+    const inventory = fsDataMigrationStorageInventory();
+
+    showPage(`
+        <h1>Phase 3D Data Migration Spec</h1>
+
+        <div class="card fs-data-migration-hero-card">
+            <h2>Flutter Data Migration Specification</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This maps Focus Shield web app data into the future Flutter Android SQLite database.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} migration sections confirmed.</p>
+        </div>
+
+        <div class="card fs-data-migration-warning-card">
+            <h2>Important</h2>
+            <p>This does not move data yet. It defines the safe migration rules before the real Flutter database is built.</p>
+        </div>
+
+        <div class="card fs-data-migration-inventory-card">
+            <h2>Current localStorage Inventory</h2>
+            <p>This scanner shows the data keys currently stored by the web prototype on this device.</p>
+            ${fsDataMigrationInventoryHtml("Protection keys", inventory.protection)}
+            ${fsDataMigrationInventoryHtml("Coach keys", inventory.coach)}
+            ${fsDataMigrationInventoryHtml("Goal keys", inventory.goals)}
+            ${fsDataMigrationInventoryHtml("Daily / review keys", inventory.daily)}
+            ${fsDataMigrationInventoryHtml("XP / badge / streak keys", inventory.xp)}
+            ${fsDataMigrationInventoryHtml("Phase planning keys", inventory.phase)}
+        </div>
+
+        <div class="card fs-data-migration-map-card">
+            <h2>Protection Data Map</h2>
+            <p><strong>fsProtectionBlockedDomains</strong> → blocked_domains</p>
+            <p><strong>fsProtectionBlockedAttempts</strong> → blocked_attempts</p>
+            <p><strong>fsProtectionRecoveryLog</strong> → recovery_actions</p>
+            <p><strong>fsProtectionLockSettings</strong> → protection_settings</p>
+            <p><strong>fsProtectionPrivacyMode</strong> → protection_settings.privacy_mode</p>
+        </div>
+
+        <div class="card fs-data-migration-discipline-card">
+            <h2>Discipline Data Map</h2>
+            <p><strong>Goals</strong> → goals</p>
+            <p><strong>Daily reflections</strong> → daily_reflections</p>
+            <p><strong>End reviews</strong> → daily_end_reviews</p>
+            <p><strong>Timeline events</strong> → timeline_events</p>
+            <p><strong>Focus sessions</strong> → focus_sessions</p>
+            <p><strong>Concentration sessions</strong> → concentration_sessions</p>
+        </div>
+
+        <div class="card fs-data-migration-coach-card">
+            <h2>Coach / Progress Data Map</h2>
+            <p><strong>Coach Memory</strong> → coach_memory</p>
+            <p><strong>Weekly Intelligence</strong> → weekly_reports</p>
+            <p><strong>XP History</strong> → xp_events</p>
+            <p><strong>Badges</strong> → badges</p>
+            <p><strong>Streaks</strong> → streaks</p>
+        </div>
+
+        <div class="card fs-data-migration-privacy-card">
+            <h2>Privacy Migration Rules</h2>
+            <p><strong>Rule 1:</strong> If privacy mode is stats-only, store blocked website as [hidden].</p>
+            <p><strong>Rule 2:</strong> Do not export or migrate plain PIN values.</p>
+            <p><strong>Rule 3:</strong> PIN hash should stay local-only unless the user intentionally migrates it.</p>
+            <p><strong>Rule 4:</strong> Recovery actions can be migrated because they represent discipline recovery.</p>
+            <p><strong>Rule 5:</strong> Backup files must respect the same privacy mode.</p>
+        </div>
+
+        <div class="card fs-data-migration-order-card">
+            <h2>Migration Order</h2>
+            <p><strong>1.</strong> protection_settings</p>
+            <p><strong>2.</strong> blocked_domains</p>
+            <p><strong>3.</strong> blocked_attempts</p>
+            <p><strong>4.</strong> recovery_actions</p>
+            <p><strong>5.</strong> goals</p>
+            <p><strong>6.</strong> daily_reflections and daily_end_reviews</p>
+            <p><strong>7.</strong> timeline_events</p>
+            <p><strong>8.</strong> coach_memory</p>
+            <p><strong>9.</strong> xp_events, badges, streaks</p>
+            <p><strong>10.</strong> focus_sessions and concentration_sessions</p>
+        </div>
+
+        <div class="card fs-data-migration-validation-card">
+            <h2>Validation Rules</h2>
+            <p><strong>Blocked domain count</strong> must match after migration.</p>
+            <p><strong>Blocked attempt count</strong> must match or be intentionally privacy-sanitized.</p>
+            <p><strong>Recovery rate</strong> must recalculate correctly.</p>
+            <p><strong>Goals, XP, badges, and streaks</strong> must preserve totals.</p>
+            <p><strong>Protection enabled state</strong> must be preserved.</p>
+            <p><strong>Privacy mode</strong> must be preserved.</p>
+        </div>
+
+        <div class="card fs-data-migration-files-card">
+            <h2>Created Migration Files</h2>
+            <p><strong>flutter_starter/docs/data_migration_spec.md</strong></p>
+            <p><strong>flutter_starter/lib/database/data_migration_spec.dart</strong></p>
+        </div>
+
+        <div class="card fs-data-migration-checklist-card">
+            <h2>Phase 3D Checklist</h2>
+            ${fsDataMigrationCheckItem("inventory", "localStorage inventory reviewed", "Current web data keys are grouped and visible.")}
+            ${fsDataMigrationCheckItem("protectionMap", "Protection data mapped", "Blocklist, attempts, recovery, settings, privacy mode.")}
+            ${fsDataMigrationCheckItem("disciplineMap", "Discipline data mapped", "Goals, reflections, reviews, timeline, focus sessions.")}
+            ${fsDataMigrationCheckItem("coachMap", "Coach and progress data mapped", "Coach memory, weekly intelligence, XP, badges, streaks.")}
+            ${fsDataMigrationCheckItem("privacyRules", "Privacy rules confirmed", "Stats-only mode and PIN rules are protected.")}
+            ${fsDataMigrationCheckItem("backupCompatibility", "Backup compatibility confirmed", "Future backups must preserve privacy and migration version.")}
+            ${fsDataMigrationCheckItem("migrationOrder", "Migration order confirmed", "Settings first, then protection, then discipline and coach data.")}
+            ${fsDataMigrationCheckItem("validationRules", "Validation rules confirmed", "Counts, totals, privacy, and protection state must be checked.")}
+        </div>
+
+        <div class="card fs-data-migration-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3E: SQLite Schema Starter Upgrade</h3>
+            <p>Next we expand the Flutter starter database into full table definitions for every mapped data area.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-data-migration-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsDataMigrationToggleItem(button.getAttribute("data-data-migration-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertDataMigrationHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("dataMigrationHomeCard")) return;
+
+    const progress = fsDataMigrationProgress();
+
+    const insertAfter =
+        document.getElementById("flutterStarterHomeCard") ||
+        document.getElementById("flutterBlueprintHomeCard") ||
+        document.getElementById("androidMigrationHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "dataMigrationHomeCard";
+    card.className = "card fs-data-migration-home-card";
+    card.innerHTML = `
+        <h2>Phase 3D Data Migration</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Map web localStorage data into future Flutter SQLite tables and migration rules.</p>
+        <button id="openDataMigrationHomeBtn">Open Migration Spec</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openDataMigrationHomeBtn").addEventListener("click", openDataMigrationSpecPage);
+}
+
+function addDataMigrationQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickDataMigrationBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickDataMigrationBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3D</span>
+        <span class="premium-quick-label">Data Map</span>
+        <span class="premium-quick-sub">SQLite migration</span>
+    `;
+
+    button.addEventListener("click", openDataMigrationSpecPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3D to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsDataMigrationHealthWrapped) {
+    window.fsDataMigrationHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksDataMigration = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksDataMigration();
+        const progress = fsDataMigrationProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3D Data Migration Specification";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3D Data Migration Specification",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Data migration specification progress: " + progress.percent + "%.",
+                "Open Phase 3D Data Migration and confirm all mapping sections."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshDataMigrationSystems() {
+    setTimeout(insertDataMigrationHomeCard, 950);
+    setTimeout(insertDataMigrationHomeCard, 2000);
+    setTimeout(insertDataMigrationHomeCard, 3300);
+
+    setTimeout(addDataMigrationQuickButton, 1050);
+    setTimeout(addDataMigrationQuickButton, 2100);
+    setTimeout(addDataMigrationQuickButton, 3300);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsDataMigrationGoHomeWrapped) {
+    window.fsDataMigrationGoHomeWrapped = true;
+
+    const oldGoHomeDataMigration = goHome;
+
+    goHome = function() {
+        oldGoHomeDataMigration.apply(this, arguments);
+        setTimeout(refreshDataMigrationSystems, 1650);
+    };
+}
+
+refreshDataMigrationSystems();
 
 </script>
 
