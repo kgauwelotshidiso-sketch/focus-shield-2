@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=dailyrollover1">
+    <link rel="stylesheet" href="style.css?v=dailystartup1">
 </head>
 <body>
 
@@ -2476,6 +2476,7 @@ function showPage(content) {
 }
 
 function goHome() {
+    setTimeout(refreshDailyStartupCheckSystems, 1300);
     setTimeout(refreshSmartCoachWeeklyIntelligenceSystems, 1200);
     setTimeout(refreshSmartCoachMemorySystems, 1100);
     setTimeout(p3RefreshActionRouterSystem, 1000);
@@ -15601,6 +15602,492 @@ fsDailyRolloverGuard();
 setTimeout(fsDailyRolloverRefreshUi, 300);
 setTimeout(fsDailyRolloverRefreshUi, 1200);
 setTimeout(fsDailyRolloverRefreshUi, 2500);
+
+
+/* Daily Startup Check + Yesterday Carry-Over */
+function fsStartupTodayKey() {
+    if (typeof fsDailyRolloverTodayKey === "function") return fsDailyRolloverTodayKey();
+    if (typeof p3TodayKey === "function") return p3TodayKey();
+    if (typeof masterTodayKey === "function") return masterTodayKey();
+    if (typeof getLocalDateKey === "function") return getLocalDateKey();
+
+    const d = new Date();
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsStartupDateKeyOffset(daysBack) {
+    const d = new Date();
+    d.setDate(d.getDate() - daysBack);
+
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function fsStartupEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsStartupGetJson(key, fallback) {
+    try {
+        const data = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        return data || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsStartupGetListeningCount() {
+    if (typeof masterGetListeningCount === "function") return masterGetListeningCount();
+    if (typeof p3GetListeningCount === "function") return p3GetListeningCount();
+
+    return Math.max(
+        Number(localStorage.getItem("listeningCount") || 0),
+        Number(localStorage.getItem("todayListeningWins") || 0),
+        Number(localStorage.getItem("dailyListeningWins") || 0),
+        Number(localStorage.getItem("missionListeningWins") || 0)
+    );
+}
+
+function fsStartupGetMorningPlan() {
+    if (typeof fsV2GetMorningPlan === "function") return fsV2GetMorningPlan();
+
+    const plans = fsStartupGetJson("fsV2MorningPlans", {});
+    return plans[fsStartupTodayKey()] || {};
+}
+
+function fsStartupMorningSaved() {
+    const plan = fsStartupGetMorningPlan();
+    return Boolean(plan.mainMission || plan.firstMove || plan.coachCommand);
+}
+
+function fsStartupGetNextAction() {
+    if (typeof p3GetNextCoachAction === "function") {
+        return p3GetNextCoachAction();
+    }
+
+    if (!fsStartupMorningSaved()) {
+        return {
+            label: "Set Morning Command",
+            detail: "Start the day with direction.",
+            type: "page",
+            page: "morning"
+        };
+    }
+
+    if (fsStartupGetListeningCount() < 3) {
+        return {
+            label: "Add Listening Win",
+            detail: "Complete one listening win.",
+            type: "listening"
+        };
+    }
+
+    return {
+        label: "Open Daily OS",
+        detail: "Review your daily system.",
+        type: "page",
+        page: "dailyos"
+    };
+}
+
+function fsStartupFindYesterdayReview() {
+    const yesterdayKey = fsStartupDateKeyOffset(1);
+
+    const nightReviews = fsStartupGetJson("fsV2NightReviews", {});
+    const night = nightReviews[yesterdayKey] || {};
+
+    const endReviews = fsStartupGetJson("dailyEndReviewHistory", {});
+    const end = endReviews[yesterdayKey] || {};
+
+    const reflections = fsStartupGetJson("reflectionHistory", {});
+    const reflection = reflections[yesterdayKey] || {};
+
+    const dailyMemory = fsStartupGetJson("p3SmartCoachDailyMemory", {});
+    const memory = dailyMemory[yesterdayKey] || {};
+
+    const carryOver = {
+        dateKey: yesterdayKey,
+        biggestWin: "",
+        lesson: "",
+        correction: "",
+        weakness: "",
+        followThrough: ""
+    };
+
+    carryOver.biggestWin =
+        night.biggestWin ||
+        end.strongestAction ||
+        end.biggestWin ||
+        reflection.win ||
+        "";
+
+    carryOver.lesson =
+        night.lesson ||
+        end.lesson ||
+        reflection.lesson ||
+        reflection.whatLearned ||
+        "";
+
+    carryOver.correction =
+        night.correction ||
+        end.correction ||
+        end.tomorrowCorrection ||
+        reflection.correction ||
+        "";
+
+    carryOver.weakness =
+        night.weakness ||
+        end.weakness ||
+        "";
+
+    if ((memory.followThrough || []).length) {
+        const lastFollow = memory.followThrough[memory.followThrough.length - 1];
+        carryOver.followThrough = lastFollow.label || "";
+    }
+
+    if (!carryOver.biggestWin && carryOver.followThrough) {
+        carryOver.biggestWin = carryOver.followThrough;
+    }
+
+    if (!carryOver.correction && carryOver.weakness) {
+        carryOver.correction = "Watch for this pattern again: " + carryOver.weakness + ".";
+    }
+
+    if (!carryOver.lesson && !carryOver.correction && !carryOver.biggestWin) {
+        carryOver.lesson = "No saved lesson from yesterday yet. Use today to create a clearer review.";
+        carryOver.correction = "Complete Night Review tonight so tomorrow has a stronger carry-over.";
+    }
+
+    return carryOver;
+}
+
+function fsStartupGetState() {
+    if (typeof fsDailyRolloverGuard === "function") {
+        fsDailyRolloverGuard();
+    }
+
+    const todayKey = fsStartupTodayKey();
+    const seenDay = localStorage.getItem("fsStartupCheckSeenDay");
+    const listening = fsStartupGetListeningCount();
+    const morningSaved = fsStartupMorningSaved();
+    const nextAction = fsStartupGetNextAction();
+    const carryOver = fsStartupFindYesterdayReview();
+
+    let status = "New Day Ready";
+    let statusDetail = "Start the day by setting command before distractions take over.";
+
+    if (seenDay === todayKey && morningSaved) {
+        status = "Startup Complete";
+        statusDetail = "Morning command has been handled. Continue execution.";
+    } else if (seenDay === todayKey && !morningSaved) {
+        status = "Startup Seen";
+        statusDetail = "You opened the startup check, but Morning Command still needs to be saved.";
+    }
+
+    if (listening > 0 && !morningSaved) {
+        status = "Action Started";
+        statusDetail = "You have started discipline actions, but Morning Command still needs to be saved.";
+    }
+
+    return {
+        todayKey: todayKey,
+        seenDay: seenDay,
+        listening: listening,
+        morningSaved: morningSaved,
+        nextAction: nextAction,
+        carryOver: carryOver,
+        status: status,
+        statusDetail: statusDetail
+    };
+}
+
+function fsStartupMarkSeen() {
+    localStorage.setItem("fsStartupCheckSeenDay", fsStartupTodayKey());
+    localStorage.setItem("fsStartupCheckLastSeenAt", new Date().toISOString());
+}
+
+function fsStartupDoFirstAction() {
+    fsStartupMarkSeen();
+
+    const action = fsStartupGetNextAction();
+
+    if (typeof p3MemoryLogRecommendation === "function") {
+        p3MemoryLogRecommendation("Daily Startup Check");
+    }
+
+    if (typeof p3MemoryLogActionTaken === "function") {
+        p3MemoryLogActionTaken("Daily Startup Check");
+    }
+
+    if (action.type === "listening") {
+        if (typeof masterAddListeningWin === "function") {
+            masterAddListeningWin();
+        }
+
+        if (typeof refreshDailyStartupCheckHomeCard === "function") {
+            refreshDailyStartupCheckHomeCard();
+        }
+
+        return;
+    }
+
+    if (action.page === "morning" && typeof openMorningCommandCenterPage === "function") {
+        openMorningCommandCenterPage();
+        return;
+    }
+
+    if (action.page === "midday" && typeof openMiddayResetCheckPage === "function") {
+        openMiddayResetCheckPage();
+        return;
+    }
+
+    if (action.page === "goal" && typeof openGoalExecutionPlanPage === "function") {
+        openGoalExecutionPlanPage();
+        return;
+    }
+
+    if (action.page === "night" && typeof openNightReviewScorePage === "function") {
+        openNightReviewScorePage();
+        return;
+    }
+
+    if (typeof p3ExecuteNextCoachAction === "function") {
+        p3ExecuteNextCoachAction();
+        return;
+    }
+
+    if (typeof openDailyOperatingSystemPage === "function") {
+        openDailyOperatingSystemPage();
+    }
+}
+
+function fsStartupGetHomeCardHtml() {
+    const state = fsStartupGetState();
+
+    return `
+        <h2>Daily Startup Check</h2>
+        <h3>${fsStartupEscape(state.status)}</h3>
+        <p>${fsStartupEscape(state.statusDetail)}</p>
+        <p><strong>Today’s Mission:</strong> ${state.listening} / 3</p>
+        <p><strong>First Action:</strong> ${fsStartupEscape(state.nextAction.label)}</p>
+        <button id="openDailyStartupCheckBtn">Open Startup Check</button>
+        <button id="dailyStartupFirstActionBtn">Start First Action</button>
+    `;
+}
+
+function insertDailyStartupCheckHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) {
+        return;
+    }
+
+    if (document.getElementById("dailyStartupCheckHomeCard")) {
+        return;
+    }
+
+    const mission = document.getElementById("homeMissionProgress");
+    const missionCard = mission ? mission.closest(".card") : null;
+    const insertAfter = missionCard || document.querySelector(".card");
+
+    if (!insertAfter) {
+        return;
+    }
+
+    const card = document.createElement("div");
+    card.id = "dailyStartupCheckHomeCard";
+    card.className = "card fs-startup-card";
+    card.innerHTML = fsStartupGetHomeCardHtml();
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openDailyStartupCheckBtn").addEventListener("click", openDailyStartupCheckPage);
+    document.getElementById("dailyStartupFirstActionBtn").addEventListener("click", fsStartupDoFirstAction);
+}
+
+function refreshDailyStartupCheckHomeCard() {
+    const existing = document.getElementById("dailyStartupCheckHomeCard");
+
+    if (existing) {
+        existing.innerHTML = fsStartupGetHomeCardHtml();
+
+        const openBtn = document.getElementById("openDailyStartupCheckBtn");
+        const actionBtn = document.getElementById("dailyStartupFirstActionBtn");
+
+        if (openBtn) openBtn.onclick = openDailyStartupCheckPage;
+        if (actionBtn) actionBtn.onclick = fsStartupDoFirstAction;
+
+        return;
+    }
+
+    setTimeout(insertDailyStartupCheckHomeCard, 300);
+    setTimeout(insertDailyStartupCheckHomeCard, 900);
+    setTimeout(insertDailyStartupCheckHomeCard, 1800);
+}
+
+function openDailyStartupCheckPage() {
+    if (typeof fsDailyRolloverGuard === "function") {
+        fsDailyRolloverGuard();
+    }
+
+    fsStartupMarkSeen();
+
+    const state = fsStartupGetState();
+    const carry = state.carryOver;
+
+    showPage(`
+        <h1>Daily Startup Check</h1>
+
+        <div class="card fs-startup-card">
+            <h2>${fsStartupEscape(state.status)}</h2>
+            <h3>${fsStartupEscape(state.nextAction.label)}</h3>
+            <p>${fsStartupEscape(state.nextAction.detail)}</p>
+            <p><strong>Today’s Mission:</strong> ${state.listening} / 3</p>
+            <p><strong>Morning Command:</strong> ${state.morningSaved ? "Saved" : "Not saved"}</p>
+        </div>
+
+        <div class="card fs-startup-carry-card">
+            <h2>Yesterday’s Carry-Over</h2>
+            <p><strong>Date:</strong> ${fsStartupEscape(carry.dateKey)}</p>
+            <p><strong>Biggest Win:</strong> ${fsStartupEscape(carry.biggestWin || "No win recorded.")}</p>
+            <p><strong>Lesson:</strong> ${fsStartupEscape(carry.lesson || "No lesson recorded.")}</p>
+            <p><strong>Correction:</strong> ${fsStartupEscape(carry.correction || "No correction recorded.")}</p>
+        </div>
+
+        <div class="card fs-startup-command-card">
+            <h2>Today’s First Command</h2>
+            <p>I pause, I listen, and I follow my dreams.</p>
+            <p>Start with one clear action, not emotion.</p>
+        </div>
+
+        <div class="card p3-action-card">
+            <h2>Startup Actions</h2>
+            <button id="startupFirstActionBtn">Start First Action</button>
+            <button id="startupOpenSmartCoachBtn">Open Smart Coach</button>
+            <button id="startupOpenDailyOSBtn">Open Daily OS</button>
+            <button id="startupMarkSeenBtn">Mark Startup Reviewed</button>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("startupFirstActionBtn").addEventListener("click", fsStartupDoFirstAction);
+
+    document.getElementById("startupOpenSmartCoachBtn").addEventListener("click", function() {
+        if (typeof openSmartDailyCoachPage === "function") {
+            openSmartDailyCoachPage();
+        }
+    });
+
+    document.getElementById("startupOpenDailyOSBtn").addEventListener("click", function() {
+        if (typeof openDailyOperatingSystemPage === "function") {
+            openDailyOperatingSystemPage();
+        }
+    });
+
+    document.getElementById("startupMarkSeenBtn").addEventListener("click", function() {
+        fsStartupMarkSeen();
+        openDailyStartupCheckPage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function addDailyStartupCheckQuickButton() {
+    const grid =
+        document.getElementById("premiumPrimaryGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumReviewGrid");
+
+    if (!grid) {
+        return;
+    }
+
+    if (document.getElementById("quickDailyStartupCheckBtn")) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "quickDailyStartupCheckBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-main-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">AM</span>
+        <span class="premium-quick-label">Startup Check</span>
+        <span class="premium-quick-sub">New day command</span>
+    `;
+
+    button.addEventListener("click", openDailyStartupCheckPage);
+
+    grid.appendChild(button);
+}
+
+/* Add Startup Check to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsStartupHealthWrapped) {
+    window.fsStartupHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksStartup = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksStartup();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Daily Startup Check";
+        });
+
+        if (!alreadyExists) {
+            const todayKey = fsStartupTodayKey();
+            const storedDay = localStorage.getItem("focusShieldSystemDay");
+
+            checks.push(makeHealthCheck(
+                "Daily Startup Check",
+                storedDay === todayKey ? "PASS" : "WARN",
+                storedDay === todayKey
+                    ? "Startup Check is aligned with today: " + todayKey + "."
+                    : "Startup Check needs daily rollover alignment.",
+                "Open Startup Check in the morning to begin the day intentionally."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshDailyStartupCheckSystems() {
+    if (typeof fsDailyRolloverGuard === "function") {
+        fsDailyRolloverGuard();
+    }
+
+    refreshDailyStartupCheckHomeCard();
+
+    setTimeout(addDailyStartupCheckQuickButton, 500);
+    setTimeout(addDailyStartupCheckQuickButton, 1400);
+    setTimeout(addDailyStartupCheckQuickButton, 2600);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsStartupGoHomeWrapped) {
+    window.fsStartupGoHomeWrapped = true;
+
+    const oldGoHomeStartup = goHome;
+
+    goHome = function() {
+        oldGoHomeStartup.apply(this, arguments);
+        setTimeout(refreshDailyStartupCheckSystems, 700);
+    };
+}
+
+refreshDailyStartupCheckSystems();
 
 </script>
 
