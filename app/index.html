@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv45intervention1">
+    <link rel="stylesheet" href="style.css?v=liveappv46progress1">
 </head>
 <body>
 
@@ -28043,6 +28043,476 @@ if (typeof goHome === "function" && !window.fsLiveAppV45GoHomeWrapped) {
 }
 
 refreshLiveAppV45Systems();
+
+
+/* Live App v4.6 Progress System Integration */
+function fsLiveV46SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV46SaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value || {}));
+}
+
+function fsLiveV46Today() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function fsLiveV46NowLabel() {
+    return new Date().toLocaleString();
+}
+
+function fsLiveV46GetProgressState() {
+    const saved = fsLiveV46SafeJson("fsLiveV46ProgressState", {});
+    const today = fsLiveV46Today();
+
+    if (saved.today !== today) {
+        return {
+            today: today,
+            xp: Number(saved.xp || 45),
+            level: Number(saved.level || 2),
+            listeningWinsToday: 0,
+            focusSessionsToday: 0,
+            reflectionsToday: 0,
+            concentrationWinsToday: 0,
+            totalListeningWins: Number(saved.totalListeningWins || 0),
+            totalFocusSessions: Number(saved.totalFocusSessions || 0),
+            totalReflections: Number(saved.totalReflections || 0),
+            totalConcentrationWins: Number(saved.totalConcentrationWins || 0)
+        };
+    }
+
+    return {
+        today: today,
+        xp: Number(saved.xp || 45),
+        level: Number(saved.level || 2),
+        listeningWinsToday: Number(saved.listeningWinsToday || 0),
+        focusSessionsToday: Number(saved.focusSessionsToday || 0),
+        reflectionsToday: Number(saved.reflectionsToday || 0),
+        concentrationWinsToday: Number(saved.concentrationWinsToday || 0),
+        totalListeningWins: Number(saved.totalListeningWins || 0),
+        totalFocusSessions: Number(saved.totalFocusSessions || 0),
+        totalReflections: Number(saved.totalReflections || 0),
+        totalConcentrationWins: Number(saved.totalConcentrationWins || 0)
+    };
+}
+
+function fsLiveV46SaveProgressState(state) {
+    const xpToLevel = 100;
+    state.level = Math.max(1, Math.floor(Number(state.xp || 0) / xpToLevel) + 1);
+    fsLiveV46SaveJson("fsLiveV46ProgressState", state);
+}
+
+function fsLiveV46GetTimeline() {
+    const timeline = fsLiveV46SafeJson("fsLiveV46Timeline", []);
+    return Array.isArray(timeline) ? timeline : [];
+}
+
+function fsLiveV46SaveTimeline(timeline) {
+    fsLiveV46SaveJson("fsLiveV46Timeline", timeline.slice(0, 40));
+}
+
+function fsLiveV46AddTimelineEvent(type, title, detail) {
+    const timeline = fsLiveV46GetTimeline();
+
+    timeline.unshift({
+        id: Date.now(),
+        date: fsLiveV46Today(),
+        time: fsLiveV46NowLabel(),
+        type: type,
+        title: title,
+        detail: detail
+    });
+
+    fsLiveV46SaveTimeline(timeline);
+}
+
+function fsLiveV46AwardXp(amount, title, detail) {
+    const state = fsLiveV46GetProgressState();
+    state.xp += Number(amount || 0);
+    fsLiveV46SaveProgressState(state);
+    fsLiveV46AddTimelineEvent("XP", title, detail + " +" + amount + " XP");
+}
+
+function fsLiveV46LogListeningWin() {
+    const state = fsLiveV46GetProgressState();
+
+    state.listeningWinsToday += 1;
+    state.totalListeningWins += 1;
+    state.xp += 10;
+
+    fsLiveV46SaveProgressState(state);
+
+    const mission = fsLiveV46SafeJson("fsTodayMissionProgress", {});
+    mission.current = Math.min(Number(mission.current || 0) + 1, Number(mission.target || 3));
+    mission.target = Number(mission.target || 3);
+    mission.text = mission.text || "Pause and fully listen before speaking at least 3 times today.";
+    localStorage.setItem("fsTodayMissionProgress", JSON.stringify(mission));
+
+    fsLiveV46AddTimelineEvent(
+        "Listening Win",
+        "Listening win logged",
+        "You paused and listened before speaking. +10 XP"
+    );
+
+    openLiveAppV46ProgressPage();
+}
+
+function fsLiveV46CompleteFocusSession() {
+    const state = fsLiveV46GetProgressState();
+
+    state.focusSessionsToday += 1;
+    state.totalFocusSessions += 1;
+    state.xp += 20;
+
+    fsLiveV46SaveProgressState(state);
+
+    fsLiveV46AddTimelineEvent(
+        "Focus Session",
+        "Focus session completed",
+        "You returned your attention to your goals. +20 XP"
+    );
+
+    openLiveAppV46ProgressPage();
+}
+
+function fsLiveV46CompleteReflection() {
+    const state = fsLiveV46GetProgressState();
+
+    state.reflectionsToday += 1;
+    state.totalReflections += 1;
+    state.xp += 15;
+
+    fsLiveV46SaveProgressState(state);
+
+    fsLiveV46AddTimelineEvent(
+        "Reflection",
+        "Daily reflection completed",
+        "You reviewed your mind and strengthened self-awareness. +15 XP"
+    );
+
+    openLiveAppV46ProgressPage();
+}
+
+function fsLiveV46CompleteConcentration() {
+    const state = fsLiveV46GetProgressState();
+
+    state.concentrationWinsToday += 1;
+    state.totalConcentrationWins += 1;
+    state.xp += 15;
+
+    fsLiveV46SaveProgressState(state);
+
+    fsLiveV46AddTimelineEvent(
+        "Concentration",
+        "Concentration drill completed",
+        "You trained your attention and returned to focus. +15 XP"
+    );
+
+    openLiveAppV46ProgressPage();
+}
+
+function fsLiveV46GetStreakSnapshot() {
+    if (typeof fsLiveV45GetStreakSnapshot === "function") {
+        return fsLiveV45GetStreakSnapshot();
+    }
+
+    const state = fsLiveV46SafeJson("fsStreakState", {});
+    return {
+        current: Number(state.currentStreak || state.current || 0),
+        longest: Number(state.longestStreak || state.longest || 0)
+    };
+}
+
+function fsLiveV46GetBadges(state) {
+    return [
+        {
+            title: "First Listening Win",
+            unlocked: state.totalListeningWins >= 1,
+            detail: "Log your first listening win."
+        },
+        {
+            title: "3 Listening Wins",
+            unlocked: state.listeningWinsToday >= 3,
+            detail: "Complete today’s listening mission."
+        },
+        {
+            title: "First Focus Session",
+            unlocked: state.totalFocusSessions >= 1,
+            detail: "Complete one focus session."
+        },
+        {
+            title: "Reflection Starter",
+            unlocked: state.totalReflections >= 1,
+            detail: "Complete one reflection."
+        },
+        {
+            title: "Attention Trainer",
+            unlocked: state.totalConcentrationWins >= 1,
+            detail: "Complete one concentration drill."
+        },
+        {
+            title: "Level 3",
+            unlocked: state.level >= 3,
+            detail: "Reach level 3 through XP."
+        }
+    ];
+}
+
+function fsLiveV46ChartBars() {
+    const timeline = fsLiveV46GetTimeline();
+    const days = [];
+
+    for (let i = 6; i >= 0; i -= 1) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const key = date.toISOString().slice(0, 10);
+        const label = date.toLocaleDateString(undefined, { weekday: "short" });
+        const count = timeline.filter(function(event) {
+            return event.date === key;
+        }).length;
+
+        days.push({ key, label, count });
+    }
+
+    const max = Math.max(1, ...days.map(function(day) { return day.count; }));
+
+    return `
+        <div class="fs-v46-chart">
+            ${days.map(function(day) {
+                const height = Math.max(8, Math.round((day.count / max) * 100));
+                return `
+                    <div class="fs-v46-chart-col">
+                        <div class="fs-v46-chart-bar-wrap">
+                            <div class="fs-v46-chart-bar" style="height: ${height}%;"></div>
+                        </div>
+                        <span>${day.label}</span>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+function fsLiveV46OpenOldProgressModule(moduleKey) {
+    if (typeof fsLiveV41OpenModule === "function") {
+        fsLiveV41OpenModule(moduleKey);
+        return;
+    }
+
+    openLiveAppV46ProgressPage();
+}
+
+function openLiveAppV46ProgressPage() {
+    const state = fsLiveV46GetProgressState();
+    const streak = fsLiveV46GetStreakSnapshot();
+    const badges = fsLiveV46GetBadges(state);
+    const unlockedBadges = badges.filter(function(badge) { return badge.unlocked; }).length;
+    const xpToNext = 100 - (state.xp % 100);
+    const missionTarget = 3;
+    const missionPercent = Math.min(100, Math.round((state.listeningWinsToday / missionTarget) * 100));
+    const timeline = fsLiveV46GetTimeline().slice(0, 8);
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Progress", "XP, streaks, badges, wins") : "<h1>Progress</h1>"}
+
+        <div class="card fs-v46-level-card">
+            <h2>Level ${state.level}</h2>
+            <p>${state.xp} XP total • ${xpToNext} XP to next level</p>
+
+            <div class="fs-v46-xp-bar">
+                <div style="width: ${state.xp % 100}%;"></div>
+            </div>
+        </div>
+
+        <div class="card fs-v46-streak-card">
+            <h2>Streak Protection</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${streak.current}</strong><span>Current Streak</span></div>
+                <div><strong>${streak.longest}</strong><span>Longest Streak</span></div>
+                <div><strong>${state.listeningWinsToday}</strong><span>Listening Wins</span></div>
+                <div><strong>${unlockedBadges}</strong><span>Badges</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v46-mission-card">
+            <h2>Listening Mission</h2>
+            <h3>${state.listeningWinsToday} / ${missionTarget}</h3>
+            <p>Pause and fully listen before speaking at least 3 times today.</p>
+
+            <div class="fs-v46-progress-bar">
+                <div style="width: ${missionPercent}%;"></div>
+            </div>
+
+            <button id="v46ListeningWinBtn">Log Listening Win</button>
+        </div>
+
+        <div class="card fs-v46-actions-card">
+            <h2>Progress Actions</h2>
+            <div class="fs-v46-action-grid">
+                <button id="v46FocusBtn">
+                    <strong>Focus Session</strong>
+                    <span>+20 XP</span>
+                </button>
+                <button id="v46ReflectionBtn">
+                    <strong>Reflection</strong>
+                    <span>+15 XP</span>
+                </button>
+                <button id="v46ConcentrationBtn">
+                    <strong>Concentration</strong>
+                    <span>+15 XP</span>
+                </button>
+                <button id="v46OpenTimerBtn">
+                    <strong>Open Timer</strong>
+                    <span>Module</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="card fs-v46-badges-card">
+            <h2>Badges</h2>
+            <div class="fs-v46-badge-grid">
+                ${badges.map(function(badge) {
+                    return `
+                        <div class="${badge.unlocked ? "unlocked" : "locked"}">
+                            <strong>${badge.unlocked ? "🏆" : "🔒"} ${fsLiveV4Escape(badge.title)}</strong>
+                            <p>${fsLiveV4Escape(badge.detail)}</p>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+        </div>
+
+        <div class="card fs-v46-chart-card">
+            <h2>7-Day Activity Chart</h2>
+            ${fsLiveV46ChartBars()}
+        </div>
+
+        <div class="card fs-v46-timeline-card">
+            <h2>Daily Timeline</h2>
+            ${
+                timeline.length
+                    ? timeline.map(function(event) {
+                        return `
+                            <div class="fs-v46-timeline-item">
+                                <strong>${fsLiveV4Escape(event.title)}</strong>
+                                <p>${fsLiveV4Escape(event.type)} • ${fsLiveV4Escape(event.time)}</p>
+                                <p>${fsLiveV4Escape(event.detail)}</p>
+                            </div>
+                        `;
+                    }).join("")
+                    : "<p>No progress events yet. Log a listening win or complete a focus action.</p>"
+            }
+        </div>
+
+        <div class="card fs-v46-modules-card">
+            <h2>Old Progress Modules</h2>
+            <div class="fs-v46-action-grid">
+                <button id="v46OldProgressBtn">Progress Tracker</button>
+                <button id="v46OldBadgesBtn">Badges Module</button>
+                <button id="v46OldChartsBtn">Charts Module</button>
+                <button id="v46OldTimelineBtn">Timeline Module</button>
+            </div>
+        </div>
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("progress") : (typeof fsLiveV4BottomNav === "function" ? fsLiveV4BottomNav("progress") : "")}
+    `);
+
+    document.getElementById("v46ListeningWinBtn").addEventListener("click", fsLiveV46LogListeningWin);
+    document.getElementById("v46FocusBtn").addEventListener("click", fsLiveV46CompleteFocusSession);
+    document.getElementById("v46ReflectionBtn").addEventListener("click", fsLiveV46CompleteReflection);
+    document.getElementById("v46ConcentrationBtn").addEventListener("click", fsLiveV46CompleteConcentration);
+
+    document.getElementById("v46OpenTimerBtn").addEventListener("click", function() {
+        fsLiveV46OpenOldProgressModule("focusTimer");
+    });
+
+    document.getElementById("v46OldProgressBtn").addEventListener("click", function() {
+        fsLiveV46OpenOldProgressModule("progress");
+    });
+
+    document.getElementById("v46OldBadgesBtn").addEventListener("click", function() {
+        fsLiveV46OpenOldProgressModule("badges");
+    });
+
+    document.getElementById("v46OldChartsBtn").addEventListener("click", function() {
+        fsLiveV46OpenOldProgressModule("charts");
+    });
+
+    document.getElementById("v46OldTimelineBtn").addEventListener("click", function() {
+        fsLiveV46OpenOldProgressModule("timeline");
+    });
+
+    if (typeof fsLiveV44BindNav === "function") {
+        fsLiveV44BindNav();
+    } else if (typeof fsLiveV4BindNav === "function") {
+        fsLiveV4BindNav();
+    }
+}
+
+/* Override progress tab */
+window.openLiveAppV46ProgressPage = openLiveAppV46ProgressPage;
+window.openLiveAppV4ProgressPage = openLiveAppV46ProgressPage;
+window.fsLiveV41OpenProgressPage = openLiveAppV46ProgressPage;
+
+function fsLiveV46AutoOpen() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("liveappv46progress")) {
+        openLiveAppV46ProgressPage();
+    }
+}
+
+function insertLiveAppV46Card() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV46HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV45HomeCard") ||
+        document.getElementById("liveAppV44HomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV46HomeCard";
+    card.className = "card fs-v46-level-card";
+    card.innerHTML = `
+        <h2>Live App v4.6</h2>
+        <h3>Progress System</h3>
+        <p>XP, badges, listening wins, streaks, charts, and timeline are now directly integrated.</p>
+        <button id="openLiveAppV46Btn">Open Progress System</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openLiveAppV46Btn").addEventListener("click", openLiveAppV46ProgressPage);
+}
+
+function refreshLiveAppV46Systems() {
+    setTimeout(insertLiveAppV46Card, 1450);
+    setTimeout(insertLiveAppV46Card, 3000);
+    setTimeout(insertLiveAppV46Card, 4400);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV46GoHomeWrapped) {
+    window.fsLiveAppV46GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV46 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV46.apply(this, arguments);
+        setTimeout(refreshLiveAppV46Systems, 2000);
+    };
+}
+
+setTimeout(fsLiveV46AutoOpen, 650);
+refreshLiveAppV46Systems();
 
 </script>
 
