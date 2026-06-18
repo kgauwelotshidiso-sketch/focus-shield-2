@@ -3527,3 +3527,93 @@ textarea:focus {
         width: 100%;
     }
 }
+
+
+/* Phase 4C Flutter SDK Setup Plan */
+.fs-flutter-sdk-home-card,
+.fs-flutter-sdk-hero-card {
+    border: 1px solid rgba(59, 130, 246, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 64, 175, 0.28));
+}
+
+.fs-flutter-sdk-home-card h3,
+.fs-flutter-sdk-hero-card h3 {
+    color: #60a5fa;
+}
+
+.fs-flutter-sdk-warning-card,
+.fs-flutter-sdk-notready-card {
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.26));
+}
+
+.fs-flutter-sdk-safe-card,
+.fs-flutter-sdk-recommend-card,
+.fs-flutter-sdk-files-card {
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(21, 128, 61, 0.24));
+}
+
+.fs-flutter-sdk-option-card,
+.fs-flutter-sdk-script-card {
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(45, 212, 191, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(13, 148, 136, 0.24));
+}
+
+.fs-flutter-sdk-devcontainer-card,
+.fs-flutter-sdk-next-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.25));
+}
+
+.fs-flutter-sdk-check-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fs-flutter-sdk-check-row p {
+    margin: 6px 0 0;
+    opacity: 0.82;
+}
+
+.fs-flutter-sdk-check-row button {
+    width: auto;
+    min-width: 110px;
+    padding: 10px 12px;
+}
+
+.fs-flutter-sdk-script-card pre {
+    overflow-x: auto;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(2, 6, 23, 0.78);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+@media (max-width: 520px) {
+    .fs-flutter-sdk-check-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fs-flutter-sdk-check-row button {
+        width: 100%;
+    }
+}

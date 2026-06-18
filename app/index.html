@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase4aflutterproject1">
+    <link rel="stylesheet" href="style.css?v=phase4cfluttersdk1">
 </head>
 <body>
 
@@ -23572,6 +23572,305 @@ if (typeof goHome === "function" && !window.fsFlutterProjectGoHomeWrapped) {
 }
 
 refreshFlutterProjectSystems();
+
+
+/* Phase 4C Flutter SDK Setup Plan */
+function fsFlutterSdkEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsFlutterSdkGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase4CChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsFlutterSdkSaveChecklist(data) {
+    localStorage.setItem("fsPhase4CChecklist", JSON.stringify(data || {}));
+}
+
+function fsFlutterSdkToggleItem(key) {
+    const data = fsFlutterSdkGetChecklist();
+    data[key] = !data[key];
+    fsFlutterSdkSaveChecklist(data);
+    openFlutterSdkSetupPage();
+}
+
+function fsFlutterSdkItems() {
+    return [
+        "statusUnderstood",
+        "webSafe",
+        "optionOne",
+        "optionTwo",
+        "optionThree",
+        "devcontainerTemplate",
+        "environmentReport",
+        "decisionHelper",
+        "doNotCreateYet",
+        "docs"
+    ];
+}
+
+function fsFlutterSdkProgress() {
+    const items = fsFlutterSdkItems();
+    const data = fsFlutterSdkGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsFlutterSdkCheckItem(key, label, detail) {
+    const data = fsFlutterSdkGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-flutter-sdk-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsFlutterSdkEscape(label)}</strong>
+                <p>${fsFlutterSdkEscape(detail)}</p>
+            </div>
+            <button data-flutter-sdk-key="${fsFlutterSdkEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openFlutterSdkSetupPage() {
+    const progress = fsFlutterSdkProgress();
+
+    showPage(`
+        <h1>Phase 4C Flutter SDK Setup</h1>
+
+        <div class="card fs-flutter-sdk-hero-card">
+            <h2>Flutter SDK Setup Plan</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This phase handles the fact that Flutter is not installed in the current Codespace.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} setup groups confirmed.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-warning-card">
+            <h2>Current Environment Result</h2>
+            <p><strong>Flutter SDK:</strong> Not installed in this Codespace.</p>
+            <p><strong>Meaning:</strong> This is a setup limitation, not an app failure.</p>
+            <p><strong>Action:</strong> Do not run flutter create yet.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-safe-card">
+            <h2>What Is Still Safe</h2>
+            <p><strong>Web prototype:</strong> safe inside /app.</p>
+            <p><strong>Git:</strong> clean after your last save.</p>
+            <p><strong>Starter files:</strong> safe inside flutter_starter.</p>
+            <p><strong>Real Flutter project:</strong> not created yet.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-option-card">
+            <h2>Option 1: Add Flutter To This Codespace</h2>
+            <p>This keeps everything in one environment.</p>
+            <p><strong>Good:</strong> simple repo continuity.</p>
+            <p><strong>Risk:</strong> Flutter and Android tools are large and may slow the Codespace.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-option-card">
+            <h2>Option 2: Flutter-Ready Devcontainer</h2>
+            <p>This prepares a dedicated Flutter-ready Codespace setup.</p>
+            <p><strong>Good:</strong> cleaner long-term Android build environment.</p>
+            <p><strong>Risk:</strong> Codespace rebuild takes time.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-option-card">
+            <h2>Option 3: Keep Planning Here</h2>
+            <p>Continue using this Codespace for the working web prototype and planning files.</p>
+            <p><strong>Good:</strong> safest for your current progress.</p>
+            <p><strong>Risk:</strong> APK build waits until Flutter environment exists.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-recommend-card">
+            <h2>Recommended Path</h2>
+            <p><strong>1.</strong> Keep this Codespace safe.</p>
+            <p><strong>2.</strong> Do not run flutter create yet.</p>
+            <p><strong>3.</strong> Use the environment report script when checking readiness.</p>
+            <p><strong>4.</strong> Use the devcontainer template only when ready to rebuild.</p>
+            <p><strong>5.</strong> Create the real Flutter project only after Flutter SDK is available.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-script-card">
+            <h2>Created Scripts</h2>
+            <p><strong>Environment report:</strong></p>
+            <pre><code>bash flutter_starter/scripts/flutter_environment_report.sh</code></pre>
+            <p><strong>Decision helper:</strong></p>
+            <pre><code>bash flutter_starter/scripts/flutter_setup_decision_helper.sh</code></pre>
+        </div>
+
+        <div class="card fs-flutter-sdk-devcontainer-card">
+            <h2>Devcontainer Template</h2>
+            <p>Template files created but not activated:</p>
+            <p><strong>flutter_starter/templates/flutter_devcontainer/devcontainer.json</strong></p>
+            <p><strong>flutter_starter/templates/flutter_devcontainer/Dockerfile</strong></p>
+            <p>This keeps the current Codespace unchanged until you intentionally rebuild.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-notready-card">
+            <h2>Do Not Do Yet</h2>
+            <p><strong>Do not run:</strong> flutter create focus_shield_flutter</p>
+            <p><strong>Reason:</strong> Flutter is not installed.</p>
+            <p><strong>Do not move templates into .devcontainer yet</strong> unless you are ready to rebuild the Codespace.</p>
+        </div>
+
+        <div class="card fs-flutter-sdk-files-card">
+            <h2>Created Files</h2>
+            <p><strong>flutter_starter/docs/flutter_sdk_setup_plan.md</strong></p>
+            <p><strong>flutter_starter/docs/flutter_codespace_devcontainer_plan.md</strong></p>
+            <p><strong>flutter_starter/scripts/flutter_environment_report.sh</strong></p>
+            <p><strong>flutter_starter/scripts/flutter_setup_decision_helper.sh</strong></p>
+            <p><strong>flutter_starter/templates/flutter_devcontainer/devcontainer.json</strong></p>
+            <p><strong>flutter_starter/templates/flutter_devcontainer/Dockerfile</strong></p>
+        </div>
+
+        <div class="card fs-flutter-sdk-checklist-card">
+            <h2>Phase 4C Checklist</h2>
+            ${fsFlutterSdkCheckItem("statusUnderstood", "Flutter status understood", "Flutter is not installed in this Codespace.")}
+            ${fsFlutterSdkCheckItem("webSafe", "Web prototype safety confirmed", "Current web app remains safe in /app.")}
+            ${fsFlutterSdkCheckItem("optionOne", "Option 1 understood", "Adding Flutter to this Codespace is possible but heavier.")}
+            ${fsFlutterSdkCheckItem("optionTwo", "Option 2 understood", "Flutter-ready devcontainer is cleaner for Android builds.")}
+            ${fsFlutterSdkCheckItem("optionThree", "Option 3 understood", "Keep planning here and build Flutter later elsewhere.")}
+            ${fsFlutterSdkCheckItem("devcontainerTemplate", "Devcontainer template confirmed", "Template created but not activated.")}
+            ${fsFlutterSdkCheckItem("environmentReport", "Environment report confirmed", "flutter_environment_report.sh created.")}
+            ${fsFlutterSdkCheckItem("decisionHelper", "Decision helper confirmed", "flutter_setup_decision_helper.sh created.")}
+            ${fsFlutterSdkCheckItem("doNotCreateYet", "Do not create Flutter project yet", "flutter create waits until SDK is available.")}
+            ${fsFlutterSdkCheckItem("docs", "Documentation confirmed", "Phase 4C setup docs created.")}
+        </div>
+
+        <div class="card fs-flutter-sdk-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 4D: Flutter Environment Route Decision</h3>
+            <p>Next we choose whether to keep planning here, install Flutter into this Codespace, or activate a Flutter-ready devcontainer.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-flutter-sdk-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsFlutterSdkToggleItem(button.getAttribute("data-flutter-sdk-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertFlutterSdkHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("flutterSdkHomeCard")) return;
+
+    const progress = fsFlutterSdkProgress();
+
+    const insertAfter =
+        document.getElementById("flutterProjectHomeCard") ||
+        document.getElementById("androidReadyHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "flutterSdkHomeCard";
+    card.className = "card fs-flutter-sdk-home-card";
+    card.innerHTML = `
+        <h2>Phase 4C Flutter SDK Setup</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Plan the safe Flutter SDK setup route after environment check.</p>
+        <button id="openFlutterSdkHomeBtn">Open SDK Setup</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openFlutterSdkHomeBtn").addEventListener("click", openFlutterSdkSetupPage);
+}
+
+function addFlutterSdkQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickFlutterSdkBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickFlutterSdkBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">4C</span>
+        <span class="premium-quick-label">Flutter SDK</span>
+        <span class="premium-quick-sub">Setup route</span>
+    `;
+
+    button.addEventListener("click", openFlutterSdkSetupPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 4C to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsFlutterSdkHealthWrapped) {
+    window.fsFlutterSdkHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksFlutterSdk = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksFlutterSdk();
+        const progress = fsFlutterSdkProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 4C Flutter SDK Setup Plan";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 4C Flutter SDK Setup Plan",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Flutter SDK setup plan progress: " + progress.percent + "%.",
+                "Open Phase 4C Flutter SDK Setup and confirm all setup groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshFlutterSdkSystems() {
+    setTimeout(insertFlutterSdkHomeCard, 1450);
+    setTimeout(insertFlutterSdkHomeCard, 3000);
+    setTimeout(insertFlutterSdkHomeCard, 4300);
+
+    setTimeout(addFlutterSdkQuickButton, 1550);
+    setTimeout(addFlutterSdkQuickButton, 3100);
+    setTimeout(addFlutterSdkQuickButton, 4300);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsFlutterSdkGoHomeWrapped) {
+    window.fsFlutterSdkGoHomeWrapped = true;
+
+    const oldGoHomeFlutterSdk = goHome;
+
+    goHome = function() {
+        oldGoHomeFlutterSdk.apply(this, arguments);
+        setTimeout(refreshFlutterSdkSystems, 2150);
+    };
+}
+
+refreshFlutterSdkSystems();
 
 </script>
 

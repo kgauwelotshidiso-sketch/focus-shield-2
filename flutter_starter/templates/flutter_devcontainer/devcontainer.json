@@ -1,0 +1,17 @@
+{
+  "name": "Focus Shield Flutter Android",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter",
+        "ms-vscode.vscode-typescript-next"
+      ]
+    }
+  },
+  "forwardPorts": [8000],
+  "postCreateCommand": "flutter doctor || true"
+}
