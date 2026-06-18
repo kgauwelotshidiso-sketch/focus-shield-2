@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=leanliveactionv21">
+    <link rel="stylesheet" href="style.css?v=leanliveactionv3">
 </head>
 <body>
 
@@ -24715,6 +24715,351 @@ function fsLiveOpenEmergencyResetPage() {
     });
 
     document.getElementById("backBtn").addEventListener("click", openLiveActionModePage);
+}
+
+
+/* Lean Build Live Action Mode v3 Real App Feel */
+function fsLiveUnrecoveredCount() {
+    const state = fsLiveDefaultState();
+    return state.attempts.filter(function(attempt) {
+        return !attempt.recovered;
+    }).length;
+}
+
+function fsLiveBottomNavHtml(activeTab) {
+    function activeClass(tab) {
+        return activeTab === tab ? "fs-live-nav-active" : "";
+    }
+
+    return `
+        <div class="fs-live-bottom-spacer"></div>
+        <div class="fs-live-bottom-nav">
+            <button id="fsLiveNavHome" class="${activeClass("home")}">
+                <span>🛡️</span>
+                <strong>Home</strong>
+            </button>
+            <button id="fsLiveNavScanner" class="${activeClass("scanner")}">
+                <span>🔍</span>
+                <strong>Scanner</strong>
+            </button>
+            <button id="fsLiveNavRecovery" class="${activeClass("recovery")}">
+                <span>🌬️</span>
+                <strong>Recovery</strong>
+            </button>
+            <button id="fsLiveNavLogs" class="${activeClass("logs")}">
+                <span>📊</span>
+                <strong>Logs</strong>
+            </button>
+        </div>
+    `;
+}
+
+function fsLiveAttachBottomNav() {
+    const home = document.getElementById("fsLiveNavHome");
+    const scanner = document.getElementById("fsLiveNavScanner");
+    const recovery = document.getElementById("fsLiveNavRecovery");
+    const logs = document.getElementById("fsLiveNavLogs");
+
+    if (home) home.addEventListener("click", openLiveActionModePage);
+    if (scanner) scanner.addEventListener("click", fsLiveOpenScannerTab);
+    if (recovery) recovery.addEventListener("click", fsLiveOpenRecoveryTab);
+    if (logs) logs.addEventListener("click", fsLiveOpenLogsTab);
+}
+
+function fsLiveTodaySummaryHtml() {
+    const stats = fsLiveStats();
+    const unrecovered = fsLiveUnrecoveredCount();
+
+    let statusText = "Strong protection day";
+    let statusDetail = "You are recovering well and keeping control.";
+
+    if (unrecovered > 0) {
+        statusText = "Recovery needed";
+        statusDetail = "You have a blocked attempt that still needs a recovery action.";
+    } else if (stats.attemptsTotal === 0) {
+        statusText = "Clean start";
+        statusDetail = "No blocked attempts yet. Keep your shield active.";
+    }
+
+    return `
+        <div class="card fs-live-v3-summary-card">
+            <h2>Today’s Protection Summary</h2>
+            <h3>${statusText}</h3>
+            <p>${statusDetail}</p>
+
+            <div class="fs-live-v3-summary-grid">
+                <div>
+                    <strong>${stats.attemptsToday}</strong>
+                    <span>Blocked today</span>
+                </div>
+                <div>
+                    <strong>${stats.recoveriesTotal}</strong>
+                    <span>Recoveries</span>
+                </div>
+                <div>
+                    <strong>${stats.recoveryRate}%</strong>
+                    <span>Recovery rate</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function fsLiveQuickDecisionHtml() {
+    const state = fsLiveDefaultState();
+    const decision = state.lastDecision;
+
+    if (!decision) {
+        return `
+            <div class="card fs-live-v3-decision-card">
+                <h2>Latest Decision</h2>
+                <p>No protection decision yet. Scan a test domain to start.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="card fs-live-v3-decision-card">
+            <h2>Latest Decision</h2>
+            <h3>${fsLiveEscape(decision.title)}</h3>
+            ${decision.domain ? `<p><strong>Domain:</strong> ${fsLiveEscape(decision.domain)}</p>` : ""}
+            <p>${fsLiveEscape(decision.message)}</p>
+        </div>
+    `;
+}
+
+function fsLiveScannerBoxHtml() {
+    return `
+        <div class="card fs-live-scanner-card">
+            <h2>Live URL Scanner</h2>
+            <p>Type a safe test domain and scan it.</p>
+
+            <div class="fs-live-scanner-row">
+                <input id="fsLiveScannerInput" type="text" placeholder="study-example.com or blocked-example.com">
+                <button id="fsLiveScanBtn">Scan</button>
+            </div>
+
+            <p class="fs-live-hint">Try: <strong>study-example.com</strong> or <strong>blocked-example.com</strong></p>
+        </div>
+    `;
+}
+
+function fsLiveAttachScanner() {
+    const scanBtn = document.getElementById("fsLiveScanBtn");
+    const input = document.getElementById("fsLiveScannerInput");
+
+    if (scanBtn && input) {
+        scanBtn.addEventListener("click", function() {
+            fsLiveAnalyzeScannerValue(input.value);
+        });
+
+        input.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                fsLiveAnalyzeScannerValue(input.value);
+            }
+        });
+    }
+}
+
+function openLiveActionModePage() {
+    const state = fsLiveDefaultState();
+    const stats = fsLiveStats();
+    const unrecovered = fsLiveUnrecoveredCount();
+
+    showPage(`
+        <div class="fs-live-v3-shell">
+            <div class="fs-live-v3-app-header">
+                <div>
+                    <p>Focus Shield</p>
+                    <h1>Protection Home</h1>
+                </div>
+                <button id="fsLiveHeaderResetBtn">Reset</button>
+            </div>
+
+            <div class="card fs-live-v3-shield-card">
+                ${fsLiveProtectionStatusHtml()}
+
+                <div class="fs-live-v3-shield-actions">
+                    <button id="fsLiveStartBtn">Start Shield</button>
+                    <button id="fsLiveStopBtn">Pause</button>
+                </div>
+            </div>
+
+            ${fsLiveTodaySummaryHtml()}
+
+            <div class="card fs-live-v3-action-card">
+                <h2>Quick Actions</h2>
+                <div class="fs-live-v3-action-grid">
+                    <button id="fsLiveScanShortcutBtn">Scan Domain</button>
+                    <button id="fsLiveBlockedBtn">Test Block</button>
+                    <button id="fsLiveSafeBtn">Test Safe</button>
+                    <button id="fsLiveEmergencyBtn">Emergency Reset</button>
+                </div>
+            </div>
+
+            ${fsLiveQuickDecisionHtml()}
+
+            <div class="card fs-live-v3-recovery-card">
+                <h2>Recovery Status</h2>
+                <h3>${unrecovered === 0 ? "All clear" : unrecovered + " action needed"}</h3>
+                <p>${unrecovered === 0 ? "No unrecovered blocked attempts right now." : "Open Recovery to complete your reset."}</p>
+            </div>
+
+            ${fsLiveBottomNavHtml("home")}
+        </div>
+    `);
+
+    document.getElementById("fsLiveStartBtn").addEventListener("click", fsLiveStartDemo);
+    document.getElementById("fsLiveStopBtn").addEventListener("click", fsLiveStopDemo);
+    document.getElementById("fsLiveHeaderResetBtn").addEventListener("click", fsLiveResetDemo);
+    document.getElementById("fsLiveScanShortcutBtn").addEventListener("click", fsLiveOpenScannerTab);
+    document.getElementById("fsLiveBlockedBtn").addEventListener("click", fsLiveTestBlocked);
+    document.getElementById("fsLiveSafeBtn").addEventListener("click", fsLiveTestSafe);
+    document.getElementById("fsLiveEmergencyBtn").addEventListener("click", fsLiveOpenEmergencyResetPage);
+
+    fsLiveAttachBottomNav();
+}
+
+function fsLiveOpenScannerTab() {
+    showPage(`
+        <div class="fs-live-v3-shell">
+            <div class="fs-live-v3-app-header">
+                <div>
+                    <p>Focus Shield</p>
+                    <h1>Scanner</h1>
+                </div>
+                <button id="fsLiveScannerBackBtn">Home</button>
+            </div>
+
+            ${fsLiveScannerBoxHtml()}
+
+            <div class="card fs-live-v3-test-card">
+                <h2>One-Tap Tests</h2>
+                <button id="fsLiveSafeBtn">Test Safe Domain</button>
+                <button id="fsLiveBlockedBtn">Test Blocked Domain</button>
+            </div>
+
+            ${fsLiveQuickDecisionHtml()}
+
+            ${fsLiveBottomNavHtml("scanner")}
+        </div>
+    `);
+
+    fsLiveAttachScanner();
+    document.getElementById("fsLiveScannerBackBtn").addEventListener("click", openLiveActionModePage);
+    document.getElementById("fsLiveSafeBtn").addEventListener("click", fsLiveTestSafe);
+    document.getElementById("fsLiveBlockedBtn").addEventListener("click", fsLiveTestBlocked);
+
+    fsLiveAttachBottomNav();
+}
+
+function fsLiveOpenRecoveryTab() {
+    const unrecovered = fsLiveUnrecoveredCount();
+
+    showPage(`
+        <div class="fs-live-v3-shell">
+            <div class="fs-live-v3-app-header">
+                <div>
+                    <p>Focus Shield</p>
+                    <h1>Recovery</h1>
+                </div>
+                <button id="fsLiveRecoveryBackBtn">Home</button>
+            </div>
+
+            <div class="card fs-live-v3-recovery-main-card">
+                <h2>Recovery Center</h2>
+                <h3>${unrecovered === 0 ? "You are clear" : unrecovered + " blocked attempt needs recovery"}</h3>
+                <p>${unrecovered === 0 ? "Use Emergency Reset anytime you need to calm your mind and return to your goals." : "Complete recovery to mark the latest blocked attempt as handled."}</p>
+            </div>
+
+            <div class="card fs-live-breathing-card">
+                <div class="fs-live-breathing-circle">
+                    <span>Breathe</span>
+                </div>
+                <h2>Quick Reset</h2>
+                <p>Use this when you feel pulled away from your goals.</p>
+                <button id="fsLiveEmergencyBtn">Open Emergency Reset</button>
+                <button id="fsLiveMarkRecoveredBtn">Mark Latest As Recovered</button>
+            </div>
+
+            <div class="card fs-live-affirmation-card">
+                <h2>Your Discipline Statement</h2>
+                <p class="fs-live-affirmation">“I pause, I listen, and I follow my dreams.”</p>
+            </div>
+
+            ${fsLiveBottomNavHtml("recovery")}
+        </div>
+    `);
+
+    document.getElementById("fsLiveRecoveryBackBtn").addEventListener("click", openLiveActionModePage);
+    document.getElementById("fsLiveEmergencyBtn").addEventListener("click", fsLiveOpenEmergencyResetPage);
+    document.getElementById("fsLiveMarkRecoveredBtn").addEventListener("click", function() {
+        fsLiveMarkLatestUnrecoveredAttemptRecovered();
+        fsLiveOpenRecoveryTab();
+    });
+
+    fsLiveAttachBottomNav();
+}
+
+function fsLiveOpenLogsTab() {
+    const state = fsLiveDefaultState();
+    const stats = fsLiveStats();
+    const recentAttempts = state.attempts.slice(0, 20);
+
+    showPage(`
+        <div class="fs-live-v3-shell">
+            <div class="fs-live-v3-app-header">
+                <div>
+                    <p>Focus Shield</p>
+                    <h1>Logs</h1>
+                </div>
+                <button id="fsLiveLogsBackBtn">Home</button>
+            </div>
+
+            <div class="card fs-live-stats-card">
+                <h2>Protection Stats</h2>
+                <div class="fs-live-stats-grid">
+                    <div>
+                        <strong>${stats.attemptsToday}</strong>
+                        <span>Today</span>
+                    </div>
+                    <div>
+                        <strong>${stats.attemptsTotal}</strong>
+                        <span>Total blocks</span>
+                    </div>
+                    <div>
+                        <strong>${stats.recoveriesTotal}</strong>
+                        <span>Recoveries</span>
+                    </div>
+                    <div>
+                        <strong>${stats.recoveryRate}%</strong>
+                        <span>Recovery rate</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card fs-live-log-card">
+                <h2>Blocked Attempt Log</h2>
+                ${
+                    recentAttempts.length
+                        ? recentAttempts.map(function(attempt) {
+                            return `
+                                <div class="fs-live-log-item">
+                                    <strong>${attempt.recovered ? "✅ Recovered" : "🛡️ Blocked"} — ${fsLiveEscape(attempt.domain)}</strong>
+                                    <p>${fsLiveEscape(attempt.category)} • ${new Date(attempt.time).toLocaleString()}</p>
+                                </div>
+                            `;
+                        }).join("")
+                        : "<p>No blocked attempts yet. Scan blocked-example.com to test the system.</p>"
+                }
+            </div>
+
+            ${fsLiveBottomNavHtml("logs")}
+        </div>
+    `);
+
+    document.getElementById("fsLiveLogsBackBtn").addEventListener("click", openLiveActionModePage);
+    fsLiveAttachBottomNav();
 }
 
 </script>
