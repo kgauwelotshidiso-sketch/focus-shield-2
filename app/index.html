@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv47coach1">
+    <link rel="stylesheet" href="style.css?v=liveappv48settings1">
 </head>
 <body>
 
@@ -29075,6 +29075,809 @@ if (typeof goHome === "function" && !window.fsLiveAppV47GoHomeWrapped) {
 
 setTimeout(fsLiveV47AutoOpen, 700);
 refreshLiveAppV47Systems();
+
+
+/* Live App v4.8 Settings Protection Control Center Integration */
+function fsLiveV48Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV48SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV48SaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function fsLiveV48Now() {
+    return new Date().toISOString();
+}
+
+function fsLiveV48NowLabel() {
+    return new Date().toLocaleString();
+}
+
+function fsLiveV48DefaultDomains() {
+    return [
+        {
+            id: 1,
+            domain: "blocked-example.com",
+            category: "test-risk",
+            updated_at: fsLiveV48Now()
+        },
+        {
+            id: 2,
+            domain: "temptation-test.net",
+            category: "test-risk",
+            updated_at: fsLiveV48Now()
+        },
+        {
+            id: 3,
+            domain: "focus-risk.org",
+            category: "test-risk",
+            updated_at: fsLiveV48Now()
+        }
+    ];
+}
+
+function fsLiveV48GetDomains() {
+    const saved = fsLiveV48SafeJson("fsLiveV48BlockedDomains", null);
+
+    if (Array.isArray(saved) && saved.length) return saved;
+
+    const legacy = fsLiveV48SafeJson("fsProtectionBlockedDomains", null);
+    if (Array.isArray(legacy) && legacy.length) {
+        const normalized = legacy.map(function(item, index) {
+            if (typeof item === "string") {
+                return {
+                    id: Date.now() + index,
+                    domain: item,
+                    category: "legacy",
+                    updated_at: fsLiveV48Now()
+                };
+            }
+
+            return {
+                id: item.id || Date.now() + index,
+                domain: item.domain || item.website || "unknown",
+                category: item.category || "legacy",
+                updated_at: item.updated_at || item.updatedAt || fsLiveV48Now()
+            };
+        });
+
+        fsLiveV48SaveJson("fsLiveV48BlockedDomains", normalized);
+        return normalized;
+    }
+
+    const defaults = fsLiveV48DefaultDomains();
+    fsLiveV48SaveJson("fsLiveV48BlockedDomains", defaults);
+    return defaults;
+}
+
+function fsLiveV48SaveDomains(domains) {
+    fsLiveV48SaveJson("fsLiveV48BlockedDomains", domains);
+}
+
+function fsLiveV48GetSettings() {
+    const saved = fsLiveV48SafeJson("fsLiveV48ProtectionSettings", {});
+    const legacy = fsLiveV48SafeJson("fsProtectionLockSettings", {});
+
+    return {
+        protectionEnabled: saved.protectionEnabled ?? saved.enabled ?? false,
+        pinSet: saved.pinSet ?? Boolean(legacy.pinHash || legacy.pin_hash || legacy.pinSet || legacy.hasPin),
+        lockEnabled: saved.lockEnabled ?? Boolean(legacy.lockEnabled || legacy.locked || legacy.pinEnabled),
+        protectedSettings: saved.protectedSettings ?? true,
+        delayedDisableHours: Number(saved.delayedDisableHours || legacy.delayHours || legacy.delay_hours || 24),
+        privacyMode: saved.privacyMode ?? "stats-only",
+        lastBackup: saved.lastBackup || null,
+        disableRequestedAt: saved.disableRequestedAt || null,
+        disableAvailableAt: saved.disableAvailableAt || null,
+        updatedAt: saved.updatedAt || fsLiveV48Now()
+    };
+}
+
+function fsLiveV48SaveSettings(settings) {
+    settings.updatedAt = fsLiveV48Now();
+    fsLiveV48SaveJson("fsLiveV48ProtectionSettings", settings);
+    localStorage.setItem("fsProtectionEnabled", settings.protectionEnabled ? "true" : "false");
+}
+
+function fsLiveV48GetAttempts() {
+    const liveState = typeof fsLiveV4GetState === "function" ? fsLiveV4GetState() : {};
+    if (Array.isArray(liveState.attempts)) return liveState.attempts;
+
+    const saved = fsLiveV48SafeJson("fsProtectionBlockedAttempts", []);
+    return Array.isArray(saved) ? saved : [];
+}
+
+function fsLiveV48GetSummary() {
+    const domains = fsLiveV48GetDomains();
+    const settings = fsLiveV48GetSettings();
+    const attempts = fsLiveV48GetAttempts();
+    const recovered = attempts.filter(function(item) {
+        return item.recovered || item.status === "recovered";
+    }).length;
+
+    const total = attempts.length;
+    const recoveryRate = total === 0 ? 100 : Math.round((recovered / total) * 100);
+
+    return {
+        domains: domains.length,
+        attempts: total,
+        recovered,
+        pending: Math.max(0, total - recovered),
+        recoveryRate,
+        protectionEnabled: settings.protectionEnabled,
+        pinSet: settings.pinSet,
+        lockEnabled: settings.lockEnabled,
+        privacyMode: settings.privacyMode,
+        lastBackup: settings.lastBackup
+    };
+}
+
+function fsLiveV48NormalizeDomain(input) {
+    let text = String(input || "").trim().toLowerCase();
+
+    if (!text) return "";
+
+    text = text.replace(/^https?:\/\//, "");
+    text = text.replace(/^www\./, "");
+    text = text.split("/")[0];
+    text = text.split("?")[0];
+    text = text.split("#")[0];
+
+    return text;
+}
+
+function fsLiveV48AnalyzeUrl(input) {
+    const domain = fsLiveV48NormalizeDomain(input);
+    const domains = fsLiveV48GetDomains();
+
+    const localMatch = domains.find(function(item) {
+        return domain === item.domain || domain.endsWith("." + item.domain);
+    });
+
+    const safeDemoKeywords = ["blocked", "temptation", "focus-risk", "unsafe", "risk"];
+    const keywordMatch = safeDemoKeywords.find(function(word) {
+        return String(input || "").toLowerCase().includes(word);
+    });
+
+    let decision = "ALLOW";
+    let category = "safe";
+    let confidence = 0.12;
+    let reason = "No local risk match found.";
+
+    if (localMatch) {
+        decision = "BLOCK";
+        category = localMatch.category || "test-risk";
+        confidence = 0.96;
+        reason = "Matched local offline database.";
+    } else if (keywordMatch) {
+        decision = "BLOCK";
+        category = "keyword-risk";
+        confidence = 0.88;
+        reason = "Matched safe demo risk keyword.";
+    }
+
+    return {
+        input,
+        domain,
+        localMatch: Boolean(localMatch),
+        keywordMatch: keywordMatch || null,
+        category,
+        confidence,
+        decision,
+        reason,
+        checkedAt: fsLiveV48NowLabel()
+    };
+}
+
+function fsLiveV48StatusBadge(text, good) {
+    return `<span class="${good ? "fs-v48-good-badge" : "fs-v48-warn-badge"}">${fsLiveV48Escape(text)}</span>`;
+}
+
+function fsLiveV48OpenSettingsHome() {
+    const summary = fsLiveV48GetSummary();
+    const settings = fsLiveV48GetSettings();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Settings", "Protection control center") : "<h1>Settings</h1>"}
+
+        <div class="card fs-v48-hero-card">
+            <h2>Protection Control Center</h2>
+            <p>This is the live control room for database, URL engine, attempts, lock layer, backups, privacy, and system health.</p>
+
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${summary.protectionEnabled ? "ON" : "OFF"}</strong><span>Protection</span></div>
+                <div><strong>${summary.domains}</strong><span>Domains</span></div>
+                <div><strong>${summary.attempts}</strong><span>Attempts</span></div>
+                <div><strong>${summary.recoveryRate}%</strong><span>Recovery</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v48-summary-card">
+            <h2>Protection Summary</h2>
+            <p><strong>Protection:</strong> ${fsLiveV48StatusBadge(summary.protectionEnabled ? "Enabled" : "Disabled", summary.protectionEnabled)}</p>
+            <p><strong>PIN:</strong> ${fsLiveV48StatusBadge(summary.pinSet ? "Set" : "Not set", summary.pinSet)}</p>
+            <p><strong>Lock Layer:</strong> ${fsLiveV48StatusBadge(summary.lockEnabled ? "Enabled" : "Not confirmed", summary.lockEnabled)}</p>
+            <p><strong>Privacy Mode:</strong> ${fsLiveV48Escape(summary.privacyMode)}</p>
+            <p><strong>Delayed Disable:</strong> ${settings.delayedDisableHours} hours</p>
+            <p><strong>Last Backup:</strong> ${summary.lastBackup ? fsLiveV48Escape(summary.lastBackup) : "No backup yet"}</p>
+        </div>
+
+        <div class="card fs-v48-action-card">
+            <h2>Protection Modules</h2>
+            <div class="fs-v48-grid">
+                <button id="v48DatabaseBtn"><strong>Database</strong><span>Local blocklist</span></button>
+                <button id="v48UrlEngineBtn"><strong>URL Engine</strong><span>Decision flow</span></button>
+                <button id="v48AttemptBtn"><strong>Attempt Intel</strong><span>Stats + logs</span></button>
+                <button id="v48LockBtn"><strong>Lock Layer</strong><span>PIN + delay</span></button>
+                <button id="v48BackupBtn"><strong>Backup</strong><span>Export / import</span></button>
+                <button id="v48PrivacyBtn"><strong>Privacy</strong><span>Stats-only mode</span></button>
+                <button id="v48HealthBtn"><strong>Health Check</strong><span>Repair system</span></button>
+                <button id="v48VaultBtn"><strong>Feature Vault</strong><span>Roadmap</span></button>
+            </div>
+        </div>
+
+        <div class="card fs-v48-note-card">
+            <h2>Android Protection Reminder</h2>
+            <p>The web demo can simulate scanning and recovery. Real system-wide filtering belongs in the future Android VPN/DNS layer.</p>
+        </div>
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("settings") : ""}
+    `);
+
+    document.getElementById("v48DatabaseBtn").addEventListener("click", fsLiveV48OpenDatabasePage);
+    document.getElementById("v48UrlEngineBtn").addEventListener("click", fsLiveV48OpenUrlEnginePage);
+    document.getElementById("v48AttemptBtn").addEventListener("click", fsLiveV48OpenAttemptIntelPage);
+    document.getElementById("v48LockBtn").addEventListener("click", fsLiveV48OpenLockLayerPage);
+    document.getElementById("v48BackupBtn").addEventListener("click", fsLiveV48OpenBackupPage);
+    document.getElementById("v48PrivacyBtn").addEventListener("click", fsLiveV48OpenPrivacyPage);
+    document.getElementById("v48HealthBtn").addEventListener("click", fsLiveV48OpenHealthPage);
+    document.getElementById("v48VaultBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV43FeatureVaultPage === "function") openLiveAppV43FeatureVaultPage("All");
+    });
+
+    if (typeof fsLiveV44BindNav === "function") fsLiveV44BindNav();
+}
+
+function fsLiveV48OpenDatabasePage() {
+    const domains = fsLiveV48GetDomains();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Protection Database", "Offline local blocklist") : "<h1>Protection Database</h1>"}
+
+        <div class="card fs-v48-db-card">
+            <h2>SQLite Model Reminder</h2>
+            <pre>CREATE TABLE blocked_domains (
+id INTEGER PRIMARY KEY,
+domain TEXT UNIQUE,
+category TEXT,
+updated_at DATETIME
+);</pre>
+            <p>The web demo stores this locally in browser storage. Flutter/Android will use SQLite later.</p>
+        </div>
+
+        <div class="card fs-v48-db-card">
+            <h2>Add Test Domain</h2>
+            <input id="v48DomainInput" placeholder="example-test.com" />
+            <input id="v48CategoryInput" placeholder="category e.g. test-risk" />
+            <button id="v48AddDomainBtn">Add Domain</button>
+            <button id="v48SeedBtn">Restore Safe Defaults</button>
+        </div>
+
+        <div class="card fs-v48-db-card">
+            <h2>Local Domains</h2>
+            ${
+                domains.map(function(item) {
+                    return `
+                        <div class="fs-v48-domain-row">
+                            <div>
+                                <strong>${fsLiveV48Escape(item.domain)}</strong>
+                                <p>${fsLiveV48Escape(item.category)} • ${fsLiveV48Escape(item.updated_at || "")}</p>
+                            </div>
+                            <button data-v48-remove-domain="${item.id}">Remove</button>
+                        </div>
+                    `;
+                }).join("")
+            }
+        </div>
+
+        <button id="v48BackSettingsBtn">Back to Settings</button>
+    `);
+
+    document.getElementById("v48AddDomainBtn").addEventListener("click", function() {
+        const domain = fsLiveV48NormalizeDomain(document.getElementById("v48DomainInput").value);
+        const category = document.getElementById("v48CategoryInput").value.trim() || "test-risk";
+
+        if (!domain) return;
+
+        const current = fsLiveV48GetDomains();
+        if (!current.some(function(item) { return item.domain === domain; })) {
+            current.push({
+                id: Date.now(),
+                domain,
+                category,
+                updated_at: fsLiveV48Now()
+            });
+
+            fsLiveV48SaveDomains(current);
+        }
+
+        fsLiveV48OpenDatabasePage();
+    });
+
+    document.getElementById("v48SeedBtn").addEventListener("click", function() {
+        fsLiveV48SaveDomains(fsLiveV48DefaultDomains());
+        fsLiveV48OpenDatabasePage();
+    });
+
+    document.querySelectorAll("[data-v48-remove-domain]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const id = String(button.getAttribute("data-v48-remove-domain"));
+            const updated = fsLiveV48GetDomains().filter(function(item) {
+                return String(item.id) !== id;
+            });
+
+            fsLiveV48SaveDomains(updated);
+            fsLiveV48OpenDatabasePage();
+        });
+    });
+
+    document.getElementById("v48BackSettingsBtn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+function fsLiveV48OpenUrlEnginePage() {
+    const last = fsLiveV48SafeJson("fsLiveV48LastAnalysis", null);
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("URL Analysis Engine", "Domain + keyword + category decision") : "<h1>URL Analysis Engine</h1>"}
+
+        <div class="card fs-v48-engine-card">
+            <h2>Decision Flow</h2>
+            <p>Request → Domain Check → Keyword Check → Category Check → Classification Stub → Decision</p>
+        </div>
+
+        <div class="card fs-v48-engine-card">
+            <h2>Test Scanner</h2>
+            <input id="v48UrlInput" placeholder="blocked-example.com" />
+            <button id="v48AnalyzeBtn">Analyze URL</button>
+            <button id="v48TestBlockedBtn">Test Blocked Domain</button>
+            <button id="v48TestSafeBtn">Test Safe Domain</button>
+        </div>
+
+        <div class="card fs-v48-engine-card" id="v48ResultCard">
+            <h2>Last Result</h2>
+            ${
+                last
+                    ? `
+                        <p><strong>Domain:</strong> ${fsLiveV48Escape(last.domain)}</p>
+                        <p><strong>Decision:</strong> ${fsLiveV48StatusBadge(last.decision, last.decision === "ALLOW")}</p>
+                        <p><strong>Category:</strong> ${fsLiveV48Escape(last.category)}</p>
+                        <p><strong>Confidence:</strong> ${Math.round(Number(last.confidence || 0) * 100)}%</p>
+                        <p><strong>Reason:</strong> ${fsLiveV48Escape(last.reason)}</p>
+                    `
+                    : "<p>No URL analyzed yet.</p>"
+            }
+        </div>
+
+        <button id="v48BackSettingsBtn">Back to Settings</button>
+    `);
+
+    function run(input) {
+        const result = fsLiveV48AnalyzeUrl(input);
+        fsLiveV48SaveJson("fsLiveV48LastAnalysis", result);
+
+        if (result.decision === "BLOCK" && typeof fsLiveV4AddBlockedAttempt === "function") {
+            fsLiveV4AddBlockedAttempt(result.domain);
+        }
+
+        fsLiveV48OpenUrlEnginePage();
+    }
+
+    document.getElementById("v48AnalyzeBtn").addEventListener("click", function() {
+        run(document.getElementById("v48UrlInput").value);
+    });
+
+    document.getElementById("v48TestBlockedBtn").addEventListener("click", function() {
+        run("blocked-example.com");
+    });
+
+    document.getElementById("v48TestSafeBtn").addEventListener("click", function() {
+        run("safe-study-site.com");
+    });
+
+    document.getElementById("v48BackSettingsBtn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+function fsLiveV48OpenAttemptIntelPage() {
+    const attempts = fsLiveV48GetAttempts();
+    const settings = fsLiveV48GetSettings();
+    const recovered = attempts.filter(function(item) {
+        return item.recovered || item.status === "recovered";
+    }).length;
+
+    const total = attempts.length;
+    const recoveryRate = total === 0 ? 100 : Math.round((recovered / total) * 100);
+    const recent = attempts.slice(0, 10);
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Attempt Intelligence", "Blocks, recovery, privacy") : "<h1>Attempt Intelligence</h1>"}
+
+        <div class="card fs-v48-intel-card">
+            <h2>Statistics Dashboard</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${total}</strong><span>Total</span></div>
+                <div><strong>${recovered}</strong><span>Recovered</span></div>
+                <div><strong>${Math.max(0, total - recovered)}</strong><span>Pending</span></div>
+                <div><strong>${recoveryRate}%</strong><span>Recovery</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v48-intel-card">
+            <h2>Privacy Mode</h2>
+            <p>Current mode: <strong>${fsLiveV48Escape(settings.privacyMode)}</strong></p>
+            <p>${settings.privacyMode === "stats-only" ? "Exact site names are hidden in this view." : "Detailed entries are visible in this demo."}</p>
+        </div>
+
+        <div class="card fs-v48-intel-card">
+            <h2>Recent Attempts</h2>
+            ${
+                recent.length
+                    ? recent.map(function(item, index) {
+                        const visibleDomain = settings.privacyMode === "stats-only" ? "Hidden by privacy mode" : (item.domain || item.website || "unknown");
+                        return `
+                            <div class="fs-v48-attempt-row">
+                                <strong>${index + 1}. ${fsLiveV48Escape(visibleDomain)}</strong>
+                                <p>${item.recovered ? "Recovered" : "Not recovered yet"} • ${fsLiveV48Escape(item.category || "test-risk")}</p>
+                            </div>
+                        `;
+                    }).join("")
+                    : "<p>No blocked attempts yet. Test the URL Engine or Scanner first.</p>"
+            }
+        </div>
+
+        <button id="v48BackSettingsBtn">Back to Settings</button>
+    `);
+
+    document.getElementById("v48BackSettingsBtn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+function fsLiveV48OpenLockLayerPage() {
+    const settings = fsLiveV48GetSettings();
+    const now = Date.now();
+    const available = settings.disableAvailableAt ? new Date(settings.disableAvailableAt).getTime() : null;
+    const canDisable = available && now >= available;
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Lock Layer", "PIN + delayed disable") : "<h1>Lock Layer</h1>"}
+
+        <div class="card fs-v48-lock-card">
+            <h2>Security Status</h2>
+            <p><strong>Protection:</strong> ${fsLiveV48StatusBadge(settings.protectionEnabled ? "Enabled" : "Disabled", settings.protectionEnabled)}</p>
+            <p><strong>PIN:</strong> ${fsLiveV48StatusBadge(settings.pinSet ? "Set" : "Not set", settings.pinSet)}</p>
+            <p><strong>Lock Layer:</strong> ${fsLiveV48StatusBadge(settings.lockEnabled ? "Enabled" : "Not confirmed", settings.lockEnabled)}</p>
+            <p><strong>Protected Settings:</strong> ${settings.protectedSettings ? "Enabled" : "Disabled"}</p>
+            <p><strong>Delayed Disable:</strong> ${settings.delayedDisableHours} hours</p>
+            <p><strong>Disable Request:</strong> ${settings.disableRequestedAt ? fsLiveV48Escape(settings.disableRequestedAt) : "None"}</p>
+        </div>
+
+        <div class="card fs-v48-lock-card">
+            <h2>Controls</h2>
+            <button id="v48EnableProtectionBtn">Enable Protection</button>
+            <button id="v48SetPinBtn">${settings.pinSet ? "Reset Demo PIN Status" : "Set Demo PIN Status"}</button>
+            <button id="v48ToggleLockBtn">${settings.lockEnabled ? "Turn Lock Layer Off" : "Turn Lock Layer On"}</button>
+            <button id="v48RequestDisableBtn">${canDisable ? "Complete Disable" : "Request Delayed Disable"}</button>
+            <button id="v48CancelDisableBtn">Cancel Disable Request</button>
+        </div>
+
+        <button id="v48BackSettingsBtn">Back to Settings</button>
+    `);
+
+    document.getElementById("v48EnableProtectionBtn").addEventListener("click", function() {
+        settings.protectionEnabled = true;
+        settings.disableRequestedAt = null;
+        settings.disableAvailableAt = null;
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenLockLayerPage();
+    });
+
+    document.getElementById("v48SetPinBtn").addEventListener("click", function() {
+        settings.pinSet = true;
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenLockLayerPage();
+    });
+
+    document.getElementById("v48ToggleLockBtn").addEventListener("click", function() {
+        settings.lockEnabled = !settings.lockEnabled;
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenLockLayerPage();
+    });
+
+    document.getElementById("v48RequestDisableBtn").addEventListener("click", function() {
+        if (canDisable) {
+            settings.protectionEnabled = false;
+            settings.disableRequestedAt = null;
+            settings.disableAvailableAt = null;
+        } else {
+            const availableAt = new Date(Date.now() + (settings.delayedDisableHours * 60 * 60 * 1000));
+            settings.disableRequestedAt = fsLiveV48Now();
+            settings.disableAvailableAt = availableAt.toISOString();
+        }
+
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenLockLayerPage();
+    });
+
+    document.getElementById("v48CancelDisableBtn").addEventListener("click", function() {
+        settings.disableRequestedAt = null;
+        settings.disableAvailableAt = null;
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenLockLayerPage();
+    });
+
+    document.getElementById("v48BackSettingsBtn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+function fsLiveV48OpenBackupPage() {
+    const settings = fsLiveV48GetSettings();
+
+    const payload = {
+        exported_at: fsLiveV48Now(),
+        protection_settings: settings,
+        blocked_domains: fsLiveV48GetDomains(),
+        last_analysis: fsLiveV48SafeJson("fsLiveV48LastAnalysis", null),
+        coach_state: fsLiveV48SafeJson("fsLiveV47CoachState", null),
+        progress_state: fsLiveV48SafeJson("fsLiveV46ProgressState", null)
+    };
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Backup Center", "Export / import settings") : "<h1>Backup Center</h1>"}
+
+        <div class="card fs-v48-backup-card">
+            <h2>Export Backup</h2>
+            <p>This creates a local text backup for your live demo settings.</p>
+            <textarea id="v48BackupText" rows="10">${fsLiveV48Escape(JSON.stringify(payload, null, 2))}</textarea>
+            <button id="v48MarkBackupBtn">Mark Backup Complete</button>
+        </div>
+
+        <div class="card fs-v48-backup-card">
+            <h2>Import Backup</h2>
+            <p>Paste a backup created from this screen.</p>
+            <textarea id="v48ImportText" rows="8" placeholder="Paste backup JSON here"></textarea>
+            <button id="v48ImportBtn">Import Backup</button>
+        </div>
+
+        <button id="v48BackSettingsBtn">Back to Settings</button>
+    `);
+
+    document.getElementById("v48MarkBackupBtn").addEventListener("click", function() {
+        settings.lastBackup = fsLiveV48NowLabel();
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenBackupPage();
+    });
+
+    document.getElementById("v48ImportBtn").addEventListener("click", function() {
+        try {
+            const imported = JSON.parse(document.getElementById("v48ImportText").value);
+
+            if (imported.protection_settings) fsLiveV48SaveSettings(imported.protection_settings);
+            if (Array.isArray(imported.blocked_domains)) fsLiveV48SaveDomains(imported.blocked_domains);
+            if (imported.progress_state) fsLiveV48SaveJson("fsLiveV46ProgressState", imported.progress_state);
+            if (imported.coach_state) fsLiveV48SaveJson("fsLiveV47CoachState", imported.coach_state);
+
+            fsLiveV48OpenSettingsHome();
+        } catch (error) {
+            alert("Import failed. Check the JSON format.");
+        }
+    });
+
+    document.getElementById("v48BackSettingsBtn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+function fsLiveV48OpenPrivacyPage() {
+    const settings = fsLiveV48GetSettings();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Privacy Mode", "Control what gets stored") : "<h1>Privacy Mode</h1>"}
+
+        <div class="card fs-v48-privacy-card">
+            <h2>Current Mode</h2>
+            <h3>${fsLiveV48Escape(settings.privacyMode)}</h3>
+            <p><strong>stats-only:</strong> hides exact site names in intelligence screens.</p>
+            <p><strong>detailed-demo:</strong> shows demo test domains for debugging.</p>
+        </div>
+
+        <div class="card fs-v48-privacy-card">
+            <h2>Change Mode</h2>
+            <button id="v48StatsOnlyBtn">Use Stats-Only Mode</button>
+            <button id="v48DetailedBtn">Use Detailed Demo Mode</button>
+        </div>
+
+        <button id="v48BackSettingsBtn">Back to Settings</button>
+    `);
+
+    document.getElementById("v48StatsOnlyBtn").addEventListener("click", function() {
+        settings.privacyMode = "stats-only";
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenPrivacyPage();
+    });
+
+    document.getElementById("v48DetailedBtn").addEventListener("click", function() {
+        settings.privacyMode = "detailed-demo";
+        fsLiveV48SaveSettings(settings);
+        fsLiveV48OpenPrivacyPage();
+    });
+
+    document.getElementById("v48BackSettingsBtn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+function fsLiveV48HealthChecks() {
+    const settings = fsLiveV48GetSettings();
+    const domains = fsLiveV48GetDomains();
+
+    return [
+        {
+            name: "Protection settings",
+            ok: Boolean(settings),
+            detail: "Settings object is available."
+        },
+        {
+            name: "Blocked domain database",
+            ok: domains.length >= 3,
+            detail: domains.length + " domains loaded."
+        },
+        {
+            name: "URL Analysis Engine",
+            ok: typeof fsLiveV48AnalyzeUrl === "function",
+            detail: "Local engine function is installed."
+        },
+        {
+            name: "Lock Layer",
+            ok: settings.pinSet || settings.lockEnabled,
+            detail: settings.pinSet || settings.lockEnabled ? "PIN/lock status confirmed." : "PIN or lock not set yet."
+        },
+        {
+            name: "Privacy Mode",
+            ok: Boolean(settings.privacyMode),
+            detail: "Current mode: " + settings.privacyMode
+        },
+        {
+            name: "Backup Center",
+            ok: Boolean(settings.lastBackup),
+            detail: settings.lastBackup ? "Last backup: " + settings.lastBackup : "No backup marked yet."
+        },
+        {
+            name: "Feature Vault",
+            ok: typeof openLiveAppV43FeatureVaultPage === "function",
+            detail: "Feature map connection checked."
+        }
+    ];
+}
+
+function fsLiveV48RepairAll() {
+    const settings = fsLiveV48GetSettings();
+
+    if (!settings.privacyMode) settings.privacyMode = "stats-only";
+    if (!settings.delayedDisableHours) settings.delayedDisableHours = 24;
+    if (!settings.pinSet) settings.pinSet = true;
+    if (!settings.lockEnabled) settings.lockEnabled = true;
+
+    fsLiveV48SaveSettings(settings);
+
+    const domains = fsLiveV48GetDomains();
+    if (domains.length < 3) fsLiveV48SaveDomains(fsLiveV48DefaultDomains());
+
+    fsLiveV48OpenHealthPage();
+}
+
+function fsLiveV48OpenHealthPage() {
+    const checks = fsLiveV48HealthChecks();
+    const passed = checks.filter(function(check) { return check.ok; }).length;
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("System Health Check", "Protection diagnostics") : "<h1>System Health Check</h1>"}
+
+        <div class="card fs-v48-health-card">
+            <h2>Health Score</h2>
+            <h3>${passed} / ${checks.length}</h3>
+            <p>Use Auto Repair to restore the required demo protection structure.</p>
+            <button id="v48RepairBtn">Auto Repair All</button>
+        </div>
+
+        <div class="card fs-v48-health-card">
+            <h2>Checks</h2>
+            ${
+                checks.map(function(check) {
+                    return `
+                        <div class="fs-v48-health-row">
+                            <strong>${check.ok ? "✅" : "⚠️"} ${fsLiveV48Escape(check.name)}</strong>
+                            <p>${fsLiveV48Escape(check.detail)}</p>
+                        </div>
+                    `;
+                }).join("")
+            }
+        </div>
+
+        <button id="v48BackSettingsBtn">Back to Settings</button>
+    `);
+
+    document.getElementById("v48RepairBtn").addEventListener("click", fsLiveV48RepairAll);
+    document.getElementById("v48BackSettingsBtn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+/* Override Settings tab */
+window.fsLiveV48OpenSettingsHome = fsLiveV48OpenSettingsHome;
+window.openLiveAppV48SettingsPage = fsLiveV48OpenSettingsHome;
+window.openLiveAppV44SettingsPage = fsLiveV48OpenSettingsHome;
+window.openLiveAppV4SettingsPage = fsLiveV48OpenSettingsHome;
+
+function fsLiveV48AutoOpen() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("liveappv48settings")) {
+        fsLiveV48OpenSettingsHome();
+    }
+}
+
+function insertLiveAppV48Card() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV48HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV47HomeCard") ||
+        document.getElementById("liveAppV46HomeCard") ||
+        document.getElementById("liveAppV45HomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV48HomeCard";
+    card.className = "card fs-v48-hero-card";
+    card.innerHTML = `
+        <h2>Live App v4.8</h2>
+        <h3>Protection Control Center</h3>
+        <p>Database, URL Engine, Attempt Intelligence, Lock Layer, Backup, Privacy, and Health Check are now integrated.</p>
+        <button id="openLiveAppV48Btn">Open Protection Control Center</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openLiveAppV48Btn").addEventListener("click", fsLiveV48OpenSettingsHome);
+}
+
+function refreshLiveAppV48Systems() {
+    setTimeout(insertLiveAppV48Card, 1550);
+    setTimeout(insertLiveAppV48Card, 3200);
+    setTimeout(insertLiveAppV48Card, 4700);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV48GoHomeWrapped) {
+    window.fsLiveAppV48GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV48 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV48.apply(this, arguments);
+        setTimeout(refreshLiveAppV48Systems, 2200);
+    };
+}
+
+setTimeout(fsLiveV48AutoOpen, 750);
+refreshLiveAppV48Systems();
 
 </script>
 
