@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3esqliteschema1">
+    <link rel="stylesheet" href="style.css?v=phase3frepostarters1">
 </head>
 <body>
 
@@ -21244,6 +21244,282 @@ if (typeof goHome === "function" && !window.fsSqliteSchemaGoHomeWrapped) {
 }
 
 refreshSqliteSchemaSystems();
+
+
+/* Phase 3F SQLite Repository DAO Starters */
+function fsRepoStarterEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsRepoStarterGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3FChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsRepoStarterSaveChecklist(data) {
+    localStorage.setItem("fsPhase3FChecklist", JSON.stringify(data || {}));
+}
+
+function fsRepoStarterToggleItem(key) {
+    const data = fsRepoStarterGetChecklist();
+    data[key] = !data[key];
+    fsRepoStarterSaveChecklist(data);
+    openRepositoryStarterPage();
+}
+
+function fsRepoStarterItems() {
+    return [
+        "protectionRepos",
+        "disciplineRepos",
+        "coachRepos",
+        "sessionRepos",
+        "repositoryIndex",
+        "daoRule",
+        "docs",
+        "nextPhase"
+    ];
+}
+
+function fsRepoStarterProgress() {
+    const items = fsRepoStarterItems();
+    const data = fsRepoStarterGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsRepoStarterCheckItem(key, label, detail) {
+    const data = fsRepoStarterGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-repo-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsRepoStarterEscape(label)}</strong>
+                <p>${fsRepoStarterEscape(detail)}</p>
+            </div>
+            <button data-repo-starter-key="${fsRepoStarterEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openRepositoryStarterPage() {
+    const progress = fsRepoStarterProgress();
+
+    showPage(`
+        <h1>Phase 3F Repository Starters</h1>
+
+        <div class="card fs-repo-hero-card">
+            <h2>SQLite Repository / DAO Starters</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This creates the future Flutter database access layer.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} repository groups confirmed.</p>
+        </div>
+
+        <div class="card fs-repo-warning-card">
+            <h2>Important</h2>
+            <p>These are starter repository templates. They do not connect to real sqflite queries yet.</p>
+        </div>
+
+        <div class="card fs-repo-flow-card">
+            <h2>Correct Data Flow</h2>
+            <p><strong>Flutter Screen</strong></p>
+            <p>↓</p>
+            <p><strong>Dart Service</strong></p>
+            <p>↓</p>
+            <p><strong>Repository / DAO</strong></p>
+            <p>↓</p>
+            <p><strong>SQLite Database</strong></p>
+        </div>
+
+        <div class="card fs-repo-protection-card">
+            <h2>Protection Repositories</h2>
+            <p><strong>BlockedDomainRepository</strong> — reads and writes blocked domains.</p>
+            <p><strong>BlockedAttemptRepository</strong> — logs and reads blocked attempts.</p>
+            <p><strong>RecoveryActionRepository</strong> — stores recovery actions.</p>
+            <p><strong>ProtectionSettingsRepository</strong> — saves protection settings, privacy mode, delay state.</p>
+        </div>
+
+        <div class="card fs-repo-discipline-card">
+            <h2>Discipline Repositories</h2>
+            <p><strong>GoalRepository</strong> — active and completed goals.</p>
+            <p><strong>SessionRepository</strong> — focus and concentration sessions.</p>
+        </div>
+
+        <div class="card fs-repo-coach-card">
+            <h2>Coach / Progress Repositories</h2>
+            <p><strong>CoachMemoryRepository</strong> — recommendations, actions taken, follow-through.</p>
+            <p><strong>XpRepository</strong> — XP event inserts and total XP calculations.</p>
+        </div>
+
+        <div class="card fs-repo-files-card">
+            <h2>Created Files</h2>
+            <p><strong>flutter_starter/lib/repositories/blocked_domain_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/blocked_attempt_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/recovery_action_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/protection_settings_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/goal_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/coach_memory_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/xp_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/session_repository.dart</strong></p>
+            <p><strong>flutter_starter/lib/repositories/repository_index.dart</strong></p>
+            <p><strong>flutter_starter/docs/repository_starters.md</strong></p>
+        </div>
+
+        <div class="card fs-repo-rules-card">
+            <h2>Repository Rules</h2>
+            <p><strong>Rule 1:</strong> Screens must not directly query SQLite.</p>
+            <p><strong>Rule 2:</strong> Services use repositories.</p>
+            <p><strong>Rule 3:</strong> Repositories own table-specific reads and writes.</p>
+            <p><strong>Rule 4:</strong> Privacy rules must be enforced before writing blocked attempts.</p>
+            <p><strong>Rule 5:</strong> Future VPN events must log through repositories, not directly into database code.</p>
+        </div>
+
+        <div class="card fs-repo-checklist-card">
+            <h2>Phase 3F Checklist</h2>
+            ${fsRepoStarterCheckItem("protectionRepos", "Protection repositories confirmed", "Domain, attempt, recovery, settings repositories.")}
+            ${fsRepoStarterCheckItem("disciplineRepos", "Discipline repositories confirmed", "Goal and session repositories.")}
+            ${fsRepoStarterCheckItem("coachRepos", "Coach/progress repositories confirmed", "Coach memory and XP repositories.")}
+            ${fsRepoStarterCheckItem("sessionRepos", "Session repository confirmed", "Focus and concentration session methods.")}
+            ${fsRepoStarterCheckItem("repositoryIndex", "Repository index confirmed", "repository_index.dart exports all repositories.")}
+            ${fsRepoStarterCheckItem("daoRule", "DAO architecture rule confirmed", "Screens → Services → Repositories → SQLite.")}
+            ${fsRepoStarterCheckItem("docs", "Repository docs confirmed", "repository_starters.md created.")}
+            ${fsRepoStarterCheckItem("nextPhase", "Next phase confirmed", "Phase 3G will connect repositories to real database provider.")}
+        </div>
+
+        <div class="card fs-repo-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3G: Database Provider Connection Plan</h3>
+            <p>Next we define how these repositories will connect to the real SQLite database provider.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-repo-starter-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsRepoStarterToggleItem(button.getAttribute("data-repo-starter-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertRepositoryStarterHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("repoStarterHomeCard")) return;
+
+    const progress = fsRepoStarterProgress();
+
+    const insertAfter =
+        document.getElementById("sqliteSchemaHomeCard") ||
+        document.getElementById("dataMigrationHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "repoStarterHomeCard";
+    card.className = "card fs-repo-home-card";
+    card.innerHTML = `
+        <h2>Phase 3F Repositories</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Starter repository / DAO classes for future SQLite access.</p>
+        <button id="openRepoStarterHomeBtn">Open Repositories</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openRepoStarterHomeBtn").addEventListener("click", openRepositoryStarterPage);
+}
+
+function addRepositoryStarterQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickRepoStarterBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickRepoStarterBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3F</span>
+        <span class="premium-quick-label">Repos</span>
+        <span class="premium-quick-sub">DAO starters</span>
+    `;
+
+    button.addEventListener("click", openRepositoryStarterPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3F to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsRepoStarterHealthWrapped) {
+    window.fsRepoStarterHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksRepoStarter = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksRepoStarter();
+        const progress = fsRepoStarterProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3F SQLite Repository DAO Starters";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3F SQLite Repository DAO Starters",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Repository starter progress: " + progress.percent + "%.",
+                "Open Phase 3F Repositories and confirm all repository groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshRepositoryStarterSystems() {
+    setTimeout(insertRepositoryStarterHomeCard, 1050);
+    setTimeout(insertRepositoryStarterHomeCard, 2200);
+    setTimeout(insertRepositoryStarterHomeCard, 3500);
+
+    setTimeout(addRepositoryStarterQuickButton, 1150);
+    setTimeout(addRepositoryStarterQuickButton, 2300);
+    setTimeout(addRepositoryStarterQuickButton, 3500);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsRepoStarterGoHomeWrapped) {
+    window.fsRepoStarterGoHomeWrapped = true;
+
+    const oldGoHomeRepoStarter = goHome;
+
+    goHome = function() {
+        oldGoHomeRepoStarter.apply(this, arguments);
+        setTimeout(refreshRepositoryStarterSystems, 1750);
+    };
+}
+
+refreshRepositoryStarterSystems();
 
 </script>
 
