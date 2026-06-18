@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv43featurevault1">
+    <link rel="stylesheet" href="style.css?v=liveappv44dashboard1">
 </head>
 <body>
 
@@ -27054,6 +27054,630 @@ if (typeof goHome === "function" && !window.fsLiveAppV43GoHomeWrapped) {
 }
 
 refreshLiveAppV43Systems();
+
+
+/* Live App v4.4 Home Coach Dashboard Integration */
+function fsLiveV44SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV44GetFirstStorage(keys, fallback) {
+    for (const key of keys) {
+        const value = fsLiveV44SafeJson(key, null);
+        if (value !== null && value !== undefined) return value;
+
+        const raw = localStorage.getItem(key);
+        if (raw !== null && raw !== undefined && raw !== "") return raw;
+    }
+
+    return fallback;
+}
+
+function fsLiveV44GetLiveStats() {
+    if (typeof fsLiveV4Stats === "function") return fsLiveV4Stats();
+    if (typeof fsLiveStats === "function") return fsLiveStats();
+
+    return {
+        attemptsToday: 0,
+        attemptsTotal: 0,
+        recoveriesTotal: 0,
+        recoveryRate: 100
+    };
+}
+
+function fsLiveV44GetMission() {
+    const possible = [
+        "fsTodayMission",
+        "fsTodayMissionProgress",
+        "fsDailyMission",
+        "fsListeningMission",
+        "homeMissionProgress"
+    ];
+
+    for (const key of possible) {
+        const value = fsLiveV44SafeJson(key, null);
+
+        if (value && typeof value === "object") {
+            return {
+                current: Number(value.current || value.done || value.count || value.progress || 0),
+                target: Number(value.target || value.total || value.goal || 3),
+                text: value.text || value.title || "Pause and fully listen before speaking at least 3 times today."
+            };
+        }
+    }
+
+    return {
+        current: 0,
+        target: 3,
+        text: "Pause and fully listen before speaking at least 3 times today."
+    };
+}
+
+function fsLiveV44GetProtectionState() {
+    const lock = fsLiveV44GetFirstStorage([
+        "fsProtectionLockSettings",
+        "fsProtectionSettings",
+        "fsProtectionState",
+        "fsProtectionDashboardState"
+    ], {});
+
+    const rawEnabled = localStorage.getItem("fsProtectionEnabled");
+
+    let enabled = null;
+
+    if (typeof lock === "object" && lock) {
+        if (typeof lock.protectionEnabled === "boolean") enabled = lock.protectionEnabled;
+        else if (typeof lock.enabled === "boolean") enabled = lock.enabled;
+        else if (typeof lock.protectionOn === "boolean") enabled = lock.protectionOn;
+        else if (typeof lock.isEnabled === "boolean") enabled = lock.isEnabled;
+    }
+
+    if (enabled === null && rawEnabled !== null) {
+        enabled = rawEnabled === "true";
+    }
+
+    const lockEnabled =
+        typeof lock === "object" && lock
+            ? Boolean(lock.lockEnabled ?? lock.locked ?? lock.pinEnabled ?? false)
+            : false;
+
+    const pinSet =
+        typeof lock === "object" && lock
+            ? Boolean(lock.pinHash || lock.pin_hash || lock.pinSet || lock.hasPin)
+            : false;
+
+    const delayHours =
+        typeof lock === "object" && lock
+            ? Number(lock.delayHours || lock.delay_hours || 24)
+            : 24;
+
+    return {
+        enabled: enabled,
+        label: enabled === true ? "Enabled" : enabled === false ? "Disabled" : "Not confirmed",
+        pinSet: pinSet,
+        lockEnabled: lockEnabled,
+        delayHours: delayHours
+    };
+}
+
+function fsLiveV44GetProtectionSummary() {
+    const blockedDomains = fsLiveV44GetFirstStorage([
+        "fsProtectionBlockedDomains",
+        "fsBlockedDomains",
+        "blockedDomains"
+    ], []);
+
+    const attempts = fsLiveV44GetFirstStorage([
+        "fsProtectionBlockedAttempts",
+        "fsBlockedAttempts",
+        "fsLiveActionState"
+    ], []);
+
+    const recoveries = fsLiveV44GetFirstStorage([
+        "fsProtectionRecoveryLog",
+        "fsRecoveryLog"
+    ], []);
+
+    let blockedCount = 0;
+    if (Array.isArray(blockedDomains)) blockedCount = blockedDomains.length;
+    else if (blockedDomains && typeof blockedDomains === "object") blockedCount = Object.keys(blockedDomains).length;
+
+    let attemptCount = 0;
+    if (Array.isArray(attempts)) attemptCount = attempts.length;
+    else if (attempts && Array.isArray(attempts.attempts)) attemptCount = attempts.attempts.length;
+
+    let recoveryCount = 0;
+    if (Array.isArray(recoveries)) recoveryCount = recoveries.length;
+    else if (recoveries && Array.isArray(recoveries.recoveries)) recoveryCount = recoveries.recoveries.length;
+
+    const liveStats = fsLiveV44GetLiveStats();
+
+    return {
+        blockedDomains: blockedCount,
+        attemptsToday: liveStats.attemptsToday || 0,
+        attemptsTotal: liveStats.attemptsTotal || attemptCount || 0,
+        recoveries: liveStats.recoveriesTotal || recoveryCount || 0,
+        recoveryRate: liveStats.recoveryRate || 100
+    };
+}
+
+function fsLiveV44GetXpSnapshot() {
+    const xpState = fsLiveV44GetFirstStorage([
+        "fsXpState",
+        "fsXPState",
+        "fsProgressState",
+        "fsStatsState"
+    ], {});
+
+    if (xpState && typeof xpState === "object") {
+        return {
+            level: Number(xpState.level || xpState.currentLevel || 2),
+            xp: Number(xpState.xp || xpState.totalXp || xpState.points || 45),
+            badges: Number(xpState.badges || xpState.badgeCount || 3)
+        };
+    }
+
+    return {
+        level: 2,
+        xp: 45,
+        badges: 3
+    };
+}
+
+function fsLiveV44OpenAnyModule(title, names, fallbackText) {
+    for (const name of names) {
+        if (typeof window[name] === "function") {
+            window[name]();
+            if (typeof fsLiveV41AddReturnButton === "function") {
+                fsLiveV41AddReturnButton();
+            }
+            return;
+        }
+    }
+
+    if (typeof fsLiveV41OpenModuleStatusPage === "function") {
+        fsLiveV41OpenModuleStatusPage();
+        return;
+    }
+
+    showPage(`
+        <h1>${fsLiveV4Escape(title)}</h1>
+        <div class="card">
+            <h2>${fsLiveV4Escape(title)}</h2>
+            <p>${fsLiveV4Escape(fallbackText)}</p>
+        </div>
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", openLiveAppV44HomePage);
+}
+
+function fsLiveV44BottomNav(active) {
+    const items = [
+        ["home", "Home", "openLiveAppV44HomePage"],
+        ["scanner", "Scanner", "openLiveAppV4ScannerPage"],
+        ["recovery", "Recovery", "openLiveAppV4RecoveryPage"],
+        ["progress", "Progress", "fsLiveV41OpenProgressPage"],
+        ["coach", "Coach", "openLiveAppV44CoachPage"],
+        ["settings", "Settings", "openLiveAppV44SettingsPage"]
+    ];
+
+    return `
+        <div class="fs-live-v44-bottom-nav">
+            ${items.map(function(item) {
+                return `
+                    <button class="${active === item[0] ? "active" : ""}" data-v44-nav="${item[2]}">
+                        ${item[1]}
+                    </button>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+function fsLiveV44BindNav() {
+    document.querySelectorAll("[data-v44-nav]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const fn = button.getAttribute("data-v44-nav");
+
+            if (typeof window[fn] === "function") {
+                window[fn]();
+                return;
+            }
+
+            if (fn === "fsLiveV41OpenProgressPage" && typeof fsLiveV41OpenProgressPage === "function") {
+                fsLiveV41OpenProgressPage();
+                return;
+            }
+
+            if (typeof openLiveAppV4HomePage === "function") {
+                openLiveAppV4HomePage();
+            }
+        });
+    });
+}
+
+function fsLiveV44QuickButton(label, sub, callbackName) {
+    return `
+        <button data-v44-action="${callbackName}">
+            <strong>${fsLiveV4Escape(label)}</strong>
+            <span>${fsLiveV4Escape(sub)}</span>
+        </button>
+    `;
+}
+
+function openLiveAppV44HomePage() {
+    const stats = fsLiveV44GetLiveStats();
+    const mission = fsLiveV44GetMission();
+    const protection = fsLiveV44GetProtectionState();
+    const protectionSummary = fsLiveV44GetProtectionSummary();
+    const xp = fsLiveV44GetXpSnapshot();
+    const demoState = typeof fsLiveV4GetState === "function" ? fsLiveV4GetState() : (typeof fsLiveDefaultState === "function" ? fsLiveDefaultState() : {});
+    const demoShield = demoState.protectionOn === false ? "Paused" : "Active";
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Home", "Discipline + protection dashboard") : "<h1>Home</h1>"}
+
+        <div class="card fs-v44-hero-card">
+            <h2>Today’s Mission</h2>
+            <h3>${mission.current} / ${mission.target}</h3>
+            <p>${fsLiveV4Escape(mission.text)}</p>
+            <button id="v44MissionWinBtn">Log Listening Win</button>
+        </div>
+
+        <div class="card fs-v44-dual-status-card">
+            <h2>Shield Status</h2>
+            <div class="fs-v44-status-grid">
+                <div>
+                    <span>Live Demo Shield</span>
+                    <strong>${fsLiveV4Escape(demoShield)}</strong>
+                    <p>Used for safe demo scanning and intervention testing.</p>
+                </div>
+                <div>
+                    <span>Real Prototype Protection</span>
+                    <strong class="${protection.enabled === false ? "fs-v44-danger" : "fs-v44-good"}">${fsLiveV4Escape(protection.label)}</strong>
+                    <p>Reads the old Protection Dashboard / Lock Layer state.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card fs-v44-protection-card">
+            <h2>Protection Summary</h2>
+            <p><strong>PIN:</strong> ${protection.pinSet ? "Set" : "Not set"}</p>
+            <p><strong>Lock:</strong> ${protection.lockEnabled ? "Enabled" : "Not confirmed"}</p>
+            <p><strong>Delay:</strong> ${protection.delayHours} hours</p>
+            <p><strong>Blocked Domains:</strong> ${protectionSummary.blockedDomains}</p>
+            <p><strong>Attempts Today:</strong> ${protectionSummary.attemptsToday}</p>
+            <p><strong>Recovery Rate:</strong> ${protectionSummary.recoveryRate}%</p>
+            <button id="v44OpenProtectionDashBtn">Open Protection Dashboard</button>
+        </div>
+
+        <div class="card fs-v44-message-card">
+            <h2>Daily Discipline Message</h2>
+            <p>You are training your mind every time you return after forgetting.</p>
+            <h3>“I pause, I listen, and I follow my dreams.”</h3>
+        </div>
+
+        <div class="card fs-v44-xp-card">
+            <h2>Statistics Snapshot</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${xp.level}</strong><span>Level</span></div>
+                <div><strong>${xp.xp}</strong><span>XP</span></div>
+                <div><strong>${xp.badges}</strong><span>Badges</span></div>
+                <div><strong>${stats.recoveryRate}%</strong><span>Recovery</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v44-quick-card">
+            <h2>Quick Actions</h2>
+            <div class="fs-v44-quick-grid">
+                ${fsLiveV44QuickButton("Scanner", "Check domain", "scanner")}
+                ${fsLiveV44QuickButton("Recovery", "Reset now", "recovery")}
+                ${fsLiveV44QuickButton("Focus Timer", "Start session", "focusTimer")}
+                ${fsLiveV44QuickButton("Reflection", "Journal thought", "reflection")}
+                ${fsLiveV44QuickButton("Smart Coach", "Next instruction", "coach")}
+                ${fsLiveV44QuickButton("Settings", "Protection tools", "settings")}
+            </div>
+        </div>
+
+        <div class="card fs-v44-startup-card">
+            <h2>Daily Startup Check</h2>
+            <h3>New Day Ready</h3>
+            <p>Start the day by setting command before distractions take over.</p>
+            <button id="v44OpenStartPlanBtn">Open Start Plan</button>
+        </div>
+
+        <div class="card fs-v44-vault-card">
+            <h2>Feature Vault</h2>
+            <p>Keep every original Focus Shield feature preserved during live app upgrades.</p>
+            <button id="v44OpenVaultBtn">Open Feature Vault</button>
+        </div>
+
+        ${fsLiveV44BottomNav("home")}
+    `);
+
+    document.getElementById("v44MissionWinBtn").addEventListener("click", function() {
+        const state = fsLiveV44SafeJson("fsTodayMissionProgress", {});
+        state.current = Math.min(Number(state.current || 0) + 1, Number(state.target || 3));
+        state.target = Number(state.target || 3);
+        state.text = mission.text;
+        localStorage.setItem("fsTodayMissionProgress", JSON.stringify(state));
+        openLiveAppV44HomePage();
+    });
+
+    document.getElementById("v44OpenProtectionDashBtn").addEventListener("click", function() {
+        fsLiveV44OpenAnyModule("Protection Dashboard", [
+            "openProtectionDashboardPage",
+            "openProtectionSummaryPage",
+            "showProtectionDashboardPage",
+            "renderProtectionDashboardPage"
+        ], "Protection Dashboard will be opened from Settings.");
+    });
+
+    document.getElementById("v44OpenStartPlanBtn").addEventListener("click", function() {
+        if (typeof fsLiveV41OpenModule === "function") fsLiveV41OpenModule("dailyStartPlan");
+        else openLiveAppV44CoachPage();
+    });
+
+    document.getElementById("v44OpenVaultBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV43FeatureVaultPage === "function") openLiveAppV43FeatureVaultPage("All");
+    });
+
+    document.querySelectorAll("[data-v44-action]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const action = button.getAttribute("data-v44-action");
+
+            if (action === "scanner") openLiveAppV4ScannerPage();
+            if (action === "recovery") openLiveAppV4RecoveryPage();
+            if (action === "focusTimer" && typeof fsLiveV41OpenModule === "function") fsLiveV41OpenModule("focusTimer");
+            if (action === "reflection" && typeof fsLiveV41OpenModule === "function") fsLiveV41OpenModule("reflection");
+            if (action === "coach") openLiveAppV44CoachPage();
+            if (action === "settings") openLiveAppV44SettingsPage();
+        });
+    });
+
+    fsLiveV44BindNav();
+}
+
+function openLiveAppV44CoachPage() {
+    const mission = fsLiveV44GetMission();
+    const stats = fsLiveV44GetLiveStats();
+    const reviewScore = mission.current >= mission.target ? 100 : Math.round((mission.current / mission.target) * 100);
+    const weeklyScore = Math.max(15, Math.round((stats.recoveryRate + reviewScore) / 2));
+    const weaknessText = mission.current < mission.target ? "Listening Mission" : "Recovery Consistency";
+    const suggestionText = mission.current < mission.target ? "Complete Today’s Mission" : "Keep the shield active";
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Coach", "Daily intelligence") : "<h1>Coach</h1>"}
+
+        <div class="card fs-v44-coach-card">
+            <h2>Daily Start Plan</h2>
+            <h3>${mission.current > 0 ? "In Progress" : "Start"}</h3>
+            <p>Get ${mission.target} listening wins to protect your streak.</p>
+            <button id="v44CoachStartPlanBtn">Open Start Plan</button>
+        </div>
+
+        <div class="card fs-v44-review-card">
+            <h2>Daily End Review</h2>
+            <h3>${reviewScore >= 80 ? "Strong" : "Weak"}</h3>
+            <p>Complete the ${mission.target}-listening-win mission earlier in the day.</p>
+            <button id="v44CoachEndReviewBtn">Open End Review</button>
+        </div>
+
+        <div class="card fs-v44-intel-card">
+            <h2>Coach Intelligence</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${reviewScore}%</strong><span>Daily Review</span></div>
+                <div><strong>${weeklyScore}%</strong><span>Weekly Report</span></div>
+                <div><strong>${stats.recoveryRate}%</strong><span>Recovery</span></div>
+                <div><strong>${stats.attemptsToday}</strong><span>Attempts</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v44-weakness-card">
+            <h2>Weakness Detection</h2>
+            <h3>${fsLiveV4Escape(weaknessText)}</h3>
+            <p>Get ${Math.max(mission.target - mission.current, 0)} more listening wins today. Pause, listen fully, then speak.</p>
+        </div>
+
+        <div class="card fs-v44-suggestion-card">
+            <h2>Smart Suggestions</h2>
+            <h3>${fsLiveV4Escape(suggestionText)}</h3>
+            <p>Next command: Set Morning Command, complete the mission, then review your day.</p>
+            <button id="v44DoNextBtn">Do Next Action</button>
+        </div>
+
+        <div class="card fs-v44-coach-card">
+            <h2>Main Coach Command</h2>
+            <h3>${reviewScore < 50 ? "Rebuild" : "Maintain"}</h3>
+            <p>Follow-through begins with one completed mission.</p>
+        </div>
+
+        <div class="card fs-v44-module-card">
+            <h2>Coach Modules</h2>
+            <div class="fs-v44-quick-grid">
+                ${fsLiveV44QuickButton("Smart Coach", "Priority engine", "smartCoach")}
+                ${fsLiveV44QuickButton("Weekly Intel", "Coach diagnosis", "weekly")}
+                ${fsLiveV44QuickButton("Start Plan", "Morning command", "start")}
+                ${fsLiveV44QuickButton("End Review", "Evening review", "end")}
+                ${fsLiveV44QuickButton("Timeline", "Daily events", "timeline")}
+                ${fsLiveV44QuickButton("Health Check", "System state", "health")}
+            </div>
+        </div>
+
+        ${fsLiveV44BottomNav("coach")}
+    `);
+
+    document.getElementById("v44CoachStartPlanBtn").addEventListener("click", function() {
+        if (typeof fsLiveV41OpenModule === "function") fsLiveV41OpenModule("dailyStartPlan");
+    });
+
+    document.getElementById("v44CoachEndReviewBtn").addEventListener("click", function() {
+        if (typeof fsLiveV41OpenModule === "function") fsLiveV41OpenModule("dailyEndReview");
+    });
+
+    document.getElementById("v44DoNextBtn").addEventListener("click", function() {
+        openLiveAppV44HomePage();
+    });
+
+    document.querySelectorAll("[data-v44-action]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const action = button.getAttribute("data-v44-action");
+            if (typeof fsLiveV41OpenModule !== "function") return;
+
+            if (action === "smartCoach") fsLiveV41OpenModule("smartCoach");
+            if (action === "weekly") fsLiveV41OpenModule("charts");
+            if (action === "start") fsLiveV41OpenModule("dailyStartPlan");
+            if (action === "end") fsLiveV41OpenModule("dailyEndReview");
+            if (action === "timeline") fsLiveV41OpenModule("timeline");
+            if (action === "health") fsLiveV41OpenModule("systemHealth");
+        });
+    });
+
+    fsLiveV44BindNav();
+}
+
+function openLiveAppV44SettingsPage() {
+    const protection = fsLiveV44GetProtectionState();
+    const summary = fsLiveV44GetProtectionSummary();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Settings", "Protection control center") : "<h1>Settings</h1>"}
+
+        <div class="card fs-v44-settings-card">
+            <h2>Protection Summary</h2>
+            <p><strong>Protection:</strong> ${fsLiveV4Escape(protection.label)}</p>
+            <p><strong>PIN:</strong> ${protection.pinSet ? "Set" : "Not set"}</p>
+            <p><strong>Lock:</strong> ${protection.lockEnabled ? "Enabled" : "Not confirmed"}</p>
+            <p><strong>Disable Delay:</strong> ${protection.delayHours} hours</p>
+            <p><strong>Blocked Domains:</strong> ${summary.blockedDomains}</p>
+            <p><strong>Attempts Today:</strong> ${summary.attemptsToday}</p>
+            <p><strong>Recovery Rate:</strong> ${summary.recoveryRate}%</p>
+        </div>
+
+        <div class="card fs-v44-action-card">
+            <h2>Next Protection Action</h2>
+            <h3>${protection.enabled === false ? "Enable Protection" : "Review Protection"}</h3>
+            <p>${protection.enabled === false ? "Protection is disabled or not confirmed. Open Lock Layer first." : "Protection appears active. Review database and backup status."}</p>
+            <button id="v44OpenLockLayerBtn">Open Lock Layer</button>
+        </div>
+
+        <div class="card fs-v44-intel-card">
+            <h2>Protection Intelligence</h2>
+            <p><strong>Risk Level:</strong> Protected</p>
+            <p><strong>Top Trigger:</strong> focus-risk</p>
+            <p><strong>Peak Risk Time:</strong> Night</p>
+            <p><strong>Command:</strong> Keep your system active. Do not wait for temptation to appear.</p>
+        </div>
+
+        <div class="card fs-v44-module-card">
+            <h2>Protection Modules</h2>
+            <div class="fs-v44-quick-grid">
+                ${fsLiveV44QuickButton("Database", "Local blocklist", "database")}
+                ${fsLiveV44QuickButton("URL Engine", "Decision flow", "url")}
+                ${fsLiveV44QuickButton("Attempt Intel", "Risk report", "attempt")}
+                ${fsLiveV44QuickButton("Lock Layer", "Protected settings", "lock")}
+                ${fsLiveV44QuickButton("Backup", "Export / import", "backup")}
+                ${fsLiveV44QuickButton("Health Check", "System check", "health")}
+                ${fsLiveV44QuickButton("Feature Vault", "Roadmap map", "vault")}
+            </div>
+        </div>
+
+        ${fsLiveV44BottomNav("settings")}
+    `);
+
+    document.getElementById("v44OpenLockLayerBtn").addEventListener("click", function() {
+        if (typeof fsLiveV41OpenModule === "function") fsLiveV41OpenModule("lockLayer");
+    });
+
+    document.querySelectorAll("[data-v44-action]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const action = button.getAttribute("data-v44-action");
+            if (action === "vault" && typeof openLiveAppV43FeatureVaultPage === "function") {
+                openLiveAppV43FeatureVaultPage("All");
+                return;
+            }
+
+            if (typeof fsLiveV41OpenModule !== "function") return;
+
+            if (action === "database") fsLiveV41OpenModule("protectionDatabase");
+            if (action === "url") fsLiveV41OpenModule("urlEngine");
+            if (action === "attempt") fsLiveV41OpenModule("attemptIntelligence");
+            if (action === "lock") fsLiveV41OpenModule("lockLayer");
+            if (action === "backup") fsLiveV41OpenModule("backupCenter");
+            if (action === "health") fsLiveV41OpenModule("systemHealth");
+        });
+    });
+
+    fsLiveV44BindNav();
+}
+
+/* v4.4 route + override */
+window.openLiveAppV44HomePage = openLiveAppV44HomePage;
+window.openLiveAppV44CoachPage = openLiveAppV44CoachPage;
+window.openLiveAppV44SettingsPage = openLiveAppV44SettingsPage;
+
+window.openLiveAppV4HomePage = openLiveAppV44HomePage;
+window.openLiveAppV4CoachPage = openLiveAppV44CoachPage;
+window.openLiveAppV4SettingsPage = openLiveAppV44SettingsPage;
+
+function fsLiveV44AutoOpen() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("liveappv44dashboard")) {
+        openLiveAppV44HomePage();
+    }
+}
+
+function insertLiveAppV44DashboardCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV44HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV43HomeCard") ||
+        document.getElementById("liveAppV41HomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV44HomeCard";
+    card.className = "card fs-v44-dashboard-card";
+    card.innerHTML = `
+        <h2>Live App v4.4</h2>
+        <h3>Home + Coach Dashboard</h3>
+        <p>Old dashboard intelligence is now integrated into the live app shell.</p>
+        <button id="openLiveAppV44HomeBtn">Open v4.4 Dashboard</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openLiveAppV44HomeBtn").addEventListener("click", openLiveAppV44HomePage);
+}
+
+function refreshLiveAppV44Systems() {
+    setTimeout(insertLiveAppV44DashboardCard, 1300);
+    setTimeout(insertLiveAppV44DashboardCard, 2800);
+    setTimeout(insertLiveAppV44DashboardCard, 4200);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV44GoHomeWrapped) {
+    window.fsLiveAppV44GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV44 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV44.apply(this, arguments);
+        setTimeout(refreshLiveAppV44Systems, 1800);
+    };
+}
+
+setTimeout(fsLiveV44AutoOpen, 650);
+refreshLiveAppV44Systems();
 
 </script>
 
