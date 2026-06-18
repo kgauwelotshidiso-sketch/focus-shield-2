@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv44dashboard1">
+    <link rel="stylesheet" href="style.css?v=liveappv45intervention1">
 </head>
 <body>
 
@@ -27678,6 +27678,371 @@ if (typeof goHome === "function" && !window.fsLiveAppV44GoHomeWrapped) {
 
 setTimeout(fsLiveV44AutoOpen, 650);
 refreshLiveAppV44Systems();
+
+
+/* Live App v4.5 Full Intervention Screen Integration */
+function fsLiveV45SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV45GetStreakSnapshot() {
+    const possibleKeys = [
+        "fsStreakState",
+        "fsStreaks",
+        "fsProgressState",
+        "fsDashboardState",
+        "fsDailyOsState"
+    ];
+
+    for (const key of possibleKeys) {
+        const value = fsLiveV45SafeJson(key, null);
+
+        if (value && typeof value === "object") {
+            return {
+                current: Number(value.currentStreak || value.current_streak || value.streak || value.current || 0),
+                longest: Number(value.longestStreak || value.longest_streak || value.longest || value.best || 0)
+            };
+        }
+    }
+
+    return {
+        current: 0,
+        longest: 0
+    };
+}
+
+function fsLiveV45GetGoalsPreview() {
+    const possibleKeys = [
+        "fsGoals",
+        "focusShieldGoals",
+        "goals",
+        "fsGoalState"
+    ];
+
+    for (const key of possibleKeys) {
+        const value = fsLiveV45SafeJson(key, null);
+
+        if (Array.isArray(value) && value.length) {
+            return value.slice(0, 3).map(function(goal) {
+                if (typeof goal === "string") return goal;
+                return goal.title || goal.name || goal.text || "Personal goal";
+            });
+        }
+
+        if (value && typeof value === "object") {
+            if (Array.isArray(value.goals) && value.goals.length) {
+                return value.goals.slice(0, 3).map(function(goal) {
+                    if (typeof goal === "string") return goal;
+                    return goal.title || goal.name || goal.text || "Personal goal";
+                });
+            }
+        }
+    }
+
+    return [
+        "Master listening without interrupting",
+        "Stay disciplined and follow my dreams",
+        "Build fitness and self-control"
+    ];
+}
+
+function fsLiveV45GetAffirmation() {
+    const possibleKeys = [
+        "fsTodayAffirmation",
+        "fsAffirmation",
+        "fsAffirmations",
+        "affirmations"
+    ];
+
+    for (const key of possibleKeys) {
+        const value = fsLiveV45SafeJson(key, null);
+
+        if (typeof value === "string" && value.trim()) return value.trim();
+
+        if (Array.isArray(value) && value.length) {
+            const favorite = value.find(function(item) {
+                return item && typeof item === "object" && item.favorite;
+            });
+
+            if (favorite) return favorite.text || favorite.title || "I pause, I listen, and I follow my dreams.";
+
+            const first = value[0];
+            if (typeof first === "string") return first;
+            if (first && typeof first === "object") return first.text || first.title || "I pause, I listen, and I follow my dreams.";
+        }
+
+        if (value && typeof value === "object") {
+            if (value.text) return value.text;
+            if (value.current) return value.current;
+            if (value.today) return value.today;
+        }
+    }
+
+    return "I pause, I listen, and I follow my dreams.";
+}
+
+function fsLiveV45MarkRecovered(reason) {
+    if (typeof fsLiveV4MarkLatestRecovered === "function") {
+        fsLiveV4MarkLatestRecovered(reason || "Intervention recovery completed");
+        return;
+    }
+
+    if (typeof fsLiveMarkLatestUnrecoveredAttemptRecovered === "function") {
+        fsLiveMarkLatestUnrecoveredAttemptRecovered();
+        return;
+    }
+
+    const state = typeof fsLiveDefaultState === "function" ? fsLiveDefaultState() : {};
+    state.lastDecision = {
+        type: "RECOVERED",
+        title: "Recovery completed",
+        message: "You chose your goals and returned to discipline.",
+        time: new Date().toISOString()
+    };
+
+    if (typeof fsLiveSaveState === "function") {
+        fsLiveSaveState(state);
+    }
+}
+
+function fsLiveV45OpenModuleOrFallback(moduleKey, title, fallbackText) {
+    if (typeof fsLiveV41OpenModule === "function") {
+        fsLiveV41OpenModule(moduleKey);
+        return;
+    }
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header(title, "Intervention action") : `<h1>${title}</h1>`}
+
+        <div class="card fs-v45-intervention-card">
+            <h2>${title}</h2>
+            <p>${fallbackText}</p>
+        </div>
+
+        <button id="v45BackInterventionBtn">Back to Recovery</button>
+    `);
+
+    document.getElementById("v45BackInterventionBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV4RecoveryPage === "function") {
+            openLiveAppV4RecoveryPage();
+        }
+    });
+}
+
+function fsLiveV45OpenBreathingExercise() {
+    const affirmation = fsLiveV45GetAffirmation();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Breathing Exercise", "Emergency reset") : "<h1>Breathing Exercise</h1>"}
+
+        <div class="card fs-v45-breathing-card">
+            <div class="fs-v45-breathing-circle">
+                <span>Breathe</span>
+            </div>
+
+            <h2>60-Second Reset</h2>
+            <p><strong>1.</strong> Inhale slowly.</p>
+            <p><strong>2.</strong> Hold for a moment.</p>
+            <p><strong>3.</strong> Exhale slowly.</p>
+            <p><strong>4.</strong> Repeat and return to your goals.</p>
+        </div>
+
+        <div class="card fs-v45-affirmation-card">
+            <h2>Affirmation</h2>
+            <h3>“${fsLiveV4Escape(affirmation)}”</h3>
+        </div>
+
+        <button id="v45BreathingDoneBtn">I am back in control</button>
+        <button id="v45BreathingBackBtn">Back to Recovery</button>
+    `);
+
+    document.getElementById("v45BreathingDoneBtn").addEventListener("click", function() {
+        fsLiveV45MarkRecovered("Breathing exercise completed");
+        if (typeof openLiveAppV4RecoveryPage === "function") {
+            openLiveAppV4RecoveryPage();
+        }
+    });
+
+    document.getElementById("v45BreathingBackBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV4RecoveryPage === "function") {
+            openLiveAppV4RecoveryPage();
+        }
+    });
+}
+
+function openLiveAppV45InterventionPage(attemptId) {
+    const state = typeof fsLiveV4GetState === "function"
+        ? fsLiveV4GetState()
+        : (typeof fsLiveDefaultState === "function" ? fsLiveDefaultState() : {});
+
+    const attempts = Array.isArray(state.attempts) ? state.attempts : [];
+    const attempt = attempts.find(function(item) {
+        return String(item.id) === String(attemptId);
+    }) || attempts[0] || null;
+
+    const domain = attempt ? attempt.domain : "blocked-example.com";
+    const category = attempt ? attempt.category : "focus risk";
+    const streak = fsLiveV45GetStreakSnapshot();
+    const goals = fsLiveV45GetGoalsPreview();
+    const affirmation = fsLiveV45GetAffirmation();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Intervention", "Temptation detected") : "<h1>Intervention</h1>"}
+
+        <div class="card fs-v45-danger-card">
+            <h2>⚠ Temptation Detected</h2>
+            <p>Focus Shield blocked a test risk signal before it pulled you away from your goals.</p>
+            <h3>${fsLiveV4Escape(domain)}</h3>
+            <p><strong>Category:</strong> ${fsLiveV4Escape(category)}</p>
+        </div>
+
+        <div class="card fs-v45-streak-card">
+            <h2>Current Streak</h2>
+            <div class="fs-v45-streak-grid">
+                <div>
+                    <strong>${streak.current}</strong>
+                    <span>Current</span>
+                </div>
+                <div>
+                    <strong>${streak.longest}</strong>
+                    <span>Longest</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card fs-v45-affirmation-card">
+            <h2>Affirmation</h2>
+            <h3>“${fsLiveV4Escape(affirmation)}”</h3>
+        </div>
+
+        <div class="card fs-v45-future-card">
+            <h2>Remember</h2>
+            <p>Your future is worth more than this moment.</p>
+            <p>You do not need to follow the urge. You only need to return to your goals now.</p>
+        </div>
+
+        <div class="card fs-v45-goals-card">
+            <h2>Your Goals</h2>
+            ${goals.map(function(goal) {
+                return `<p>✅ ${fsLiveV4Escape(goal)}</p>`;
+            }).join("")}
+        </div>
+
+        <div class="card fs-v45-action-card">
+            <h2>Choose Recovery Action</h2>
+            <div class="fs-v45-action-grid">
+                <button id="v45ReadGoalsBtn">Read Goals</button>
+                <button id="v45StartFocusBtn">Start Focus Session</button>
+                <button id="v45JournalBtn">Journal Thoughts</button>
+                <button id="v45BreathingBtn">Breathing Exercise</button>
+                <button id="v45ChooseGoalsBtn">I Choose My Goals</button>
+                <button id="v45BackScannerBtn">Back to Scanner</button>
+            </div>
+        </div>
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("recovery") : ""}
+    `);
+
+    document.getElementById("v45ReadGoalsBtn").addEventListener("click", function() {
+        fsLiveV45OpenModuleOrFallback("goals", "Goals", "Read your goals and remember why you are building discipline.");
+    });
+
+    document.getElementById("v45StartFocusBtn").addEventListener("click", function() {
+        fsLiveV45MarkRecovered("Started focus session from intervention");
+        fsLiveV45OpenModuleOrFallback("focusTimer", "Focus Timer", "Start a focus session to redirect your energy.");
+    });
+
+    document.getElementById("v45JournalBtn").addEventListener("click", function() {
+        fsLiveV45MarkRecovered("Journaled thoughts from intervention");
+        fsLiveV45OpenModuleOrFallback("reflection", "Journal Thoughts", "Write what you felt and how you returned to your goals.");
+    });
+
+    document.getElementById("v45BreathingBtn").addEventListener("click", function() {
+        fsLiveV45OpenBreathingExercise();
+    });
+
+    document.getElementById("v45ChooseGoalsBtn").addEventListener("click", function() {
+        fsLiveV45MarkRecovered("Chose goals from intervention");
+        if (typeof openLiveAppV4RecoveryPage === "function") {
+            openLiveAppV4RecoveryPage();
+        }
+    });
+
+    document.getElementById("v45BackScannerBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV4ScannerPage === "function") {
+            openLiveAppV4ScannerPage();
+        }
+    });
+
+    if (typeof fsLiveV44BindNav === "function") {
+        fsLiveV44BindNav();
+    } else if (typeof fsLiveV4BindNav === "function") {
+        fsLiveV4BindNav();
+    }
+}
+
+/* Override previous intervention route */
+window.openLiveAppV45InterventionPage = openLiveAppV45InterventionPage;
+window.openLiveAppV4InterventionPage = openLiveAppV45InterventionPage;
+
+function insertLiveAppV45Card() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV45HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV44HomeCard") ||
+        document.getElementById("liveAppV43HomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV45HomeCard";
+    card.className = "card fs-v45-affirmation-card";
+    card.innerHTML = `
+        <h2>Live App v4.5</h2>
+        <h3>Full Intervention Screen</h3>
+        <p>Blocked attempts now open the full recovery screen with streak, goals, affirmation, focus, journal, and breathing actions.</p>
+        <button id="openLiveAppV45DemoBtn">Test Intervention</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openLiveAppV45DemoBtn").addEventListener("click", function() {
+        let attempt = null;
+
+        if (typeof fsLiveV4AddBlockedAttempt === "function") {
+            attempt = fsLiveV4AddBlockedAttempt("blocked-example.com");
+        }
+
+        openLiveAppV45InterventionPage(attempt ? attempt.id : null);
+    });
+}
+
+function refreshLiveAppV45Systems() {
+    setTimeout(insertLiveAppV45Card, 1400);
+    setTimeout(insertLiveAppV45Card, 2900);
+    setTimeout(insertLiveAppV45Card, 4300);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV45GoHomeWrapped) {
+    window.fsLiveAppV45GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV45 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV45.apply(this, arguments);
+        setTimeout(refreshLiveAppV45Systems, 1900);
+    };
+}
+
+refreshLiveAppV45Systems();
 
 </script>
 
