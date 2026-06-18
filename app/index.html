@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3kmethodchannel1">
+    <link rel="stylesheet" href="style.css?v=urlenginehealthfix1">
 </head>
 <body>
 
@@ -22936,6 +22936,55 @@ if (typeof goHome === "function" && !window.fsMethodChannelGoHomeWrapped) {
 }
 
 refreshMethodChannelSystems();
+
+
+/* URL Analysis Engine Health Check State Fix */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsUrlEngineHealthStateFixWrapped) {
+    window.fsUrlEngineHealthStateFixWrapped = true;
+
+    const oldRunFocusShieldHealthChecksUrlEngineFix = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksUrlEngineFix();
+
+        return checks.map(function(check) {
+            if (
+                check &&
+                typeof check.name === "string" &&
+                check.name.toLowerCase().includes("url analysis engine")
+            ) {
+                const engineReady =
+                    typeof openUrlAnalysisEnginePage === "function" &&
+                    typeof fsUrlEngineAnalyze === "function";
+
+                if (typeof makeHealthCheck === "function") {
+                    return makeHealthCheck(
+                        check.name,
+                        engineReady ? "PASS" : "FAIL",
+                        engineReady
+                            ? "URL Analysis Engine module is installed and functional. Manual test warnings belong inside the URL Engine, not as system failures."
+                            : "URL Analysis Engine module is missing or incomplete.",
+                        engineReady
+                            ? "No repair needed. Use URL Analysis Engine for manual blocked/allowed tests."
+                            : "Reinstall Phase 2B URL Analysis Engine."
+                    );
+                }
+
+                check.status = engineReady ? "PASS" : "FAIL";
+                check.message = engineReady
+                    ? "URL Analysis Engine module is installed and functional."
+                    : "URL Analysis Engine module is missing or incomplete.";
+                check.recommendation = engineReady
+                    ? "No repair needed."
+                    : "Reinstall Phase 2B URL Analysis Engine.";
+
+                return check;
+            }
+
+            return check;
+        });
+    };
+}
 
 </script>
 
