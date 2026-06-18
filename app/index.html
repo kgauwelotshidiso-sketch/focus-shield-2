@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=leanliveactionv3">
+    <link rel="stylesheet" href="style.css?v=liveappv4mainintegration1">
 </head>
 <body>
 
@@ -25061,6 +25061,712 @@ function fsLiveOpenLogsTab() {
     document.getElementById("fsLiveLogsBackBtn").addEventListener("click", openLiveActionModePage);
     fsLiveAttachBottomNav();
 }
+
+
+/* Live App v4 Main App Integration */
+function fsLiveV4Escape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV4GetState() {
+    if (typeof fsLiveDefaultState === "function") {
+        return fsLiveDefaultState();
+    }
+
+    try {
+        return JSON.parse(localStorage.getItem("fsLiveActionState") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsLiveV4SaveState(state) {
+    if (typeof fsLiveSaveState === "function") {
+        fsLiveSaveState(state);
+        return;
+    }
+
+    localStorage.setItem("fsLiveActionState", JSON.stringify(state || {}));
+}
+
+function fsLiveV4Stats() {
+    if (typeof fsLiveStats === "function") {
+        return fsLiveStats();
+    }
+
+    const state = fsLiveV4GetState();
+    const attempts = Array.isArray(state.attempts) ? state.attempts : [];
+    const recoveries = Array.isArray(state.recoveries) ? state.recoveries : [];
+    const recovered = attempts.filter(function(item) { return item.recovered; }).length;
+
+    return {
+        attemptsToday: attempts.length,
+        attemptsTotal: attempts.length,
+        recoveriesTotal: recoveries.length,
+        recoveryRate: attempts.length ? Math.round((recovered / attempts.length) * 100) : 100
+    };
+}
+
+function fsLiveV4NormalizeDomain(rawValue) {
+    if (typeof fsLiveNormalizeDomain === "function") {
+        return fsLiveNormalizeDomain(rawValue);
+    }
+
+    const raw = String(rawValue || "").trim().toLowerCase();
+    if (!raw) return "";
+
+    try {
+        const url = new URL(raw.startsWith("http") ? raw : "https://" + raw);
+        return url.hostname.replace(/^www\./, "");
+    } catch (error) {
+        return raw.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0].trim();
+    }
+}
+
+function fsLiveV4IsBlocked(domain) {
+    if (typeof fsLiveIsBlockedDomain === "function") {
+        return fsLiveIsBlockedDomain(domain);
+    }
+
+    const keywords = ["blocked", "temptation", "risk", "unsafe", "trigger"];
+    return keywords.some(function(keyword) {
+        return String(domain || "").includes(keyword);
+    });
+}
+
+function fsLiveV4MarkLatestRecovered(mode) {
+    if (typeof fsLiveMarkLatestUnrecoveredAttemptRecovered === "function") {
+        fsLiveMarkLatestUnrecoveredAttemptRecovered();
+        return;
+    }
+
+    const state = fsLiveV4GetState();
+    let marked = false;
+    let linkedAttemptId = null;
+
+    state.attempts = Array.isArray(state.attempts) ? state.attempts : [];
+    state.recoveries = Array.isArray(state.recoveries) ? state.recoveries : [];
+
+    state.attempts = state.attempts.map(function(attempt) {
+        if (!marked && !attempt.recovered) {
+            marked = true;
+            linkedAttemptId = attempt.id;
+            return Object.assign({}, attempt, { recovered: true });
+        }
+
+        return attempt;
+    });
+
+    state.recoveries.unshift({
+        id: Date.now(),
+        attemptId: linkedAttemptId,
+        action: mode || "Recovery completed",
+        time: new Date().toISOString()
+    });
+
+    state.lastDecision = {
+        type: "RECOVERED",
+        title: mode || "Recovery completed",
+        message: linkedAttemptId
+            ? "You recovered from the latest blocked attempt."
+            : "You reset and returned to your goals.",
+        time: new Date().toISOString()
+    };
+
+    fsLiveV4SaveState(state);
+}
+
+function fsLiveV4AddBlockedAttempt(domain) {
+    const state = fsLiveV4GetState();
+
+    state.protectionOn = true;
+    state.demoStarted = true;
+    state.attempts = Array.isArray(state.attempts) ? state.attempts : [];
+    state.recoveries = Array.isArray(state.recoveries) ? state.recoveries : [];
+
+    const attempt = {
+        id: Date.now(),
+        domain: domain,
+        category: "focus risk",
+        reason: "This domain matched the Focus Shield safe test block rules.",
+        time: new Date().toISOString(),
+        recovered: false
+    };
+
+    state.attempts.unshift(attempt);
+    state.lastDecision = {
+        type: "BLOCK",
+        title: "Domain blocked",
+        domain: domain,
+        message: "Focus Shield blocked this test domain and opened recovery options.",
+        time: attempt.time
+    };
+
+    fsLiveV4SaveState(state);
+    return attempt;
+}
+
+function fsLiveV4AllowDomain(domain) {
+    const state = fsLiveV4GetState();
+
+    state.protectionOn = true;
+    state.demoStarted = true;
+    state.lastDecision = {
+        type: "ALLOW",
+        title: "Domain allowed",
+        domain: domain,
+        message: "This domain did not match the local test block rules.",
+        time: new Date().toISOString()
+    };
+
+    fsLiveV4SaveState(state);
+}
+
+function fsLiveV4OpenOldModule(title, functionNames, fallbackText) {
+    for (const name of functionNames) {
+        if (typeof window[name] === "function") {
+            window[name]();
+            return;
+        }
+    }
+
+    showPage(`
+        <h1>${fsLiveV4Escape(title)}</h1>
+
+        <div class="card fs-live-v4-fallback-card">
+            <h2>${fsLiveV4Escape(title)}</h2>
+            <p>${fsLiveV4Escape(fallbackText)}</p>
+            <p>This module still exists in the project, but its direct open function was not found in the current live shell. We will connect it properly in the next integration pass.</p>
+        </div>
+
+        <button id="backBtn">Back to Live App</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", openLiveAppV4HomePage);
+}
+
+function fsLiveV4Header(title, subtitle) {
+    return `
+        <div class="fs-live-v4-header">
+            <div class="fs-live-v4-logo">🛡️</div>
+            <div>
+                <p>Focus Shield</p>
+                <h1>${fsLiveV4Escape(title)}</h1>
+                ${subtitle ? `<span>${fsLiveV4Escape(subtitle)}</span>` : ""}
+            </div>
+        </div>
+    `;
+}
+
+function fsLiveV4BottomNav(active) {
+    const items = [
+        ["home", "Home", "openLiveAppV4HomePage"],
+        ["scanner", "Scanner", "openLiveAppV4ScannerPage"],
+        ["recovery", "Recovery", "openLiveAppV4RecoveryPage"],
+        ["progress", "Progress", "openLiveAppV4ProgressPage"],
+        ["coach", "Coach", "openLiveAppV4CoachPage"],
+        ["settings", "Settings", "openLiveAppV4SettingsPage"]
+    ];
+
+    return `
+        <div class="fs-live-v4-bottom-nav">
+            ${items.map(function(item) {
+                const key = item[0];
+                const label = item[1];
+                const fn = item[2];
+
+                return `
+                    <button class="${active === key ? "active" : ""}" data-v4-nav="${fn}">
+                        <span>${fsLiveV4Escape(label)}</span>
+                    </button>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+function fsLiveV4BindNav() {
+    document.querySelectorAll("[data-v4-nav]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const fn = button.getAttribute("data-v4-nav");
+            if (typeof window[fn] === "function") {
+                window[fn]();
+            }
+        });
+    });
+}
+
+function fsLiveV4DecisionCard() {
+    const state = fsLiveV4GetState();
+    const decision = state.lastDecision || {
+        title: "Protection ready",
+        message: "Shield is ready. Scan a test domain or open a module."
+    };
+
+    return `
+        <div class="card fs-live-v4-decision-card">
+            <h2>Latest Decision</h2>
+            <h3>${fsLiveV4Escape(decision.title)}</h3>
+            <p>${fsLiveV4Escape(decision.message)}</p>
+        </div>
+    `;
+}
+
+function openLiveAppV4HomePage() {
+    const stats = fsLiveV4Stats();
+    const state = fsLiveV4GetState();
+
+    showPage(`
+        ${fsLiveV4Header("Home", "Main live app shell")}
+
+        <div class="card fs-live-v4-hero-card">
+            <h2>${state.protectionOn === false ? "Shield Paused" : "Shield Active"}</h2>
+            <p>Today’s protection summary and discipline system are now connected into one app shell.</p>
+
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${stats.attemptsToday}</strong><span>Today</span></div>
+                <div><strong>${stats.attemptsTotal}</strong><span>Blocks</span></div>
+                <div><strong>${stats.recoveriesTotal}</strong><span>Recoveries</span></div>
+                <div><strong>${stats.recoveryRate}%</strong><span>Recovery</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-live-v4-mission-card">
+            <h2>Today’s Mission</h2>
+            <p>Protect your focus, pause before reacting, and choose your goals over impulses.</p>
+            <h3>“I pause, I listen, and I follow my dreams.”</h3>
+        </div>
+
+        <div class="card fs-live-v4-module-card">
+            <h2>Quick Modules</h2>
+            <div class="fs-live-v4-module-grid">
+                <button id="v4OpenScanner">Live Scanner</button>
+                <button id="v4OpenRecovery">Recovery</button>
+                <button id="v4OpenFocusTimer">Focus Timer</button>
+                <button id="v4OpenGoals">Goals</button>
+                <button id="v4OpenCoach">Smart Coach</button>
+                <button id="v4OpenHealth">Health Check</button>
+            </div>
+        </div>
+
+        ${fsLiveV4DecisionCard()}
+
+        ${fsLiveV4BottomNav("home")}
+    `);
+
+    document.getElementById("v4OpenScanner").addEventListener("click", openLiveAppV4ScannerPage);
+    document.getElementById("v4OpenRecovery").addEventListener("click", openLiveAppV4RecoveryPage);
+
+    document.getElementById("v4OpenFocusTimer").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Focus Timer", ["openFocusTimerPage", "openFocusPage", "openTimerPage", "openFocusModePage"], "Focus Timer will be integrated here.");
+    });
+
+    document.getElementById("v4OpenGoals").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Goals", ["openGoalsPage", "openGoalPage", "showGoalsPage"], "Goals and affirmations will be integrated here.");
+    });
+
+    document.getElementById("v4OpenCoach").addEventListener("click", openLiveAppV4CoachPage);
+
+    document.getElementById("v4OpenHealth").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("System Health Check", ["openSystemHealthPage", "openHealthCheckPage", "showSystemHealthPage"], "System Health Check will be integrated inside Settings.");
+    });
+
+    fsLiveV4BindNav();
+}
+
+function openLiveAppV4ScannerPage() {
+    showPage(`
+        ${fsLiveV4Header("Scanner", "Live protection scanner")}
+
+        <div class="card fs-live-v4-scanner-card">
+            <h2>Live URL Scanner</h2>
+            <p>Type a safe test domain and scan it.</p>
+
+            <div class="fs-live-v4-scanner-row">
+                <input id="v4ScannerInput" type="text" placeholder="study-example.com or blocked-example.com">
+                <button id="v4ScanBtn">Scan</button>
+            </div>
+
+            <p>Try: <strong>study-example.com</strong> or <strong>blocked-example.com</strong></p>
+        </div>
+
+        <div class="card fs-live-v4-module-card">
+            <h2>One-Tap Tests</h2>
+            <button id="v4SafeBtn">Test Safe Domain</button>
+            <button id="v4BlockedBtn">Test Blocked Domain</button>
+        </div>
+
+        ${fsLiveV4DecisionCard()}
+
+        ${fsLiveV4BottomNav("scanner")}
+    `);
+
+    function scanDomain(raw) {
+        const domain = fsLiveV4NormalizeDomain(raw);
+
+        if (!domain) {
+            const state = fsLiveV4GetState();
+            state.lastDecision = {
+                type: "PAUSED",
+                title: "Input needed",
+                message: "Type a domain first, then scan it.",
+                time: new Date().toISOString()
+            };
+            fsLiveV4SaveState(state);
+            openLiveAppV4ScannerPage();
+            return;
+        }
+
+        if (fsLiveV4IsBlocked(domain)) {
+            const attempt = fsLiveV4AddBlockedAttempt(domain);
+            openLiveAppV4InterventionPage(attempt.id);
+        } else {
+            fsLiveV4AllowDomain(domain);
+            openLiveAppV4ScannerPage();
+        }
+    }
+
+    document.getElementById("v4ScanBtn").addEventListener("click", function() {
+        scanDomain(document.getElementById("v4ScannerInput").value);
+    });
+
+    document.getElementById("v4ScannerInput").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            scanDomain(document.getElementById("v4ScannerInput").value);
+        }
+    });
+
+    document.getElementById("v4SafeBtn").addEventListener("click", function() {
+        fsLiveV4AllowDomain("study-example.com");
+        openLiveAppV4ScannerPage();
+    });
+
+    document.getElementById("v4BlockedBtn").addEventListener("click", function() {
+        const attempt = fsLiveV4AddBlockedAttempt("blocked-example.com");
+        openLiveAppV4InterventionPage(attempt.id);
+    });
+
+    fsLiveV4BindNav();
+}
+
+function openLiveAppV4InterventionPage(attemptId) {
+    const state = fsLiveV4GetState();
+    const attempts = Array.isArray(state.attempts) ? state.attempts : [];
+    const attempt = attempts.find(function(item) {
+        return String(item.id) === String(attemptId);
+    });
+
+    showPage(`
+        ${fsLiveV4Header("Intervention", "Choose recovery")}
+
+        <div class="card fs-live-v4-intervention-card">
+            <h2>Shield Blocked A Distraction</h2>
+            <p>${attempt ? fsLiveV4Escape(attempt.domain) : "Blocked test domain"} was stopped by Focus Shield.</p>
+            <h3>“I pause, I listen, and I follow my dreams.”</h3>
+        </div>
+
+        <div class="card fs-live-v4-module-card">
+            <h2>Recovery Actions</h2>
+            <button id="v4ChooseGoalsBtn">I choose my goals</button>
+            <button id="v4EmergencyBtn">Emergency Reset</button>
+            <button id="v4FocusTimerBtn">Take me to Focus Timer</button>
+        </div>
+
+        ${fsLiveV4BottomNav("recovery")}
+    `);
+
+    document.getElementById("v4ChooseGoalsBtn").addEventListener("click", function() {
+        fsLiveV4MarkLatestRecovered("Recovery completed");
+        openLiveAppV4RecoveryPage();
+    });
+
+    document.getElementById("v4EmergencyBtn").addEventListener("click", function() {
+        fsLiveV4MarkLatestRecovered("Emergency reset completed");
+        openLiveAppV4RecoveryPage();
+    });
+
+    document.getElementById("v4FocusTimerBtn").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Focus Timer", ["openFocusTimerPage", "openFocusPage", "openTimerPage", "openFocusModePage"], "Focus Timer will be integrated here.");
+    });
+
+    fsLiveV4BindNav();
+}
+
+function openLiveAppV4RecoveryPage() {
+    const stats = fsLiveV4Stats();
+
+    showPage(`
+        ${fsLiveV4Header("Recovery", "Reset and return")}
+
+        <div class="card fs-live-v4-recovery-card">
+            <h2>${stats.recoveryRate >= 100 ? "You are clear" : "Recovery available"}</h2>
+            <p>Use Emergency Reset anytime you need to calm your mind and return to your goals.</p>
+        </div>
+
+        <div class="card fs-live-v4-breathe-card">
+            <div class="fs-live-v4-breathe-circle">Breathe</div>
+            <h2>Quick Reset</h2>
+            <p>Pause, breathe, and return to your discipline statement.</p>
+            <button id="v4EmergencyResetBtn">Open Emergency Reset</button>
+            <button id="v4MarkRecoveredBtn">Mark Latest As Recovered</button>
+        </div>
+
+        <div class="card fs-live-v4-mission-card">
+            <h2>Your Discipline Statement</h2>
+            <h3>“I pause, I listen, and I follow my dreams.”</h3>
+        </div>
+
+        ${fsLiveV4BottomNav("recovery")}
+    `);
+
+    document.getElementById("v4EmergencyResetBtn").addEventListener("click", function() {
+        fsLiveV4MarkLatestRecovered("Emergency reset completed");
+        openLiveAppV4RecoveryPage();
+    });
+
+    document.getElementById("v4MarkRecoveredBtn").addEventListener("click", function() {
+        fsLiveV4MarkLatestRecovered("Recovery completed");
+        openLiveAppV4RecoveryPage();
+    });
+
+    fsLiveV4BindNav();
+}
+
+function openLiveAppV4ProgressPage() {
+    const stats = fsLiveV4Stats();
+
+    showPage(`
+        ${fsLiveV4Header("Progress", "XP, badges, wins")}
+
+        <div class="card fs-live-v4-hero-card">
+            <h2>Protection Progress</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${stats.attemptsToday}</strong><span>Today</span></div>
+                <div><strong>${stats.attemptsTotal}</strong><span>Blocks</span></div>
+                <div><strong>${stats.recoveriesTotal}</strong><span>Recoveries</span></div>
+                <div><strong>${stats.recoveryRate}%</strong><span>Recovery</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-live-v4-module-card">
+            <h2>Progress Modules</h2>
+            <div class="fs-live-v4-module-grid">
+                <button id="v4ListeningWins">Listening Wins</button>
+                <button id="v4Badges">Badges</button>
+                <button id="v4Charts">Charts</button>
+                <button id="v4Timeline">Timeline</button>
+                <button id="v4Reflection">Daily Reflection</button>
+                <button id="v4Concentration">Concentration Trainer</button>
+            </div>
+        </div>
+
+        ${fsLiveV4BottomNav("progress")}
+    `);
+
+    document.getElementById("v4ListeningWins").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Listening Wins", ["openProgressPage", "openListeningWinsPage", "showProgressPage"], "Listening wins and progress tracker will be integrated here.");
+    });
+
+    document.getElementById("v4Badges").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Badges", ["openBadgesPage", "openAchievementsPage", "showBadgesPage"], "Badges and achievements will be integrated here.");
+    });
+
+    document.getElementById("v4Charts").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Charts", ["openChartsPage", "openWeeklyIntelligencePage", "showChartsPage"], "Charts and weekly intelligence will be integrated here.");
+    });
+
+    document.getElementById("v4Timeline").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Timeline", ["openTimelinePage", "openDailyTimelinePage", "showTimelinePage"], "Timeline will be integrated here.");
+    });
+
+    document.getElementById("v4Reflection").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Daily Reflection", ["openDailyReflectionPage", "openReflectionPage", "showReflectionPage"], "Daily Reflection will be integrated here.");
+    });
+
+    document.getElementById("v4Concentration").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Concentration Trainer", ["openConcentrationTrainerPage", "openConcentrationPage", "showConcentrationPage"], "Concentration Trainer will be integrated here.");
+    });
+
+    fsLiveV4BindNav();
+}
+
+function openLiveAppV4CoachPage() {
+    showPage(`
+        ${fsLiveV4Header("Coach", "Smart guidance")}
+
+        <div class="card fs-live-v4-coach-card">
+            <h2>Smart Coach</h2>
+            <p>Use your attempts, recoveries, reflections, and goals to guide your next discipline step.</p>
+            <h3>Today’s coaching focus: return quickly after forgetting.</h3>
+        </div>
+
+        <div class="card fs-live-v4-module-card">
+            <h2>Coach Modules</h2>
+            <div class="fs-live-v4-module-grid">
+                <button id="v4SmartCoach">Smart Coach</button>
+                <button id="v4Weekly">Weekly Intelligence</button>
+                <button id="v4StartPlan">Daily Start Plan</button>
+                <button id="v4EndReview">Daily End Review</button>
+                <button id="v4EndHistory">Review History</button>
+                <button id="v4GoalsCoach">Goals</button>
+            </div>
+        </div>
+
+        ${fsLiveV4BottomNav("coach")}
+    `);
+
+    document.getElementById("v4SmartCoach").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Smart Coach", ["openCoachPage", "openSmartCoachPage", "showCoachPage"], "Smart Coach will be integrated here.");
+    });
+
+    document.getElementById("v4Weekly").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Weekly Intelligence", ["openWeeklyIntelligencePage", "openWeeklyReportPage", "showWeeklyPage"], "Weekly Intelligence will be integrated here.");
+    });
+
+    document.getElementById("v4StartPlan").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Daily Start Plan", ["openDailyStartPlanPage", "openStartPlanPage", "showStartPlanPage"], "Daily Start Plan will be integrated here.");
+    });
+
+    document.getElementById("v4EndReview").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Daily End Review", ["openDailyEndReviewPage", "openEndReviewPage", "showEndReviewPage"], "Daily End Review will be integrated here.");
+    });
+
+    document.getElementById("v4EndHistory").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("End Review History", ["openEndReviewHistoryPage", "openReviewHistoryPage", "showReviewHistoryPage"], "End Review History will be integrated here.");
+    });
+
+    document.getElementById("v4GoalsCoach").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Goals", ["openGoalsPage", "openGoalPage", "showGoalsPage"], "Goals will be integrated here.");
+    });
+
+    fsLiveV4BindNav();
+}
+
+function openLiveAppV4SettingsPage() {
+    showPage(`
+        ${fsLiveV4Header("Settings", "Protection control")}
+
+        <div class="card fs-live-v4-settings-card">
+            <h2>Protection Settings</h2>
+            <p>Connect the protection database, lock layer, backup center, and system health into the new shell.</p>
+        </div>
+
+        <div class="card fs-live-v4-module-card">
+            <h2>Settings Modules</h2>
+            <div class="fs-live-v4-module-grid">
+                <button id="v4ProtectionDb">Protection Database</button>
+                <button id="v4UrlEngine">URL Engine</button>
+                <button id="v4AttemptIntel">Attempt Intelligence</button>
+                <button id="v4LockLayer">Lock Layer</button>
+                <button id="v4Backup">Backup Center</button>
+                <button id="v4Health">System Health</button>
+            </div>
+        </div>
+
+        ${fsLiveV4BottomNav("settings")}
+    `);
+
+    document.getElementById("v4ProtectionDb").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Protection Database", ["openProtectionDatabasePage", "openProtectionDbPage", "showProtectionDatabasePage"], "Protection Database will be integrated here.");
+    });
+
+    document.getElementById("v4UrlEngine").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("URL Analysis Engine", ["openUrlAnalysisEnginePage", "openUrlEnginePage", "showUrlAnalysisPage"], "URL Analysis Engine will be integrated here.");
+    });
+
+    document.getElementById("v4AttemptIntel").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Blocked Attempt Intelligence", ["openBlockedAttemptIntelligencePage", "openAttemptIntelligencePage", "showAttemptIntelPage"], "Blocked Attempt Intelligence will be integrated here.");
+    });
+
+    document.getElementById("v4LockLayer").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Protection Lock Layer", ["openProtectionLockPage", "openLockLayerPage", "showLockPage"], "Lock Layer will be integrated here.");
+    });
+
+    document.getElementById("v4Backup").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("Backup Center", ["openProtectionBackupPage", "openBackupPage", "showBackupPage"], "Backup Center will be integrated here.");
+    });
+
+    document.getElementById("v4Health").addEventListener("click", function() {
+        fsLiveV4OpenOldModule("System Health Check", ["openSystemHealthPage", "openHealthCheckPage", "showSystemHealthPage"], "System Health Check will be integrated here.");
+    });
+
+    fsLiveV4BindNav();
+}
+
+function insertLiveAppV4HomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV4HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveActionHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV4HomeCard";
+    card.className = "card fs-live-v4-home-card";
+    card.innerHTML = `
+        <h2>Live App v4</h2>
+        <h3>Main App Integration</h3>
+        <p>Home, Scanner, Recovery, Progress, Coach, and Settings are now organized in one live shell.</p>
+        <button id="openLiveAppV4HomeBtn">Open Live App v4</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openLiveAppV4HomeBtn").addEventListener("click", openLiveAppV4HomePage);
+}
+
+function addLiveAppV4QuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickLiveAppV4Btn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickLiveAppV4Btn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-main-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">V4</span>
+        <span class="premium-quick-label">Live App</span>
+        <span class="premium-quick-sub">Main shell</span>
+    `;
+
+    button.addEventListener("click", openLiveAppV4HomePage);
+    grid.appendChild(button);
+}
+
+function refreshLiveAppV4Systems() {
+    setTimeout(insertLiveAppV4HomeCard, 1000);
+    setTimeout(insertLiveAppV4HomeCard, 2300);
+    setTimeout(insertLiveAppV4HomeCard, 3700);
+
+    setTimeout(addLiveAppV4QuickButton, 1100);
+    setTimeout(addLiveAppV4QuickButton, 2400);
+    setTimeout(addLiveAppV4QuickButton, 3700);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV4GoHomeWrapped) {
+    window.fsLiveAppV4GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV4 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV4.apply(this, arguments);
+        setTimeout(refreshLiveAppV4Systems, 1500);
+    };
+}
+
+refreshLiveAppV4Systems();
 
 </script>
 
