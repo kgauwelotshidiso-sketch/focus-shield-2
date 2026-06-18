@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3frepostarters1">
+    <link rel="stylesheet" href="style.css?v=phase3gdbprovider1">
 </head>
 <body>
 
@@ -21520,6 +21520,278 @@ if (typeof goHome === "function" && !window.fsRepoStarterGoHomeWrapped) {
 }
 
 refreshRepositoryStarterSystems();
+
+
+/* Phase 3G Database Provider Connection Plan */
+function fsDbProviderEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsDbProviderGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3GChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsDbProviderSaveChecklist(data) {
+    localStorage.setItem("fsPhase3GChecklist", JSON.stringify(data || {}));
+}
+
+function fsDbProviderToggleItem(key) {
+    const data = fsDbProviderGetChecklist();
+    data[key] = !data[key];
+    fsDbProviderSaveChecklist(data);
+    openDatabaseProviderPlanPage();
+}
+
+function fsDbProviderItems() {
+    return [
+        "provider",
+        "initializer",
+        "connectionPlan",
+        "startupOrder",
+        "repositoryFlow",
+        "migrationPlan",
+        "safetyRules",
+        "docs"
+    ];
+}
+
+function fsDbProviderProgress() {
+    const items = fsDbProviderItems();
+    const data = fsDbProviderGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsDbProviderCheckItem(key, label, detail) {
+    const data = fsDbProviderGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-db-provider-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsDbProviderEscape(label)}</strong>
+                <p>${fsDbProviderEscape(detail)}</p>
+            </div>
+            <button data-db-provider-key="${fsDbProviderEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openDatabaseProviderPlanPage() {
+    const progress = fsDbProviderProgress();
+
+    showPage(`
+        <h1>Phase 3G Database Provider</h1>
+
+        <div class="card fs-db-provider-hero-card">
+            <h2>Database Provider Connection Plan</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This defines how the future Flutter app connects repositories to SQLite safely.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} connection groups confirmed.</p>
+        </div>
+
+        <div class="card fs-db-provider-warning-card">
+            <h2>Important</h2>
+            <p>This is still a connection plan. The real sqflite package and live SQL queries come later.</p>
+        </div>
+
+        <div class="card fs-db-provider-flow-card">
+            <h2>Correct Data Flow</h2>
+            <p><strong>Flutter Screen</strong></p>
+            <p>↓</p>
+            <p><strong>Dart Service</strong></p>
+            <p>↓</p>
+            <p><strong>Repository / DAO</strong></p>
+            <p>↓</p>
+            <p><strong>DatabaseProvider</strong></p>
+            <p>↓</p>
+            <p><strong>SQLite</strong></p>
+        </div>
+
+        <div class="card fs-db-provider-startup-card">
+            <h2>Safe Startup Order</h2>
+            <p><strong>1.</strong> Open DatabaseProvider.</p>
+            <p><strong>2.</strong> Create schema if database is new.</p>
+            <p><strong>3.</strong> Run migrations if database version changed.</p>
+            <p><strong>4.</strong> Create repository instances.</p>
+            <p><strong>5.</strong> Inject repositories into services.</p>
+            <p><strong>6.</strong> Inject services into screens.</p>
+            <p><strong>7.</strong> Start protection engine.</p>
+            <p><strong>8.</strong> Start native VPN/DNS layer only after protection engine is ready.</p>
+        </div>
+
+        <div class="card fs-db-provider-files-card">
+            <h2>Created / Updated Files</h2>
+            <p><strong>flutter_starter/lib/database/database_provider.dart</strong></p>
+            <p><strong>flutter_starter/lib/database/database_initializer.dart</strong></p>
+            <p><strong>flutter_starter/lib/database/database_connection_plan.dart</strong></p>
+            <p><strong>flutter_starter/docs/database_provider_connection_plan.md</strong></p>
+        </div>
+
+        <div class="card fs-db-provider-migration-card">
+            <h2>Migration Version Handling</h2>
+            <p><strong>AppDatabase.databaseVersion</strong> controls schema version.</p>
+            <p><strong>onCreate</strong> should run all starter create statements.</p>
+            <p><strong>onUpgrade</strong> should run safe versioned migrations.</p>
+            <p><strong>Rule:</strong> never delete user data during migration unless the user intentionally resets it.</p>
+        </div>
+
+        <div class="card fs-db-provider-safety-card">
+            <h2>Safety Rules</h2>
+            <p><strong>Rule 1:</strong> Database initializes before protection engine.</p>
+            <p><strong>Rule 2:</strong> Screens never query SQLite directly.</p>
+            <p><strong>Rule 3:</strong> VPN filtering waits for blocklist repository readiness.</p>
+            <p><strong>Rule 4:</strong> Privacy mode is checked before saving blocked attempts.</p>
+            <p><strong>Rule 5:</strong> PIN is never stored in plain text.</p>
+        </div>
+
+        <div class="card fs-db-provider-checklist-card">
+            <h2>Phase 3G Checklist</h2>
+            ${fsDbProviderCheckItem("provider", "DatabaseProvider confirmed", "database_provider.dart starter updated.")}
+            ${fsDbProviderCheckItem("initializer", "DatabaseInitializer confirmed", "initializer file created for safe startup.")}
+            ${fsDbProviderCheckItem("connectionPlan", "Connection plan confirmed", "database_connection_plan.dart created.")}
+            ${fsDbProviderCheckItem("startupOrder", "Startup order confirmed", "Database before repositories, services, protection engine, VPN.")}
+            ${fsDbProviderCheckItem("repositoryFlow", "Repository flow confirmed", "Screens → Services → Repositories → DatabaseProvider → SQLite.")}
+            ${fsDbProviderCheckItem("migrationPlan", "Migration plan confirmed", "onCreate and onUpgrade rules are defined.")}
+            ${fsDbProviderCheckItem("safetyRules", "Safety rules confirmed", "Privacy, PIN, VPN readiness, and data preservation rules.")}
+            ${fsDbProviderCheckItem("docs", "Documentation confirmed", "database_provider_connection_plan.md created.")}
+        </div>
+
+        <div class="card fs-db-provider-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3H: Protection Engine Database Integration Plan</h3>
+            <p>Next we define how the Dart ProtectionEngine uses BlockedDomainRepository and BlockedAttemptRepository.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-db-provider-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsDbProviderToggleItem(button.getAttribute("data-db-provider-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertDatabaseProviderHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("dbProviderHomeCard")) return;
+
+    const progress = fsDbProviderProgress();
+
+    const insertAfter =
+        document.getElementById("repoStarterHomeCard") ||
+        document.getElementById("sqliteSchemaHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "dbProviderHomeCard";
+    card.className = "card fs-db-provider-home-card";
+    card.innerHTML = `
+        <h2>Phase 3G Database Provider</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Connection plan for repositories, database provider, migrations, and safe startup.</p>
+        <button id="openDbProviderHomeBtn">Open Database Provider</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openDbProviderHomeBtn").addEventListener("click", openDatabaseProviderPlanPage);
+}
+
+function addDatabaseProviderQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickDbProviderBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickDbProviderBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3G</span>
+        <span class="premium-quick-label">DB Provider</span>
+        <span class="premium-quick-sub">Connection plan</span>
+    `;
+
+    button.addEventListener("click", openDatabaseProviderPlanPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3G to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsDbProviderHealthWrapped) {
+    window.fsDbProviderHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksDbProvider = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksDbProvider();
+        const progress = fsDbProviderProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3G Database Provider Connection Plan";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3G Database Provider Connection Plan",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Database provider connection plan progress: " + progress.percent + "%.",
+                "Open Phase 3G Database Provider and confirm all connection groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshDatabaseProviderSystems() {
+    setTimeout(insertDatabaseProviderHomeCard, 1100);
+    setTimeout(insertDatabaseProviderHomeCard, 2300);
+    setTimeout(insertDatabaseProviderHomeCard, 3600);
+
+    setTimeout(addDatabaseProviderQuickButton, 1200);
+    setTimeout(addDatabaseProviderQuickButton, 2400);
+    setTimeout(addDatabaseProviderQuickButton, 3600);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsDbProviderGoHomeWrapped) {
+    window.fsDbProviderGoHomeWrapped = true;
+
+    const oldGoHomeDbProvider = goHome;
+
+    goHome = function() {
+        oldGoHomeDbProvider.apply(this, arguments);
+        setTimeout(refreshDatabaseProviderSystems, 1800);
+    };
+}
+
+refreshDatabaseProviderSystems();
 
 </script>
 
