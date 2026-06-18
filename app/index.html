@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv41moduleconnector1">
+    <link rel="stylesheet" href="style.css?v=liveappv42concentration1">
 </head>
 <body>
 
@@ -26346,6 +26346,145 @@ if (typeof goHome === "function" && !window.fsLiveAppV41GoHomeWrapped) {
 }
 
 refreshLiveAppV41Systems();
+
+
+/* Live App v4.2 Concentration Trainer Connector */
+function fsConcentrationGetState() {
+    try {
+        return JSON.parse(localStorage.getItem("fsConcentrationTrainerState") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsConcentrationSaveState(state) {
+    localStorage.setItem("fsConcentrationTrainerState", JSON.stringify(state || {}));
+}
+
+function fsConcentrationDefaultState() {
+    const state = fsConcentrationGetState();
+
+    return {
+        taps: Number(state.taps || 0),
+        sessions: Number(state.sessions || 0),
+        bestScore: Number(state.bestScore || 0),
+        lastScore: Number(state.lastScore || 0),
+        lastCompletedAt: state.lastCompletedAt || null
+    };
+}
+
+function openConcentrationTrainerPage() {
+    const state = fsConcentrationDefaultState();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Concentration Trainer", "Attention training") : "<h1>Concentration Trainer</h1>"}
+
+        <div class="card fs-concentration-hero-card">
+            <h2>Attention Drill</h2>
+            <p>Train your ability to return your attention after distraction.</p>
+            <h3>Tap the target 10 times with full focus.</h3>
+        </div>
+
+        <div class="card fs-concentration-target-card">
+            <div id="fsConcentrationTarget" class="fs-concentration-target">
+                <span id="fsConcentrationTapCount">${state.taps}</span>
+            </div>
+
+            <p class="fs-concentration-instruction">Tap the circle until you reach 10 focused taps.</p>
+
+            <div class="fs-concentration-progress-bar">
+                <div id="fsConcentrationProgressFill" style="width: ${Math.min(state.taps * 10, 100)}%;"></div>
+            </div>
+
+            <button id="fsConcentrationResetBtn">Reset Drill</button>
+        </div>
+
+        <div class="card fs-concentration-stats-card">
+            <h2>Trainer Stats</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${state.taps}</strong><span>Current Taps</span></div>
+                <div><strong>${state.sessions}</strong><span>Sessions</span></div>
+                <div><strong>${state.bestScore}</strong><span>Best Score</span></div>
+                <div><strong>${state.lastScore}</strong><span>Last Score</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-concentration-affirmation-card">
+            <h2>Focus Statement</h2>
+            <h3>“I pause, I listen, and I follow my dreams.”</h3>
+        </div>
+
+        <button id="fsConcentrationBackBtn">Back to Live App</button>
+    `);
+
+    const target = document.getElementById("fsConcentrationTarget");
+    const count = document.getElementById("fsConcentrationTapCount");
+    const fill = document.getElementById("fsConcentrationProgressFill");
+
+    target.addEventListener("click", function() {
+        const current = fsConcentrationDefaultState();
+
+        if (current.taps >= 10) return;
+
+        current.taps += 1;
+
+        if (current.taps >= 10) {
+            current.sessions += 1;
+            current.lastScore = current.taps;
+            current.bestScore = Math.max(current.bestScore, current.taps);
+            current.lastCompletedAt = new Date().toISOString();
+
+            const liveState = typeof fsLiveDefaultState === "function" ? fsLiveDefaultState() : {};
+            liveState.lastDecision = {
+                type: "RECOVERED",
+                title: "Concentration drill completed",
+                message: "You completed 10 focused taps and strengthened your attention.",
+                time: new Date().toISOString()
+            };
+
+            if (typeof fsLiveSaveState === "function") {
+                fsLiveSaveState(liveState);
+            }
+        }
+
+        fsConcentrationSaveState(current);
+
+        count.textContent = current.taps;
+        fill.style.width = Math.min(current.taps * 10, 100) + "%";
+
+        if (current.taps >= 10) {
+            target.classList.add("fs-concentration-complete");
+            target.innerHTML = "<span>Done</span>";
+        }
+    });
+
+    document.getElementById("fsConcentrationResetBtn").addEventListener("click", function() {
+        const current = fsConcentrationDefaultState();
+        current.taps = 0;
+        fsConcentrationSaveState(current);
+        openConcentrationTrainerPage();
+    });
+
+    document.getElementById("fsConcentrationBackBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV4ProgressPage === "function") {
+            openLiveAppV4ProgressPage();
+        } else if (typeof openLiveAppV4HomePage === "function") {
+            openLiveAppV4HomePage();
+        } else if (typeof goHome === "function") {
+            goHome();
+        }
+    });
+}
+
+/* Aliases for old-module connector */
+window.openConcentrationTrainerPage = openConcentrationTrainerPage;
+window.openConcentrationPage = openConcentrationTrainerPage;
+window.showConcentrationPage = openConcentrationTrainerPage;
+window.showConcentrationTrainerPage = openConcentrationTrainerPage;
+window.renderConcentrationTrainerPage = openConcentrationTrainerPage;
+window.renderConcentrationPage = openConcentrationTrainerPage;
+window.openAttentionTrainerPage = openConcentrationTrainerPage;
+window.openTapTrainerPage = openConcentrationTrainerPage;
 
 </script>
 
