@@ -3268,3 +3268,85 @@ textarea:focus {
         width: 100%;
     }
 }
+
+
+/* Phase 3K MethodChannel Contract Expansion */
+.fs-method-channel-home-card,
+.fs-method-channel-hero-card {
+    border: 1px solid rgba(56, 189, 248, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(14, 116, 144, 0.26));
+}
+
+.fs-method-channel-home-card h3,
+.fs-method-channel-hero-card h3 {
+    color: #38bdf8;
+}
+
+.fs-method-channel-warning-card {
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    background:
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(113, 63, 18, 0.26));
+}
+
+.fs-method-channel-channels-card,
+.fs-method-channel-status-card,
+.fs-method-channel-files-card {
+    border: 1px solid rgba(96, 165, 250, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(96, 165, 250, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 64, 175, 0.24));
+}
+
+.fs-method-channel-methods-card,
+.fs-method-channel-events-card,
+.fs-method-channel-next-card {
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(45, 212, 191, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(13, 148, 136, 0.24));
+}
+
+.fs-method-channel-payload-card,
+.fs-method-channel-safety-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.25));
+}
+
+.fs-method-channel-check-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fs-method-channel-check-row p {
+    margin: 6px 0 0;
+    opacity: 0.82;
+}
+
+.fs-method-channel-check-row button {
+    width: auto;
+    min-width: 110px;
+    padding: 10px 12px;
+}
+
+@media (max-width: 520px) {
+    .fs-method-channel-check-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fs-method-channel-check-row button {
+        width: 100%;
+    }
+}

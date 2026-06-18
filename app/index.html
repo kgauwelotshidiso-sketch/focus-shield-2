@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3jvpnskeleton1">
+    <link rel="stylesheet" href="style.css?v=phase3kmethodchannel1">
 </head>
 <body>
 
@@ -22654,6 +22654,288 @@ if (typeof goHome === "function" && !window.fsVpnSkeletonGoHomeWrapped) {
 }
 
 refreshVpnSkeletonSystems();
+
+
+/* Phase 3K MethodChannel Contract Expansion */
+function fsMethodChannelEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsMethodChannelGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3KChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsMethodChannelSaveChecklist(data) {
+    localStorage.setItem("fsPhase3KChecklist", JSON.stringify(data || {}));
+}
+
+function fsMethodChannelToggleItem(key) {
+    const data = fsMethodChannelGetChecklist();
+    data[key] = !data[key];
+    fsMethodChannelSaveChecklist(data);
+    openMethodChannelContractPage();
+}
+
+function fsMethodChannelItems() {
+    return [
+        "methodChannel",
+        "eventChannel",
+        "flutterMethods",
+        "nativeEvents",
+        "payloads",
+        "validator",
+        "androidNotes",
+        "docs"
+    ];
+}
+
+function fsMethodChannelProgress() {
+    const items = fsMethodChannelItems();
+    const data = fsMethodChannelGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsMethodChannelCheckItem(key, label, detail) {
+    const data = fsMethodChannelGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-method-channel-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsMethodChannelEscape(label)}</strong>
+                <p>${fsMethodChannelEscape(detail)}</p>
+            </div>
+            <button data-method-channel-key="${fsMethodChannelEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openMethodChannelContractPage() {
+    const progress = fsMethodChannelProgress();
+
+    showPage(`
+        <h1>Phase 3K MethodChannel</h1>
+
+        <div class="card fs-method-channel-hero-card">
+            <h2>MethodChannel Contract Expansion</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This defines the exact Flutter ↔ Android communication contract before real VPN implementation.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} contract groups confirmed.</p>
+        </div>
+
+        <div class="card fs-method-channel-warning-card">
+            <h2>Important</h2>
+            <p>This is still contract architecture. It does not activate real VPN filtering.</p>
+        </div>
+
+        <div class="card fs-method-channel-channels-card">
+            <h2>Channels</h2>
+            <p><strong>MethodChannel:</strong> focus_shield/vpn</p>
+            <p>Used for Flutter → Android commands.</p>
+            <p><strong>EventChannel:</strong> focus_shield/vpn_events</p>
+            <p>Used for Android → Flutter events.</p>
+        </div>
+
+        <div class="card fs-method-channel-methods-card">
+            <h2>Flutter → Android Methods</h2>
+            <p><strong>requestVpnPermission</strong> — ask Android for VPN permission.</p>
+            <p><strong>startVpn</strong> — start native VPN service.</p>
+            <p><strong>stopVpn</strong> — request protected VPN stop.</p>
+            <p><strong>isVpnRunning</strong> — return true / false.</p>
+            <p><strong>getVpnStatus</strong> — return stopped, starting, running, stopping, or error.</p>
+        </div>
+
+        <div class="card fs-method-channel-events-card">
+            <h2>Android → Flutter Events</h2>
+            <p><strong>onBlockedDomain</strong> — domain was blocked by protection decision.</p>
+            <p><strong>onVpnStatusChanged</strong> — native protection status changed.</p>
+            <p><strong>onVpnError</strong> — native VPN layer reported an error.</p>
+        </div>
+
+        <div class="card fs-method-channel-payload-card">
+            <h2>Blocked Domain Payload</h2>
+            <p><strong>eventType:</strong> onBlockedDomain</p>
+            <p><strong>domain:</strong> normalized domain</p>
+            <p><strong>category:</strong> protection category</p>
+            <p><strong>reason:</strong> block reason</p>
+            <p><strong>confidence:</strong> decision confidence</p>
+            <p><strong>timestamp:</strong> ISO timestamp</p>
+        </div>
+
+        <div class="card fs-method-channel-status-card">
+            <h2>Status + Error Payloads</h2>
+            <p><strong>Status values:</strong> stopped, starting, running, stopping, error.</p>
+            <p><strong>Error codes:</strong> permission_denied, service_start_failed, engine_unavailable, database_unavailable.</p>
+            <p><strong>Rule:</strong> every event includes timestamp.</p>
+        </div>
+
+        <div class="card fs-method-channel-safety-card">
+            <h2>Safety Rules</h2>
+            <p><strong>1.</strong> Native Android must not write directly to SQLite.</p>
+            <p><strong>2.</strong> Native Android sends events to Flutter.</p>
+            <p><strong>3.</strong> Flutter ProtectionEngine handles decision and logging.</p>
+            <p><strong>4.</strong> Full packet contents must not be sent through MethodChannel.</p>
+            <p><strong>5.</strong> Privacy mode must be applied before attempt logging.</p>
+        </div>
+
+        <div class="card fs-method-channel-files-card">
+            <h2>Created Files</h2>
+            <p><strong>flutter_starter/lib/native/method_channel_contract.dart</strong></p>
+            <p><strong>flutter_starter/lib/native/vpn_method_channel_payloads.dart</strong></p>
+            <p><strong>flutter_starter/lib/native/vpn_method_channel_bridge.dart</strong></p>
+            <p><strong>flutter_starter/lib/native/method_channel_payload_validator.dart</strong></p>
+            <p><strong>flutter_starter/android_native_skeleton/MethodChannelContract_notes.kt</strong></p>
+            <p><strong>flutter_starter/docs/method_channel_contract.md</strong></p>
+        </div>
+
+        <div class="card fs-method-channel-checklist-card">
+            <h2>Phase 3K Checklist</h2>
+            ${fsMethodChannelCheckItem("methodChannel", "MethodChannel confirmed", "focus_shield/vpn command channel defined.")}
+            ${fsMethodChannelCheckItem("eventChannel", "EventChannel confirmed", "focus_shield/vpn_events event channel defined.")}
+            ${fsMethodChannelCheckItem("flutterMethods", "Flutter methods confirmed", "permission, start, stop, status methods defined.")}
+            ${fsMethodChannelCheckItem("nativeEvents", "Native events confirmed", "blocked domain, status, error events defined.")}
+            ${fsMethodChannelCheckItem("payloads", "Payloads confirmed", "Blocked domain, status, and error payloads created.")}
+            ${fsMethodChannelCheckItem("validator", "Payload validator confirmed", "Payload validation starter created.")}
+            ${fsMethodChannelCheckItem("androidNotes", "Android notes confirmed", "Kotlin contract notes created.")}
+            ${fsMethodChannelCheckItem("docs", "Documentation confirmed", "MethodChannel contract documentation created.")}
+        </div>
+
+        <div class="card fs-method-channel-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3L: Android Build Readiness Checklist</h3>
+            <p>Next we verify the full Flutter/native preparation stack before any real Android implementation.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-method-channel-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsMethodChannelToggleItem(button.getAttribute("data-method-channel-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertMethodChannelHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("methodChannelHomeCard")) return;
+
+    const progress = fsMethodChannelProgress();
+
+    const insertAfter =
+        document.getElementById("vpnSkeletonHomeCard") ||
+        document.getElementById("nativeVpnHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "methodChannelHomeCard";
+    card.className = "card fs-method-channel-home-card";
+    card.innerHTML = `
+        <h2>Phase 3K MethodChannel</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Flutter ↔ Android communication contract for future VPN service.</p>
+        <button id="openMethodChannelHomeBtn">Open MethodChannel</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openMethodChannelHomeBtn").addEventListener("click", openMethodChannelContractPage);
+}
+
+function addMethodChannelQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickMethodChannelBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickMethodChannelBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3K</span>
+        <span class="premium-quick-label">Channel</span>
+        <span class="premium-quick-sub">Native bridge</span>
+    `;
+
+    button.addEventListener("click", openMethodChannelContractPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3K to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsMethodChannelHealthWrapped) {
+    window.fsMethodChannelHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksMethodChannel = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksMethodChannel();
+        const progress = fsMethodChannelProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3K MethodChannel Contract Expansion";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3K MethodChannel Contract Expansion",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "MethodChannel contract progress: " + progress.percent + "%.",
+                "Open Phase 3K MethodChannel and confirm all contract groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshMethodChannelSystems() {
+    setTimeout(insertMethodChannelHomeCard, 1300);
+    setTimeout(insertMethodChannelHomeCard, 2700);
+    setTimeout(insertMethodChannelHomeCard, 4000);
+
+    setTimeout(addMethodChannelQuickButton, 1400);
+    setTimeout(addMethodChannelQuickButton, 2800);
+    setTimeout(addMethodChannelQuickButton, 4000);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsMethodChannelGoHomeWrapped) {
+    window.fsMethodChannelGoHomeWrapped = true;
+
+    const oldGoHomeMethodChannel = goHome;
+
+    goHome = function() {
+        oldGoHomeMethodChannel.apply(this, arguments);
+        setTimeout(refreshMethodChannelSystems, 2000);
+    };
+}
+
+refreshMethodChannelSystems();
 
 </script>
 
