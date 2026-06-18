@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv48settings1">
+    <link rel="stylesheet" href="style.css?v=liveappv49default1">
 </head>
 <body>
 
@@ -29878,6 +29878,196 @@ if (typeof goHome === "function" && !window.fsLiveAppV48GoHomeWrapped) {
 
 setTimeout(fsLiveV48AutoOpen, 750);
 refreshLiveAppV48Systems();
+
+
+/* Live App v4.9 Default Home Integration */
+function fsLiveV49Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV49ShouldOpenLiveDefault() {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("classic") === "1") return false;
+    if (params.has("live") || params.has("liveappv49default")) return true;
+
+    return window.location.search === "" || window.location.search === "?";
+}
+
+function fsLiveV49OpenClassicDashboard() {
+    const url = new URL(window.location.href);
+    url.search = "?classic=1";
+    window.location.href = url.toString();
+}
+
+function fsLiveV49OpenLiveApp() {
+    const url = new URL(window.location.href);
+    url.search = "?live=1";
+    window.location.href = url.toString();
+}
+
+function fsLiveV49AddClassicAccessCard() {
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+    if (document.getElementById("fsLiveV49ClassicCard")) return;
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV49ClassicCard";
+    card.className = "card fs-v49-default-card";
+    card.innerHTML = `
+        <h2>Live App v4.9</h2>
+        <h3>Default Home Active</h3>
+        <p>Focus Shield now opens directly into the new live app shell. The old dashboard is still preserved.</p>
+        <button id="fsLiveV49ClassicBtn">Open Classic Dashboard</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+
+    document.getElementById("fsLiveV49ClassicBtn").addEventListener("click", fsLiveV49OpenClassicDashboard);
+}
+
+function fsLiveV49AddLiveReturnCard() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("classic") !== "1") return;
+
+    if (document.getElementById("fsLiveV49ReturnCard")) return;
+
+    const firstCard = document.querySelector(".card");
+    if (!firstCard || !firstCard.parentNode) return;
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV49ReturnCard";
+    card.className = "card fs-v49-return-card";
+    card.innerHTML = `
+        <h2>Classic Dashboard Mode</h2>
+        <p>You are viewing the preserved old dashboard. Nothing has been deleted.</p>
+        <button id="fsLiveV49ReturnBtn">Open New Live App</button>
+    `;
+
+    firstCard.parentNode.insertBefore(card, firstCard);
+
+    document.getElementById("fsLiveV49ReturnBtn").addEventListener("click", fsLiveV49OpenLiveApp);
+}
+
+function fsLiveV49WrapHome() {
+    if (window.fsLiveV49HomeWrapped) return;
+
+    const oldHome =
+        window.openLiveAppV4HomePage ||
+        window.openLiveAppV44HomePage ||
+        window.openLiveAppV49HomePage;
+
+    if (typeof oldHome !== "function") return;
+
+    window.fsLiveV49HomeWrapped = true;
+
+    window.openLiveAppV49HomePage = function() {
+        oldHome.apply(this, arguments);
+        setTimeout(fsLiveV49AddClassicAccessCard, 120);
+        setTimeout(fsLiveV49AddClassicAccessCard, 500);
+    };
+
+    window.openLiveAppV4HomePage = window.openLiveAppV49HomePage;
+    window.openLiveAppV44HomePage = window.openLiveAppV49HomePage;
+}
+
+function fsLiveV49OpenDefaultHome(attempt) {
+    fsLiveV49WrapHome();
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("classic") === "1") {
+        setTimeout(fsLiveV49AddLiveReturnCard, 900);
+        setTimeout(fsLiveV49AddLiveReturnCard, 2200);
+        return;
+    }
+
+    if (!fsLiveV49ShouldOpenLiveDefault()) return;
+    if (window.fsLiveV49DefaultOpened) return;
+
+    const home =
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage ||
+        window.openLiveAppV44HomePage;
+
+    if (typeof home === "function") {
+        window.fsLiveV49DefaultOpened = true;
+        home();
+        setTimeout(fsLiveV49AddClassicAccessCard, 250);
+        return;
+    }
+
+    if ((attempt || 0) < 8) {
+        setTimeout(function() {
+            fsLiveV49OpenDefaultHome((attempt || 0) + 1);
+        }, 500);
+    }
+}
+
+function insertLiveAppV49ClassicDashboardCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV49HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV48HomeCard") ||
+        document.getElementById("liveAppV47HomeCard") ||
+        document.getElementById("liveAppV46HomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV49HomeCard";
+    card.className = "card fs-v49-default-card";
+    card.innerHTML = `
+        <h2>Live App v4.9</h2>
+        <h3>Default Home Ready</h3>
+        <p>The normal Focus Shield link now opens the new live app shell. Classic mode remains preserved.</p>
+        <button id="openLiveAppV49Btn">Open Live App Home</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openLiveAppV49Btn").addEventListener("click", fsLiveV49OpenLiveApp);
+}
+
+function refreshLiveAppV49Systems() {
+    fsLiveV49WrapHome();
+
+    setTimeout(insertLiveAppV49ClassicDashboardCard, 1600);
+    setTimeout(insertLiveAppV49ClassicDashboardCard, 3300);
+    setTimeout(insertLiveAppV49ClassicDashboardCard, 4800);
+
+    setTimeout(fsLiveV49AddLiveReturnCard, 1600);
+    setTimeout(fsLiveV49AddLiveReturnCard, 3300);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV49GoHomeWrapped) {
+    window.fsLiveAppV49GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV49 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV49.apply(this, arguments);
+        setTimeout(refreshLiveAppV49Systems, 2300);
+    };
+}
+
+setTimeout(function() { fsLiveV49OpenDefaultHome(0); }, 850);
+setTimeout(function() { fsLiveV49OpenDefaultHome(0); }, 1800);
+setTimeout(function() { fsLiveV49OpenDefaultHome(0); }, 3200);
+
+refreshLiveAppV49Systems();
 
 </script>
 
