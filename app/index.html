@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=leanliveactionv2">
+    <link rel="stylesheet" href="style.css?v=leanliveactionv21">
 </head>
 <body>
 
@@ -24639,6 +24639,82 @@ function openLiveActionModePage() {
     });
 
     document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+
+/* Lean Build Live Action Mode v2.1 Recovery Rate Fix */
+function fsLiveMarkLatestUnrecoveredAttemptRecovered() {
+    const state = fsLiveDefaultState();
+
+    let linkedAttemptId = null;
+    let marked = false;
+
+    state.attempts = state.attempts.map(function(attempt) {
+        if (!marked && !attempt.recovered) {
+            marked = true;
+            linkedAttemptId = attempt.id;
+            return Object.assign({}, attempt, { recovered: true });
+        }
+
+        return attempt;
+    });
+
+    state.recoveries.unshift({
+        id: Date.now(),
+        attemptId: linkedAttemptId,
+        action: linkedAttemptId
+            ? "Emergency reset completed and latest block marked recovered."
+            : "Emergency reset completed.",
+        time: new Date().toISOString()
+    });
+
+    state.lastDecision = {
+        type: "RECOVERED",
+        title: "Emergency reset completed",
+        message: linkedAttemptId
+            ? "You paused, reset, and recovered from the latest blocked attempt."
+            : "You paused, reset, and returned to your goals.",
+        time: new Date().toISOString()
+    };
+
+    fsLiveSaveState(state);
+}
+
+function fsLiveOpenEmergencyResetPage() {
+    showPage(`
+        <h1>Emergency Reset</h1>
+
+        <div class="card fs-live-reset-hero-card">
+            <h2>Pause. Breathe. Reset.</h2>
+            <p>This is your quick reset screen when you feel pulled away from your goals.</p>
+        </div>
+
+        <div class="card fs-live-breathing-card">
+            <div class="fs-live-breathing-circle">
+                <span>Breathe</span>
+            </div>
+            <h2>60-Second Reset</h2>
+            <p><strong>Step 1:</strong> Inhale slowly.</p>
+            <p><strong>Step 2:</strong> Hold for a moment.</p>
+            <p><strong>Step 3:</strong> Exhale slowly.</p>
+            <p><strong>Step 4:</strong> Repeat and return to your goals.</p>
+        </div>
+
+        <div class="card fs-live-affirmation-card">
+            <h2>Your Discipline Statement</h2>
+            <p class="fs-live-affirmation">“I pause, I listen, and I follow my dreams.”</p>
+        </div>
+
+        <button id="fsLiveResetCompleteBtn">I am back in control</button>
+        <button id="backBtn">Back to Live Mode</button>
+    `);
+
+    document.getElementById("fsLiveResetCompleteBtn").addEventListener("click", function() {
+        fsLiveMarkLatestUnrecoveredAttemptRecovered();
+        openLiveActionModePage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openLiveActionModePage);
 }
 
 </script>
