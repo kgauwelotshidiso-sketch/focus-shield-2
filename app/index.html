@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=urlenginehealthfix1">
+    <link rel="stylesheet" href="style.css?v=phase3landroidready1">
 </head>
 <body>
 
@@ -22985,6 +22985,293 @@ if (typeof runFocusShieldHealthChecks === "function" && !window.fsUrlEngineHealt
         });
     };
 }
+
+
+/* Phase 3L Android Build Readiness Checklist */
+function fsAndroidReadyEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsAndroidReadyGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3LChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsAndroidReadySaveChecklist(data) {
+    localStorage.setItem("fsPhase3LChecklist", JSON.stringify(data || {}));
+}
+
+function fsAndroidReadyToggleItem(key) {
+    const data = fsAndroidReadyGetChecklist();
+    data[key] = !data[key];
+    fsAndroidReadySaveChecklist(data);
+    openAndroidBuildReadinessPage();
+}
+
+function fsAndroidReadyItems() {
+    return [
+        "flutterStarter",
+        "sqliteSchema",
+        "repositories",
+        "databaseProvider",
+        "engineIntegration",
+        "nativePlan",
+        "vpnSkeleton",
+        "methodChannel",
+        "safetyRules",
+        "buildOrder"
+    ];
+}
+
+function fsAndroidReadyProgress() {
+    const items = fsAndroidReadyItems();
+    const data = fsAndroidReadyGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsAndroidReadyCheckItem(key, label, detail) {
+    const data = fsAndroidReadyGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-android-ready-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsAndroidReadyEscape(label)}</strong>
+                <p>${fsAndroidReadyEscape(detail)}</p>
+            </div>
+            <button data-android-ready-key="${fsAndroidReadyEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openAndroidBuildReadinessPage() {
+    const progress = fsAndroidReadyProgress();
+
+    showPage(`
+        <h1>Phase 3L Android Readiness</h1>
+
+        <div class="card fs-android-ready-hero-card">
+            <h2>Android Build Readiness Checklist</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This verifies the full Flutter/native preparation stack before real Android implementation begins.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} readiness gates confirmed.</p>
+        </div>
+
+        <div class="card fs-android-ready-warning-card">
+            <h2>Important</h2>
+            <p>This is a readiness checkpoint. It does not activate real VPN filtering.</p>
+        </div>
+
+        <div class="card fs-android-ready-stack-card">
+            <h2>Prepared Stack</h2>
+            <p><strong>Phase 3A:</strong> Android / Flutter migration roadmap.</p>
+            <p><strong>Phase 3B:</strong> Flutter project blueprint.</p>
+            <p><strong>Phase 3C:</strong> Flutter starter files.</p>
+            <p><strong>Phase 3D:</strong> Data migration specification.</p>
+            <p><strong>Phase 3E:</strong> SQLite schema starter upgrade.</p>
+            <p><strong>Phase 3F:</strong> Repository / DAO starters.</p>
+            <p><strong>Phase 3G:</strong> Database provider connection plan.</p>
+            <p><strong>Phase 3H:</strong> ProtectionEngine database integration.</p>
+            <p><strong>Phase 3I:</strong> Native VPN / DNS preparation.</p>
+            <p><strong>Phase 3J:</strong> Native VPN service skeleton.</p>
+            <p><strong>Phase 3K:</strong> MethodChannel contract expansion.</p>
+        </div>
+
+        <div class="card fs-android-ready-gates-card">
+            <h2>Readiness Gates</h2>
+            <p><strong>Gate 1:</strong> Flutter starter files exist.</p>
+            <p><strong>Gate 2:</strong> SQLite schema v1 exists.</p>
+            <p><strong>Gate 3:</strong> Repository starter layer exists.</p>
+            <p><strong>Gate 4:</strong> Database provider plan exists.</p>
+            <p><strong>Gate 5:</strong> ProtectionEngine uses repositories.</p>
+            <p><strong>Gate 6:</strong> Native VPN/DNS architecture exists.</p>
+            <p><strong>Gate 7:</strong> Kotlin skeleton files exist.</p>
+            <p><strong>Gate 8:</strong> MethodChannel contract exists.</p>
+            <p><strong>Gate 9:</strong> Privacy and safety rules are documented.</p>
+            <p><strong>Gate 10:</strong> Build order is clear.</p>
+        </div>
+
+        <div class="card fs-android-ready-notready-card">
+            <h2>Not Ready If</h2>
+            <p><strong>Not ready</strong> if native layer writes directly to SQLite.</p>
+            <p><strong>Not ready</strong> if VPN starts before user permission.</p>
+            <p><strong>Not ready</strong> if ProtectionEngine bypasses repositories.</p>
+            <p><strong>Not ready</strong> if privacy mode is ignored.</p>
+            <p><strong>Not ready</strong> if delayed disable is bypassed.</p>
+            <p><strong>Not ready</strong> if intervention flow is missing.</p>
+        </div>
+
+        <div class="card fs-android-ready-order-card">
+            <h2>Correct Build Order After Phase 3L</h2>
+            <p><strong>1.</strong> Create real Flutter project.</p>
+            <p><strong>2.</strong> Add starter lib files.</p>
+            <p><strong>3.</strong> Add sqflite and database initialization.</p>
+            <p><strong>4.</strong> Implement repositories with real SQL queries.</p>
+            <p><strong>5.</strong> Connect ProtectionEngine to repositories.</p>
+            <p><strong>6.</strong> Build Flutter UI screens.</p>
+            <p><strong>7.</strong> Add native MethodChannel implementation.</p>
+            <p><strong>8.</strong> Add VPN permission flow.</p>
+            <p><strong>9.</strong> Add non-filtering VPN service test.</p>
+            <p><strong>10.</strong> Add DNS/domain detection prototype.</p>
+            <p><strong>11.</strong> Connect BLOCK decisions to intervention and logging.</p>
+            <p><strong>12.</strong> Test privacy, battery, and safety behavior.</p>
+        </div>
+
+        <div class="card fs-android-ready-files-card">
+            <h2>Created Files</h2>
+            <p><strong>flutter_starter/docs/android_build_readiness_checklist.md</strong></p>
+            <p><strong>flutter_starter/lib/native/android_build_readiness_checklist.dart</strong></p>
+        </div>
+
+        <div class="card fs-android-ready-checklist-card">
+            <h2>Phase 3L Checklist</h2>
+            ${fsAndroidReadyCheckItem("flutterStarter", "Flutter starter confirmed", "Phase 3C starter files exist.")}
+            ${fsAndroidReadyCheckItem("sqliteSchema", "SQLite schema confirmed", "Phase 3E schema v1 exists.")}
+            ${fsAndroidReadyCheckItem("repositories", "Repositories confirmed", "Phase 3F repository starters exist.")}
+            ${fsAndroidReadyCheckItem("databaseProvider", "Database provider confirmed", "Phase 3G provider plan exists.")}
+            ${fsAndroidReadyCheckItem("engineIntegration", "Engine integration confirmed", "Phase 3H ProtectionEngine database plan exists.")}
+            ${fsAndroidReadyCheckItem("nativePlan", "Native VPN/DNS plan confirmed", "Phase 3I native architecture exists.")}
+            ${fsAndroidReadyCheckItem("vpnSkeleton", "VPN skeleton confirmed", "Phase 3J Kotlin skeleton exists.")}
+            ${fsAndroidReadyCheckItem("methodChannel", "MethodChannel confirmed", "Phase 3K channel contract exists.")}
+            ${fsAndroidReadyCheckItem("safetyRules", "Safety rules confirmed", "Privacy, packet, permission, and delayed-disable rules are documented.")}
+            ${fsAndroidReadyCheckItem("buildOrder", "Build order confirmed", "Real Android implementation order is defined.")}
+        </div>
+
+        <div class="card fs-android-ready-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 4A: Real Flutter Project Creation Plan</h3>
+            <p>After this readiness checkpoint, the next phase is planning how to create the actual Flutter project and move starter files into it.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-android-ready-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsAndroidReadyToggleItem(button.getAttribute("data-android-ready-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertAndroidReadyHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("androidReadyHomeCard")) return;
+
+    const progress = fsAndroidReadyProgress();
+
+    const insertAfter =
+        document.getElementById("methodChannelHomeCard") ||
+        document.getElementById("vpnSkeletonHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "androidReadyHomeCard";
+    card.className = "card fs-android-ready-home-card";
+    card.innerHTML = `
+        <h2>Phase 3L Android Readiness</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Final readiness checklist before real Flutter/Android implementation.</p>
+        <button id="openAndroidReadyHomeBtn">Open Build Readiness</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openAndroidReadyHomeBtn").addEventListener("click", openAndroidBuildReadinessPage);
+}
+
+function addAndroidReadyQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickAndroidReadyBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickAndroidReadyBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3L</span>
+        <span class="premium-quick-label">Build Ready</span>
+        <span class="premium-quick-sub">Android checklist</span>
+    `;
+
+    button.addEventListener("click", openAndroidBuildReadinessPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3L to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsAndroidReadyHealthWrapped) {
+    window.fsAndroidReadyHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksAndroidReady = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksAndroidReady();
+        const progress = fsAndroidReadyProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3L Android Build Readiness Checklist";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3L Android Build Readiness Checklist",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Android build readiness progress: " + progress.percent + "%.",
+                "Open Phase 3L Android Readiness and confirm all readiness gates."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshAndroidReadySystems() {
+    setTimeout(insertAndroidReadyHomeCard, 1350);
+    setTimeout(insertAndroidReadyHomeCard, 2800);
+    setTimeout(insertAndroidReadyHomeCard, 4100);
+
+    setTimeout(addAndroidReadyQuickButton, 1450);
+    setTimeout(addAndroidReadyQuickButton, 2900);
+    setTimeout(addAndroidReadyQuickButton, 4100);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsAndroidReadyGoHomeWrapped) {
+    window.fsAndroidReadyGoHomeWrapped = true;
+
+    const oldGoHomeAndroidReady = goHome;
+
+    goHome = function() {
+        oldGoHomeAndroidReady.apply(this, arguments);
+        setTimeout(refreshAndroidReadySystems, 2050);
+    };
+}
+
+refreshAndroidReadySystems();
 
 </script>
 
