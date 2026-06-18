@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3henginedb1">
+    <link rel="stylesheet" href="style.css?v=phase3inativevpn1">
 </head>
 <body>
 
@@ -22073,6 +22073,306 @@ if (typeof goHome === "function" && !window.fsEngineDbGoHomeWrapped) {
 }
 
 refreshEngineDbSystems();
+
+
+/* Phase 3I Native Android VPN DNS Filtering Preparation Plan */
+function fsNativeVpnEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsNativeVpnGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3IChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsNativeVpnSaveChecklist(data) {
+    localStorage.setItem("fsPhase3IChecklist", JSON.stringify(data || {}));
+}
+
+function fsNativeVpnToggleItem(key) {
+    const data = fsNativeVpnGetChecklist();
+    data[key] = !data[key];
+    fsNativeVpnSaveChecklist(data);
+    openNativeVpnPlanPage();
+}
+
+function fsNativeVpnItems() {
+    return [
+        "vpnService",
+        "dnsDetection",
+        "methodChannel",
+        "engineFlow",
+        "loggingFlow",
+        "interventionFlow",
+        "safetyRules",
+        "performanceRules"
+    ];
+}
+
+function fsNativeVpnProgress() {
+    const items = fsNativeVpnItems();
+    const data = fsNativeVpnGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsNativeVpnCheckItem(key, label, detail) {
+    const data = fsNativeVpnGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-native-vpn-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsNativeVpnEscape(label)}</strong>
+                <p>${fsNativeVpnEscape(detail)}</p>
+            </div>
+            <button data-native-vpn-key="${fsNativeVpnEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openNativeVpnPlanPage() {
+    const progress = fsNativeVpnProgress();
+
+    showPage(`
+        <h1>Phase 3I Native VPN / DNS</h1>
+
+        <div class="card fs-native-vpn-hero-card">
+            <h2>Native Android VPN / DNS Filtering Preparation</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This prepares the native Android protection layer architecture.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} native preparation groups confirmed.</p>
+        </div>
+
+        <div class="card fs-native-vpn-warning-card">
+            <h2>Important</h2>
+            <p>This is not full VPN filtering code yet. It is the safe architecture plan before native implementation.</p>
+        </div>
+
+        <div class="card fs-native-vpn-components-card">
+            <h2>Native Android Components</h2>
+            <p><strong>FocusShieldVpnService:</strong> future Android VPN service.</p>
+            <p><strong>DnsPacketParser:</strong> future DNS/domain metadata extractor.</p>
+            <p><strong>DomainDecisionBridge:</strong> sends domain decisions between native Android and Flutter.</p>
+            <p><strong>VpnPermissionActivity:</strong> handles Android VPN permission flow.</p>
+            <p><strong>VpnStatusReceiver:</strong> tracks protection running/stopped status.</p>
+        </div>
+
+        <div class="card fs-native-vpn-flow-card">
+            <h2>Future Filtering Flow</h2>
+            <p><strong>1.</strong> User enables protection in Flutter.</p>
+            <p><strong>2.</strong> Flutter requests Android VPN permission.</p>
+            <p><strong>3.</strong> Android starts FocusShieldVpnService.</p>
+            <p><strong>4.</strong> VPN service observes DNS/domain request metadata.</p>
+            <p><strong>5.</strong> Domain goes to ProtectionEngine.</p>
+            <p><strong>6.</strong> ProtectionEngine checks SQLite repositories.</p>
+            <p><strong>7.</strong> ALLOW continues request.</p>
+            <p><strong>8.</strong> BLOCK stops request, logs attempt, triggers intervention.</p>
+        </div>
+
+        <div class="card fs-native-vpn-bridge-card">
+            <h2>MethodChannel Bridge</h2>
+            <p><strong>Channel:</strong> focus_shield/vpn</p>
+            <p><strong>startVpn:</strong> start native protection service.</p>
+            <p><strong>stopVpn:</strong> request protected shutdown.</p>
+            <p><strong>isVpnRunning:</strong> check status.</p>
+            <p><strong>requestVpnPermission:</strong> ask Android for VPN permission.</p>
+            <p><strong>onBlockedDomain:</strong> future native-to-Flutter blocked event.</p>
+        </div>
+
+        <div class="card fs-native-vpn-engine-card">
+            <h2>ProtectionEngine Call Rule</h2>
+            <p>The native VPN layer must not write directly to SQLite.</p>
+            <p><strong>Correct flow:</strong></p>
+            <p>Android VPN Service → MethodChannel → ProtectionEngine → Repositories → SQLite</p>
+        </div>
+
+        <div class="card fs-native-vpn-logging-card">
+            <h2>Blocked Attempt Logging</h2>
+            <p><strong>BLOCK decision:</strong> creates blocked attempt through BlockedAttemptRepository.</p>
+            <p><strong>Privacy mode:</strong> stats-only saves [hidden].</p>
+            <p><strong>Recovery action:</strong> saved through RecoveryActionRepository.</p>
+            <p><strong>Coach link:</strong> future SmartCoachService reads attempt and recovery pattern.</p>
+        </div>
+
+        <div class="card fs-native-vpn-intervention-card">
+            <h2>Intervention Trigger</h2>
+            <p>When a BLOCK decision happens, the app should show the intervention screen.</p>
+            <p><strong>Message:</strong> I pause, I listen, and I follow my dreams.</p>
+            <p><strong>Actions:</strong> breathing reset, focus timer, journal, goals, smart coach.</p>
+        </div>
+
+        <div class="card fs-native-vpn-safety-card">
+            <h2>User Safety Limits</h2>
+            <p><strong>Rule 1:</strong> Do not inspect private message content.</p>
+            <p><strong>Rule 2:</strong> Do not store full packets.</p>
+            <p><strong>Rule 3:</strong> Do not log exact domains in stats-only mode.</p>
+            <p><strong>Rule 4:</strong> Do not start VPN before database and engine are ready.</p>
+            <p><strong>Rule 5:</strong> Do not hide protection status from the user.</p>
+            <p><strong>Rule 6:</strong> Delayed disable must protect turning off filtering.</p>
+        </div>
+
+        <div class="card fs-native-vpn-performance-card">
+            <h2>Battery / Performance Rules</h2>
+            <p><strong>Keep it lightweight:</strong> domain-level checks only.</p>
+            <p><strong>Cache safe decisions:</strong> avoid repeated heavy checks.</p>
+            <p><strong>Cache blocklist:</strong> load from SQLite after startup.</p>
+            <p><strong>Avoid heavy packet-loop work:</strong> log through controlled async flow.</p>
+        </div>
+
+        <div class="card fs-native-vpn-files-card">
+            <h2>Created Files</h2>
+            <p><strong>flutter_starter/lib/native/native_vpn_contract.dart</strong></p>
+            <p><strong>flutter_starter/lib/native/vpn_dns_filtering_plan.dart</strong></p>
+            <p><strong>flutter_starter/docs/native_vpn_dns_filtering_plan.md</strong></p>
+        </div>
+
+        <div class="card fs-native-vpn-checklist-card">
+            <h2>Phase 3I Checklist</h2>
+            ${fsNativeVpnCheckItem("vpnService", "VPN service plan confirmed", "FocusShieldVpnService role is defined.")}
+            ${fsNativeVpnCheckItem("dnsDetection", "DNS/domain detection confirmed", "Domain-level metadata only, no private content inspection.")}
+            ${fsNativeVpnCheckItem("methodChannel", "MethodChannel contract confirmed", "start, stop, status, permission, blocked-domain events.")}
+            ${fsNativeVpnCheckItem("engineFlow", "ProtectionEngine flow confirmed", "Native layer calls engine, not SQLite directly.")}
+            ${fsNativeVpnCheckItem("loggingFlow", "Logging flow confirmed", "Blocked attempts and recoveries go through repositories.")}
+            ${fsNativeVpnCheckItem("interventionFlow", "Intervention flow confirmed", "BLOCK decision triggers recovery screen.")}
+            ${fsNativeVpnCheckItem("safetyRules", "Safety rules confirmed", "Privacy, delayed disable, and user-visible status.")}
+            ${fsNativeVpnCheckItem("performanceRules", "Performance rules confirmed", "Lightweight domain checks and cache strategy.")}
+        </div>
+
+        <div class="card fs-native-vpn-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3J: Native VPN Service Starter Skeleton</h3>
+            <p>Next we can create non-active Kotlin/Android starter skeleton files for the future native VPN layer.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-native-vpn-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsNativeVpnToggleItem(button.getAttribute("data-native-vpn-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertNativeVpnHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("nativeVpnHomeCard")) return;
+
+    const progress = fsNativeVpnProgress();
+
+    const insertAfter =
+        document.getElementById("engineDbHomeCard") ||
+        document.getElementById("dbProviderHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "nativeVpnHomeCard";
+    card.className = "card fs-native-vpn-home-card";
+    card.innerHTML = `
+        <h2>Phase 3I Native VPN / DNS</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Prepare native Android VPN/DNS protection architecture safely.</p>
+        <button id="openNativeVpnHomeBtn">Open Native VPN Plan</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openNativeVpnHomeBtn").addEventListener("click", openNativeVpnPlanPage);
+}
+
+function addNativeVpnQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickNativeVpnBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickNativeVpnBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3I</span>
+        <span class="premium-quick-label">Native VPN</span>
+        <span class="premium-quick-sub">DNS plan</span>
+    `;
+
+    button.addEventListener("click", openNativeVpnPlanPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3I to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsNativeVpnHealthWrapped) {
+    window.fsNativeVpnHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksNativeVpn = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksNativeVpn();
+        const progress = fsNativeVpnProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3I Native Android VPN DNS Filtering Preparation Plan";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3I Native Android VPN DNS Filtering Preparation Plan",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Native VPN/DNS preparation progress: " + progress.percent + "%.",
+                "Open Phase 3I Native VPN/DNS and confirm all preparation groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshNativeVpnSystems() {
+    setTimeout(insertNativeVpnHomeCard, 1200);
+    setTimeout(insertNativeVpnHomeCard, 2500);
+    setTimeout(insertNativeVpnHomeCard, 3800);
+
+    setTimeout(addNativeVpnQuickButton, 1300);
+    setTimeout(addNativeVpnQuickButton, 2600);
+    setTimeout(addNativeVpnQuickButton, 3800);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsNativeVpnGoHomeWrapped) {
+    window.fsNativeVpnGoHomeWrapped = true;
+
+    const oldGoHomeNativeVpn = goHome;
+
+    goHome = function() {
+        oldGoHomeNativeVpn.apply(this, arguments);
+        setTimeout(refreshNativeVpnSystems, 1900);
+    };
+}
+
+refreshNativeVpnSystems();
 
 </script>
 
