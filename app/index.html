@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv49default1">
+    <link rel="stylesheet" href="style.css?v=liveappv50audit1">
 </head>
 <body>
 
@@ -30068,6 +30068,468 @@ setTimeout(function() { fsLiveV49OpenDefaultHome(0); }, 1800);
 setTimeout(function() { fsLiveV49OpenDefaultHome(0); }, 3200);
 
 refreshLiveAppV49Systems();
+
+
+/* Live App v5.0 Final Integration Audit + Demo Test Center */
+function fsLiveV50Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV50SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV50Check(area, name, ok, detail, action) {
+    return {
+        area,
+        name,
+        ok: Boolean(ok),
+        detail,
+        action: action || ""
+    };
+}
+
+function fsLiveV50RunAudit() {
+    let storageOk = false;
+
+    try {
+        localStorage.setItem("fsLiveV50StorageTest", "ok");
+        storageOk = localStorage.getItem("fsLiveV50StorageTest") === "ok";
+        localStorage.removeItem("fsLiveV50StorageTest");
+    } catch (error) {
+        storageOk = false;
+    }
+
+    const domains =
+        typeof fsLiveV48GetDomains === "function"
+            ? fsLiveV48GetDomains()
+            : fsLiveV50SafeJson("fsLiveV48BlockedDomains", []);
+
+    const checks = [
+        fsLiveV50Check(
+            "Home",
+            "Default Live Home",
+            typeof openLiveAppV49HomePage === "function" || typeof openLiveAppV4HomePage === "function",
+            "Normal app link should open the new live home.",
+            "Open Home"
+        ),
+        fsLiveV50Check(
+            "Classic",
+            "Classic Dashboard Link",
+            typeof fsLiveV49OpenClassicDashboard === "function",
+            "Old dashboard should remain available through ?classic=1.",
+            "Open Classic"
+        ),
+        fsLiveV50Check(
+            "Scanner",
+            "Live Scanner",
+            typeof openLiveAppV4ScannerPage === "function",
+            "Scanner page should be available from the live shell.",
+            "Open Scanner"
+        ),
+        fsLiveV50Check(
+            "Intervention",
+            "Full Intervention Screen",
+            typeof openLiveAppV45InterventionPage === "function" || typeof openLiveAppV4InterventionPage === "function",
+            "Blocked test attempts should open the full recovery screen.",
+            "Test Intervention"
+        ),
+        fsLiveV50Check(
+            "Recovery",
+            "Recovery Center",
+            typeof openLiveAppV4RecoveryPage === "function",
+            "Recovery page should open and show breathing/recovery controls.",
+            "Open Recovery"
+        ),
+        fsLiveV50Check(
+            "Progress",
+            "Progress System",
+            typeof openLiveAppV46ProgressPage === "function",
+            "XP, badges, timeline, listening wins, and chart should be connected.",
+            "Open Progress"
+        ),
+        fsLiveV50Check(
+            "Coach",
+            "Coach System",
+            typeof openLiveAppV47CoachPage === "function",
+            "Daily Start Plan, End Review, Smart Coach, and Coach Memory should be connected.",
+            "Open Coach"
+        ),
+        fsLiveV50Check(
+            "Settings",
+            "Protection Control Center",
+            typeof fsLiveV48OpenSettingsHome === "function" || typeof openLiveAppV48SettingsPage === "function",
+            "Database, URL Engine, lock layer, backup, privacy, and health check should be connected.",
+            "Open Settings"
+        ),
+        fsLiveV50Check(
+            "Feature Vault",
+            "Feature Preservation Map",
+            typeof openLiveAppV43FeatureVaultPage === "function",
+            "Roadmap and original feature map should still be available.",
+            "Open Vault"
+        ),
+        fsLiveV50Check(
+            "Storage",
+            "Local Storage",
+            storageOk,
+            "Browser storage is needed for demo progress, settings, attempts, and coach memory.",
+            "Check Storage"
+        ),
+        fsLiveV50Check(
+            "Database",
+            "Local Blocklist",
+            Array.isArray(domains) && domains.length >= 3,
+            `${Array.isArray(domains) ? domains.length : 0} local test domains loaded.`,
+            "Open Database"
+        ),
+        fsLiveV50Check(
+            "URL Engine",
+            "URL Analysis Engine",
+            typeof fsLiveV48AnalyzeUrl === "function",
+            "Safe demo URL analysis function should be installed.",
+            "Test URL Engine"
+        ),
+        fsLiveV50Check(
+            "Navigation",
+            "Bottom Navigation",
+            typeof fsLiveV44BindNav === "function" || typeof fsLiveV4BindNav === "function",
+            "Live app tabs should bind correctly.",
+            "Check Navigation"
+        ),
+        fsLiveV50Check(
+            "PWA",
+            "Manifest Link",
+            Boolean(document.querySelector('link[rel="manifest"]')),
+            "Manifest file should be linked for app-like behavior.",
+            "Check Manifest"
+        ),
+        fsLiveV50Check(
+            "Cache",
+            "Service Worker / Cache API",
+            "serviceWorker" in navigator && "caches" in window,
+            "Browser supports service worker/cache APIs used by the prototype.",
+            "Check Cache"
+        )
+    ];
+
+    const passed = checks.filter(function(check) {
+        return check.ok;
+    }).length;
+
+    return {
+        checks,
+        passed,
+        total: checks.length,
+        score: Math.round((passed / checks.length) * 100)
+    };
+}
+
+function fsLiveV50RunSmokeTest() {
+    const results = [];
+
+    function add(name, ok, detail) {
+        results.push({
+            name,
+            ok: Boolean(ok),
+            detail
+        });
+    }
+
+    try {
+        localStorage.setItem("fsLiveV50SmokeStorage", "ok");
+        add("Local storage write", localStorage.getItem("fsLiveV50SmokeStorage") === "ok", "Storage write/read test completed.");
+        localStorage.removeItem("fsLiveV50SmokeStorage");
+    } catch (error) {
+        add("Local storage write", false, "Storage write/read failed.");
+    }
+
+    const audit = fsLiveV50RunAudit();
+    add("Audit score", audit.score >= 80, `Audit score: ${audit.score}%.`);
+
+    if (typeof fsLiveV48AnalyzeUrl === "function") {
+        const blocked = fsLiveV48AnalyzeUrl("blocked-example.com");
+        const safe = fsLiveV48AnalyzeUrl("safe-study-site.com");
+
+        add("Blocked test decision", blocked.decision === "BLOCK", `blocked-example.com → ${blocked.decision}`);
+        add("Safe test decision", safe.decision === "ALLOW", `safe-study-site.com → ${safe.decision}`);
+    } else {
+        add("URL engine decision", false, "URL engine function not found.");
+    }
+
+    if (typeof fsLiveV46GetProgressState === "function") {
+        const progress = fsLiveV46GetProgressState();
+        add("Progress state", Boolean(progress), "Progress state loaded.");
+    } else {
+        add("Progress state", false, "Progress system function not found.");
+    }
+
+    if (typeof fsLiveV47AnalyzeCoach === "function") {
+        const coach = fsLiveV47AnalyzeCoach();
+        add("Coach analysis", Boolean(coach && coach.command), "Coach analysis returned a command.");
+    } else {
+        add("Coach analysis", false, "Coach analysis function not found.");
+    }
+
+    if (typeof fsLiveV48HealthChecks === "function") {
+        const health = fsLiveV48HealthChecks();
+        const passedHealth = health.filter(function(item) { return item.ok; }).length;
+        add("Settings health checks", passedHealth >= 4, `${passedHealth}/${health.length} settings checks passed.`);
+    } else {
+        add("Settings health checks", false, "Settings health check function not found.");
+    }
+
+    localStorage.setItem("fsLiveV50LastSmokeTest", JSON.stringify({
+        time: new Date().toLocaleString(),
+        results
+    }));
+
+    openLiveAppV50AuditPage();
+}
+
+function fsLiveV50OpenBlockSimulation() {
+    let attempt = null;
+
+    if (typeof fsLiveV4AddBlockedAttempt === "function") {
+        attempt = fsLiveV4AddBlockedAttempt("blocked-example.com");
+    }
+
+    if (typeof openLiveAppV45InterventionPage === "function") {
+        openLiveAppV45InterventionPage(attempt ? attempt.id : null);
+        return;
+    }
+
+    if (typeof openLiveAppV4InterventionPage === "function") {
+        openLiveAppV4InterventionPage(attempt ? attempt.id : null);
+        return;
+    }
+
+    alert("Intervention screen is not available yet.");
+}
+
+function fsLiveV50OpenHome() {
+    const home =
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage ||
+        window.openLiveAppV44HomePage;
+
+    if (typeof home === "function") home();
+}
+
+function fsLiveV50OpenSettings() {
+    const settings =
+        window.fsLiveV48OpenSettingsHome ||
+        window.openLiveAppV48SettingsPage ||
+        window.openLiveAppV44SettingsPage;
+
+    if (typeof settings === "function") settings();
+}
+
+function fsLiveV50OpenDatabase() {
+    if (typeof fsLiveV48OpenDatabasePage === "function") {
+        fsLiveV48OpenDatabasePage();
+        return;
+    }
+
+    fsLiveV50OpenSettings();
+}
+
+function fsLiveV50OpenClassic() {
+    const url = new URL(window.location.href);
+    url.search = "?classic=1";
+    window.location.href = url.toString();
+}
+
+function fsLiveV50Button(label, sub, action) {
+    return `
+        <button data-v50-action="${action}">
+            <strong>${fsLiveV50Escape(label)}</strong>
+            <span>${fsLiveV50Escape(sub)}</span>
+        </button>
+    `;
+}
+
+function openLiveAppV50AuditPage() {
+    const audit = fsLiveV50RunAudit();
+    const smoke = fsLiveV50SafeJson("fsLiveV50LastSmokeTest", null);
+    const statusLabel = audit.score >= 90 ? "Ready" : audit.score >= 75 ? "Needs Minor Fixes" : "Needs Attention";
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Demo Test Center", "Final integration audit") : "<h1>Demo Test Center</h1>"}
+
+        <div class="card fs-v50-hero-card">
+            <h2>Live App v5.0</h2>
+            <h3>${fsLiveV50Escape(statusLabel)} • ${audit.score}%</h3>
+            <p>${audit.passed} of ${audit.total} systems passed the integration audit.</p>
+
+            <div class="fs-v50-score-bar">
+                <div style="width:${audit.score}%;"></div>
+            </div>
+
+            <button id="v50SmokeBtn">Run Smoke Test</button>
+        </div>
+
+        <div class="card fs-v50-check-card">
+            <h2>Integration Checklist</h2>
+            ${
+                audit.checks.map(function(check) {
+                    return `
+                        <div class="fs-v50-check-row ${check.ok ? "pass" : "warn"}">
+                            <div>
+                                <strong>${check.ok ? "✅" : "⚠️"} ${fsLiveV50Escape(check.name)}</strong>
+                                <p>${fsLiveV50Escape(check.area)} • ${fsLiveV50Escape(check.detail)}</p>
+                            </div>
+                            <span>${check.ok ? "PASS" : "CHECK"}</span>
+                        </div>
+                    `;
+                }).join("")
+            }
+        </div>
+
+        <div class="card fs-v50-demo-card">
+            <h2>Demo Test Center</h2>
+            <div class="fs-v50-demo-grid">
+                ${fsLiveV50Button("Home", "Live dashboard", "home")}
+                ${fsLiveV50Button("Scanner", "Open scanner", "scanner")}
+                ${fsLiveV50Button("Block Demo", "Trigger intervention", "block")}
+                ${fsLiveV50Button("Recovery", "Open recovery", "recovery")}
+                ${fsLiveV50Button("Progress", "XP + badges", "progress")}
+                ${fsLiveV50Button("Coach", "Daily OS", "coach")}
+                ${fsLiveV50Button("Settings", "Control center", "settings")}
+                ${fsLiveV50Button("Database", "Local blocklist", "database")}
+                ${fsLiveV50Button("Feature Vault", "Roadmap", "vault")}
+                ${fsLiveV50Button("Classic", "Old dashboard", "classic")}
+            </div>
+        </div>
+
+        <div class="card fs-v50-smoke-card">
+            <h2>Last Smoke Test</h2>
+            ${
+                smoke
+                    ? `
+                        <p><strong>Time:</strong> ${fsLiveV50Escape(smoke.time)}</p>
+                        ${
+                            smoke.results.map(function(result) {
+                                return `
+                                    <div class="fs-v50-smoke-row ${result.ok ? "pass" : "warn"}">
+                                        <strong>${result.ok ? "✅" : "⚠️"} ${fsLiveV50Escape(result.name)}</strong>
+                                        <p>${fsLiveV50Escape(result.detail)}</p>
+                                    </div>
+                                `;
+                            }).join("")
+                        }
+                    `
+                    : "<p>No smoke test has been run yet.</p>"
+            }
+        </div>
+
+        <div class="card fs-v50-next-card">
+            <h2>Next Build Direction</h2>
+            <p><strong>Web demo:</strong> Use this page before every major change.</p>
+            <p><strong>Android build:</strong> Next major phase is preparing the real Flutter/Android project when the environment supports Flutter.</p>
+            <p><strong>Protection note:</strong> Real system-wide filtering belongs in the future Android VPN/DNS layer, not the web demo.</p>
+        </div>
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("settings") : ""}
+    `);
+
+    document.getElementById("v50SmokeBtn").addEventListener("click", fsLiveV50RunSmokeTest);
+
+    document.querySelectorAll("[data-v50-action]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const action = button.getAttribute("data-v50-action");
+
+            if (action === "home") fsLiveV50OpenHome();
+            if (action === "scanner" && typeof openLiveAppV4ScannerPage === "function") openLiveAppV4ScannerPage();
+            if (action === "block") fsLiveV50OpenBlockSimulation();
+            if (action === "recovery" && typeof openLiveAppV4RecoveryPage === "function") openLiveAppV4RecoveryPage();
+            if (action === "progress" && typeof openLiveAppV46ProgressPage === "function") openLiveAppV46ProgressPage();
+            if (action === "coach" && typeof openLiveAppV47CoachPage === "function") openLiveAppV47CoachPage();
+            if (action === "settings") fsLiveV50OpenSettings();
+            if (action === "database") fsLiveV50OpenDatabase();
+            if (action === "vault" && typeof openLiveAppV43FeatureVaultPage === "function") openLiveAppV43FeatureVaultPage("All");
+            if (action === "classic") fsLiveV50OpenClassic();
+        });
+    });
+
+    if (typeof fsLiveV44BindNav === "function") fsLiveV44BindNav();
+}
+
+function fsLiveV50AddHomeAuditCard() {
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+    if (document.getElementById("fsLiveV50HomeAuditCard")) return;
+
+    const audit = fsLiveV50RunAudit();
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV50HomeAuditCard";
+    card.className = "card fs-v50-hero-card";
+    card.innerHTML = `
+        <h2>Live App v5.0</h2>
+        <h3>Demo Test Center</h3>
+        <p>Integration audit score: <strong>${audit.score}%</strong>. Use this before major upgrades.</p>
+        <button id="fsLiveV50OpenAuditBtn">Open Demo Test Center</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+
+    document.getElementById("fsLiveV50OpenAuditBtn").addEventListener("click", openLiveAppV50AuditPage);
+}
+
+function fsLiveV50WrapHome() {
+    if (window.fsLiveV50HomeWrapped) return;
+
+    const oldHome =
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage ||
+        window.openLiveAppV44HomePage;
+
+    if (typeof oldHome !== "function") return;
+
+    window.fsLiveV50HomeWrapped = true;
+
+    window.openLiveAppV50HomePage = function() {
+        oldHome.apply(this, arguments);
+        setTimeout(fsLiveV50AddHomeAuditCard, 200);
+        setTimeout(fsLiveV50AddHomeAuditCard, 700);
+    };
+
+    window.openLiveAppV49HomePage = window.openLiveAppV50HomePage;
+    window.openLiveAppV4HomePage = window.openLiveAppV50HomePage;
+    window.openLiveAppV44HomePage = window.openLiveAppV50HomePage;
+}
+
+function fsLiveV50AutoOpen() {
+    fsLiveV50WrapHome();
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("liveappv50audit")) {
+        openLiveAppV50AuditPage();
+    }
+}
+
+window.openLiveAppV50AuditPage = openLiveAppV50AuditPage;
+
+setTimeout(fsLiveV50AutoOpen, 850);
+setTimeout(fsLiveV50WrapHome, 1800);
+setTimeout(fsLiveV50AddHomeAuditCard, 2600);
 
 </script>
 
