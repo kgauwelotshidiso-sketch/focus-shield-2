@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv4mainintegration1">
+    <link rel="stylesheet" href="style.css?v=liveappv41moduleconnector1">
 </head>
 <body>
 
@@ -25767,6 +25767,585 @@ if (typeof goHome === "function" && !window.fsLiveAppV4GoHomeWrapped) {
 }
 
 refreshLiveAppV4Systems();
+
+
+/* Live App v4.1 Old Module Connector */
+const fsLiveV41ModuleRegistry = {
+    focusTimer: {
+        title: "Focus Timer",
+        category: "Recovery",
+        description: "Start a focus session after recovery.",
+        functions: [
+            "openFocusTimerPage", "openFocusPage", "openTimerPage", "openFocusModePage",
+            "showFocusTimerPage", "showFocusPage", "renderFocusTimerPage", "renderFocusPage",
+            "openFocusTimer", "startFocusTimer"
+        ],
+        keywords: ["focus", "timer"]
+    },
+    concentrationTrainer: {
+        title: "Concentration Trainer",
+        category: "Progress",
+        description: "Train attention and concentration.",
+        functions: [
+            "openConcentrationTrainerPage", "openConcentrationPage", "showConcentrationPage",
+            "showConcentrationTrainerPage", "renderConcentrationTrainerPage", "renderConcentrationPage",
+            "openAttentionTrainerPage", "openTapTrainerPage"
+        ],
+        keywords: ["concentration", "attention", "trainer", "tap"]
+    },
+    progress: {
+        title: "Progress Tracker",
+        category: "Progress",
+        description: "Track listening wins, XP, and discipline progress.",
+        functions: [
+            "openProgressPage", "showProgressPage", "renderProgressPage",
+            "openProgressTrackerPage", "showProgressTrackerPage", "openListeningWinsPage",
+            "openWinsPage", "showWinsPage", "showListeningWinsPage"
+        ],
+        keywords: ["progress", "listening", "wins"]
+    },
+    badges: {
+        title: "Badges / Achievements",
+        category: "Progress",
+        description: "View earned badges and achievements.",
+        functions: [
+            "openBadgesPage", "openAchievementsPage", "showBadgesPage", "showAchievementsPage",
+            "renderBadgesPage", "renderAchievementsPage", "openBadgePage", "openAchievementPage"
+        ],
+        keywords: ["badge", "badges", "achievement", "achievements"]
+    },
+    charts: {
+        title: "Charts / Weekly Intelligence",
+        category: "Progress",
+        description: "View progress charts and weekly intelligence.",
+        functions: [
+            "openChartsPage", "openChartPage", "showChartsPage", "renderChartsPage",
+            "openWeeklyIntelligencePage", "showWeeklyIntelligencePage", "openWeeklyReportPage",
+            "showWeeklyReportPage", "renderWeeklyIntelligencePage"
+        ],
+        keywords: ["chart", "charts", "weekly", "intelligence", "report"]
+    },
+    timeline: {
+        title: "Daily Timeline",
+        category: "Progress",
+        description: "View the daily event timeline.",
+        functions: [
+            "openTimelinePage", "openDailyTimelinePage", "showTimelinePage",
+            "showDailyTimelinePage", "renderTimelinePage", "renderDailyTimelinePage"
+        ],
+        keywords: ["timeline", "dailytimeline"]
+    },
+    reflection: {
+        title: "Daily Reflection",
+        category: "Progress",
+        description: "Write or review daily reflections.",
+        functions: [
+            "openDailyReflectionPage", "openReflectionPage", "showReflectionPage",
+            "showDailyReflectionPage", "renderReflectionPage", "renderDailyReflectionPage"
+        ],
+        keywords: ["reflection", "dailyreflection"]
+    },
+    goals: {
+        title: "Goals / Affirmations",
+        category: "Coach",
+        description: "Review goals and affirmations.",
+        functions: [
+            "openGoalsPage", "openGoalPage", "showGoalsPage", "showGoalPage",
+            "renderGoalsPage", "renderGoalPage", "openAffirmationsPage",
+            "showAffirmationsPage", "renderAffirmationsPage"
+        ],
+        keywords: ["goal", "goals", "affirmation", "affirmations"]
+    },
+    smartCoach: {
+        title: "Smart Coach",
+        category: "Coach",
+        description: "Open the Smart Coach guidance page.",
+        functions: [
+            "openCoachPage", "openSmartCoachPage", "showCoachPage", "showSmartCoachPage",
+            "renderCoachPage", "renderSmartCoachPage", "openAiCoachPage", "showAiCoachPage"
+        ],
+        keywords: ["coach", "smartcoach"]
+    },
+    dailyStartPlan: {
+        title: "Daily Start Plan",
+        category: "Coach",
+        description: "Plan the day before distractions begin.",
+        functions: [
+            "openDailyStartPlanPage", "openStartPlanPage", "showStartPlanPage",
+            "showDailyStartPlanPage", "renderStartPlanPage", "renderDailyStartPlanPage"
+        ],
+        keywords: ["startplan", "dailyplan", "morning"]
+    },
+    dailyEndReview: {
+        title: "Daily End Review",
+        category: "Coach",
+        description: "Review the day and lock in lessons.",
+        functions: [
+            "openDailyEndReviewPage", "openEndReviewPage", "showEndReviewPage",
+            "showDailyEndReviewPage", "renderEndReviewPage", "renderDailyEndReviewPage"
+        ],
+        keywords: ["endreview", "dailyendreview", "review"]
+    },
+    endReviewHistory: {
+        title: "End Review History",
+        category: "Coach",
+        description: "View previous daily end reviews.",
+        functions: [
+            "openEndReviewHistoryPage", "openReviewHistoryPage", "showReviewHistoryPage",
+            "showEndReviewHistoryPage", "renderReviewHistoryPage", "renderEndReviewHistoryPage"
+        ],
+        keywords: ["history", "reviewhistory", "endreviewhistory"]
+    },
+    protectionDatabase: {
+        title: "Protection Database",
+        category: "Settings",
+        description: "Manage local protected test domains.",
+        functions: [
+            "openProtectionDatabasePage", "openProtectionDbPage", "showProtectionDatabasePage",
+            "showProtectionDbPage", "renderProtectionDatabasePage", "renderProtectionDbPage",
+            "openBlocklistPage", "showBlocklistPage"
+        ],
+        keywords: ["protectiondatabase", "protectiondb", "blocklist", "database"]
+    },
+    urlEngine: {
+        title: "URL Analysis Engine",
+        category: "Settings",
+        description: "Open the URL analysis engine.",
+        functions: [
+            "openUrlAnalysisEnginePage", "openUrlEnginePage", "showUrlAnalysisPage",
+            "showUrlAnalysisEnginePage", "renderUrlAnalysisEnginePage", "renderUrlEnginePage",
+            "openUrlAnalysisPage", "showUrlEnginePage"
+        ],
+        keywords: ["url", "analysis", "engine"]
+    },
+    attemptIntelligence: {
+        title: "Blocked Attempt Intelligence",
+        category: "Settings",
+        description: "Review blocked attempt patterns.",
+        functions: [
+            "openBlockedAttemptIntelligencePage", "openAttemptIntelligencePage",
+            "showAttemptIntelPage", "showBlockedAttemptIntelligencePage",
+            "renderAttemptIntelligencePage", "renderBlockedAttemptIntelligencePage",
+            "openBlockedAttemptsPage"
+        ],
+        keywords: ["attempt", "intelligence", "blockedattempt"]
+    },
+    lockLayer: {
+        title: "Protection Lock Layer",
+        category: "Settings",
+        description: "Manage PIN and protected settings.",
+        functions: [
+            "openProtectionLockPage", "openLockLayerPage", "showLockPage",
+            "showProtectionLockPage", "renderProtectionLockPage", "renderLockLayerPage",
+            "openProtectedSettingsPage"
+        ],
+        keywords: ["lock", "pin", "protectedsettings"]
+    },
+    backupCenter: {
+        title: "Backup Center",
+        category: "Settings",
+        description: "Backup and restore protection data.",
+        functions: [
+            "openProtectionBackupPage", "openBackupPage", "showBackupPage",
+            "showProtectionBackupPage", "renderBackupPage", "renderProtectionBackupPage",
+            "openBackupCenterPage"
+        ],
+        keywords: ["backup", "export", "restore"]
+    },
+    systemHealth: {
+        title: "System Health Check",
+        category: "Settings",
+        description: "Run full app health checks.",
+        functions: [
+            "openSystemHealthPage", "openHealthCheckPage", "showSystemHealthPage",
+            "showHealthCheckPage", "renderSystemHealthPage", "renderHealthCheckPage",
+            "openSystemHealthCheckPage"
+        ],
+        keywords: ["health", "systemhealth", "check"]
+    }
+};
+
+function fsLiveV41FindFunctionForModule(moduleKey) {
+    const module = fsLiveV41ModuleRegistry[moduleKey];
+
+    if (!module) return null;
+
+    for (const name of module.functions) {
+        if (typeof window[name] === "function") {
+            return name;
+        }
+    }
+
+    const windowKeys = Object.keys(window);
+
+    for (const fnName of windowKeys) {
+        if (typeof window[fnName] !== "function") continue;
+
+        const lower = fnName.toLowerCase();
+
+        const hasAllKeywords = module.keywords.every(function(keyword) {
+            return lower.includes(keyword.toLowerCase());
+        });
+
+        if (hasAllKeywords) {
+            return fnName;
+        }
+    }
+
+    for (const fnName of windowKeys) {
+        if (typeof window[fnName] !== "function") continue;
+
+        const lower = fnName.toLowerCase();
+
+        const hasAnyKeyword = module.keywords.some(function(keyword) {
+            return lower.includes(keyword.toLowerCase());
+        });
+
+        const looksLikePageFunction =
+            lower.includes("open") ||
+            lower.includes("show") ||
+            lower.includes("render");
+
+        if (hasAnyKeyword && looksLikePageFunction) {
+            return fnName;
+        }
+    }
+
+    return null;
+}
+
+function fsLiveV41AddReturnButton() {
+    setTimeout(function() {
+        if (document.getElementById("fsLiveV41ReturnBtn")) return;
+
+        const button = document.createElement("button");
+        button.id = "fsLiveV41ReturnBtn";
+        button.className = "fs-live-v41-return-btn";
+        button.textContent = "Back to Live App";
+
+        button.addEventListener("click", function() {
+            if (typeof openLiveAppV4HomePage === "function") {
+                openLiveAppV4HomePage();
+            } else if (typeof goHome === "function") {
+                goHome();
+            }
+        });
+
+        document.body.appendChild(button);
+    }, 250);
+}
+
+function fsLiveV41OpenModule(moduleKey) {
+    const module = fsLiveV41ModuleRegistry[moduleKey];
+
+    if (!module) {
+        fsLiveV41OpenModuleStatusPage();
+        return;
+    }
+
+    const functionName = fsLiveV41FindFunctionForModule(moduleKey);
+
+    if (functionName && typeof window[functionName] === "function") {
+        try {
+            window[functionName]();
+            fsLiveV41AddReturnButton();
+            return;
+        } catch (error) {
+            fsLiveV41OpenModuleFallback(moduleKey, "The module function was found, but it produced an error: " + error.message);
+            return;
+        }
+    }
+
+    fsLiveV41OpenModuleFallback(moduleKey, "No direct open function was found yet.");
+}
+
+function fsLiveV41OpenModuleFallback(moduleKey, reason) {
+    const module = fsLiveV41ModuleRegistry[moduleKey];
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header(module.title, module.category + " module") : `<h1>${fsLiveV4Escape(module.title)}</h1>`}
+
+        <div class="card fs-live-v41-fallback-card">
+            <h2>${fsLiveV4Escape(module.title)}</h2>
+            <p>${fsLiveV4Escape(module.description)}</p>
+            <p><strong>Status:</strong> ${fsLiveV4Escape(reason)}</p>
+            <p>This does not mean the feature is lost. It means v4.1 could not find the exact browser function name to open it directly.</p>
+        </div>
+
+        <div class="card fs-live-v41-fallback-card">
+            <h2>Next Connector Step</h2>
+            <p>Use Module Status to see which old features are connected and which still need exact function mapping.</p>
+            <button id="v41OpenStatusBtn">Open Module Status</button>
+            <button id="v41BackHomeBtn">Back to Live App</button>
+        </div>
+
+        ${typeof fsLiveV4BottomNav === "function" ? fsLiveV4BottomNav("settings") : ""}
+    `);
+
+    document.getElementById("v41OpenStatusBtn").addEventListener("click", fsLiveV41OpenModuleStatusPage);
+    document.getElementById("v41BackHomeBtn").addEventListener("click", openLiveAppV4HomePage);
+
+    if (typeof fsLiveV4BindNav === "function") {
+        fsLiveV4BindNav();
+    }
+}
+
+function fsLiveV41ModuleButton(moduleKey) {
+    const module = fsLiveV41ModuleRegistry[moduleKey];
+    const fn = fsLiveV41FindFunctionForModule(moduleKey);
+    const status = fn ? "Connected" : "Needs mapping";
+
+    return `
+        <button class="${fn ? "fs-live-v41-connected" : "fs-live-v41-unmapped"}" data-v41-module="${fsLiveV4Escape(moduleKey)}">
+            <span>${fsLiveV4Escape(module.title)}</span>
+            <small>${fsLiveV4Escape(status)}</small>
+        </button>
+    `;
+}
+
+function fsLiveV41BindModuleButtons() {
+    document.querySelectorAll("[data-v41-module]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsLiveV41OpenModule(button.getAttribute("data-v41-module"));
+        });
+    });
+}
+
+function fsLiveV41OpenModuleStatusPage() {
+    const modules = Object.keys(fsLiveV41ModuleRegistry);
+    const connected = modules.filter(function(key) {
+        return Boolean(fsLiveV41FindFunctionForModule(key));
+    });
+    const unmapped = modules.filter(function(key) {
+        return !fsLiveV41FindFunctionForModule(key);
+    });
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Module Status", "Old feature connector") : "<h1>Module Status</h1>"}
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Old Module Connection Status</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${connected.length}</strong><span>Connected</span></div>
+                <div><strong>${unmapped.length}</strong><span>Need Mapping</span></div>
+                <div><strong>${modules.length}</strong><span>Total Modules</span></div>
+                <div><strong>${Math.round((connected.length / modules.length) * 100)}%</strong><span>Connected</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Progress Modules</h2>
+            <div class="fs-live-v41-module-list">
+                ${["progress", "focusTimer", "concentrationTrainer", "badges", "charts", "timeline", "reflection"].map(fsLiveV41ModuleButton).join("")}
+            </div>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Coach Modules</h2>
+            <div class="fs-live-v41-module-list">
+                ${["smartCoach", "goals", "dailyStartPlan", "dailyEndReview", "endReviewHistory"].map(fsLiveV41ModuleButton).join("")}
+            </div>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Settings Modules</h2>
+            <div class="fs-live-v41-module-list">
+                ${["protectionDatabase", "urlEngine", "attemptIntelligence", "lockLayer", "backupCenter", "systemHealth"].map(fsLiveV41ModuleButton).join("")}
+            </div>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>How This Works</h2>
+            <p>v4.1 searches for old page-opening functions and connects them into the new app shell.</p>
+            <p>If a module says <strong>Needs mapping</strong>, the feature is not deleted. We only need to identify the exact function name used by the old page.</p>
+        </div>
+
+        ${typeof fsLiveV4BottomNav === "function" ? fsLiveV4BottomNav("settings") : ""}
+    `);
+
+    fsLiveV41BindModuleButtons();
+
+    if (typeof fsLiveV4BindNav === "function") {
+        fsLiveV4BindNav();
+    }
+}
+
+function fsLiveV41OpenProgressPage() {
+    if (typeof fsLiveV4Stats !== "function") {
+        fsLiveV41OpenModuleStatusPage();
+        return;
+    }
+
+    const stats = fsLiveV4Stats();
+
+    showPage(`
+        ${fsLiveV4Header("Progress", "Connected old modules")}
+
+        <div class="card fs-live-v4-hero-card">
+            <h2>Protection Progress</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${stats.attemptsToday}</strong><span>Today</span></div>
+                <div><strong>${stats.attemptsTotal}</strong><span>Blocks</span></div>
+                <div><strong>${stats.recoveriesTotal}</strong><span>Recoveries</span></div>
+                <div><strong>${stats.recoveryRate}%</strong><span>Recovery</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Progress Modules</h2>
+            <div class="fs-live-v41-module-list">
+                ${["progress", "focusTimer", "concentrationTrainer", "badges", "charts", "timeline", "reflection"].map(fsLiveV41ModuleButton).join("")}
+            </div>
+        </div>
+
+        ${fsLiveV4BottomNav("progress")}
+    `);
+
+    fsLiveV41BindModuleButtons();
+    fsLiveV4BindNav();
+}
+
+function fsLiveV41OpenCoachPage() {
+    showPage(`
+        ${fsLiveV4Header("Coach", "Connected old modules")}
+
+        <div class="card fs-live-v4-coach-card">
+            <h2>Smart Coach Hub</h2>
+            <p>Connect your goals, reviews, reflections, and weekly intelligence into the new live app shell.</p>
+            <h3>Today’s coaching focus: recover quickly and continue.</h3>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Coach Modules</h2>
+            <div class="fs-live-v41-module-list">
+                ${["smartCoach", "goals", "dailyStartPlan", "dailyEndReview", "endReviewHistory"].map(fsLiveV41ModuleButton).join("")}
+            </div>
+        </div>
+
+        ${fsLiveV4BottomNav("coach")}
+    `);
+
+    fsLiveV41BindModuleButtons();
+    fsLiveV4BindNav();
+}
+
+function fsLiveV41OpenSettingsPage() {
+    showPage(`
+        ${fsLiveV4Header("Settings", "Connected old modules")}
+
+        <div class="card fs-live-v4-settings-card">
+            <h2>Protection Control Center</h2>
+            <p>Connect database, URL engine, lock layer, backup, and health check into the new app shell.</p>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Settings Modules</h2>
+            <div class="fs-live-v41-module-list">
+                ${["protectionDatabase", "urlEngine", "attemptIntelligence", "lockLayer", "backupCenter", "systemHealth"].map(fsLiveV41ModuleButton).join("")}
+            </div>
+        </div>
+
+        <div class="card fs-live-v41-status-card">
+            <h2>Connector Tools</h2>
+            <button id="v41ModuleStatusBtn">Open Module Status</button>
+        </div>
+
+        ${fsLiveV4BottomNav("settings")}
+    `);
+
+    document.getElementById("v41ModuleStatusBtn").addEventListener("click", fsLiveV41OpenModuleStatusPage);
+
+    fsLiveV41BindModuleButtons();
+    fsLiveV4BindNav();
+}
+
+/* Override v4 bottom navigation targets for connected tabs */
+if (!window.fsLiveV41NavWrapped) {
+    window.fsLiveV41NavWrapped = true;
+
+    const oldFsLiveV4BindNav = window.fsLiveV4BindNav;
+
+    window.fsLiveV4BindNav = function() {
+        document.querySelectorAll("[data-v4-nav]").forEach(function(button) {
+            button.addEventListener("click", function() {
+                const fn = button.getAttribute("data-v4-nav");
+
+                if (fn === "openLiveAppV4ProgressPage") {
+                    fsLiveV41OpenProgressPage();
+                    return;
+                }
+
+                if (fn === "openLiveAppV4CoachPage") {
+                    fsLiveV41OpenCoachPage();
+                    return;
+                }
+
+                if (fn === "openLiveAppV4SettingsPage") {
+                    fsLiveV41OpenSettingsPage();
+                    return;
+                }
+
+                if (typeof window[fn] === "function") {
+                    window[fn]();
+                    return;
+                }
+
+                if (typeof oldFsLiveV4BindNav === "function") {
+                    oldFsLiveV4BindNav();
+                }
+            });
+        });
+    };
+}
+
+/* Replace old pages with connected v4.1 versions where possible */
+window.openLiveAppV4ProgressPage = fsLiveV41OpenProgressPage;
+window.openLiveAppV4CoachPage = fsLiveV41OpenCoachPage;
+window.openLiveAppV4SettingsPage = fsLiveV41OpenSettingsPage;
+
+function insertLiveAppV41HomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV41HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV4HomeCard") ||
+        document.getElementById("liveActionHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV41HomeCard";
+    card.className = "card fs-live-v41-status-card";
+    card.innerHTML = `
+        <h2>Live App v4.1</h2>
+        <h3>Old Module Connector</h3>
+        <p>Connect Progress, Coach, and Settings features into the new live app shell.</p>
+        <button id="openLiveAppV41StatusBtn">Open Module Status</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openLiveAppV41StatusBtn").addEventListener("click", fsLiveV41OpenModuleStatusPage);
+}
+
+function refreshLiveAppV41Systems() {
+    setTimeout(insertLiveAppV41HomeCard, 1150);
+    setTimeout(insertLiveAppV41HomeCard, 2500);
+    setTimeout(insertLiveAppV41HomeCard, 3900);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV41GoHomeWrapped) {
+    window.fsLiveAppV41GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV41 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV41.apply(this, arguments);
+        setTimeout(refreshLiveAppV41Systems, 1600);
+    };
+}
+
+refreshLiveAppV41Systems();
 
 </script>
 

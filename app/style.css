@@ -4281,3 +4281,89 @@ textarea:focus {
         width: 100%;
     }
 }
+
+
+/* Live App v4.1 Old Module Connector */
+.fs-live-v41-status-card,
+.fs-live-v41-fallback-card {
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(14, 116, 144, 0.24));
+}
+
+.fs-live-v41-status-card h3 {
+    color: #38bdf8;
+}
+
+.fs-live-v41-module-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.fs-live-v41-module-list button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    text-align: left;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.fs-live-v41-module-list button span {
+    font-weight: 800;
+}
+
+.fs-live-v41-module-list button small {
+    font-weight: 800;
+    opacity: 0.86;
+}
+
+.fs-live-v41-module-list button.fs-live-v41-connected {
+    border-color: rgba(34, 197, 94, 0.45);
+}
+
+.fs-live-v41-module-list button.fs-live-v41-connected small {
+    color: #22c55e;
+}
+
+.fs-live-v41-module-list button.fs-live-v41-unmapped {
+    border-color: rgba(250, 204, 21, 0.38);
+}
+
+.fs-live-v41-module-list button.fs-live-v41-unmapped small {
+    color: #facc15;
+}
+
+.fs-live-v41-return-btn {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 9999;
+    width: auto;
+    padding: 12px 16px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #22c55e, #2563eb);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-weight: 900;
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.42);
+}
+
+@media (max-width: 520px) {
+    .fs-live-v41-module-list button {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fs-live-v41-return-btn {
+        left: 14px;
+        right: 14px;
+        width: calc(100% - 28px);
+    }
+}
