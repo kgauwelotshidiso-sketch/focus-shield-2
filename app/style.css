@@ -3617,3 +3617,125 @@ textarea:focus {
         width: 100%;
     }
 }
+
+
+/* Lean Build Live Action Mode */
+.fs-live-home-card,
+.fs-live-hero-card {
+    border: 1px solid rgba(34, 197, 94, 0.6);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.2), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(21, 128, 61, 0.28));
+}
+
+.fs-live-home-card h3,
+.fs-live-hero-card h3 {
+    color: #22c55e;
+}
+
+.fs-live-control-card,
+.fs-live-stats-card,
+.fs-live-next-card {
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(14, 116, 144, 0.24));
+}
+
+.fs-live-result-card,
+.fs-live-log-card {
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.13), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(88, 28, 135, 0.24));
+}
+
+.fs-live-intervention-card {
+    border: 1px solid rgba(248, 113, 113, 0.55);
+    background:
+        radial-gradient(circle at top right, rgba(248, 113, 113, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(127, 29, 29, 0.28));
+}
+
+.fs-live-affirmation-card,
+.fs-live-choice-card {
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(21, 128, 61, 0.24));
+}
+
+.fs-live-affirmation {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.5;
+    color: #bbf7d0;
+}
+
+.fs-live-control-card button {
+    margin-top: 8px;
+}
+
+.fs-live-decision {
+    padding: 14px;
+    border-radius: 18px;
+    margin-top: 10px;
+}
+
+.fs-live-ready {
+    background: rgba(59, 130, 246, 0.16);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.fs-live-allow,
+.fs-live-recovered {
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.fs-live-block {
+    background: rgba(248, 113, 113, 0.16);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.fs-live-paused {
+    background: rgba(250, 204, 21, 0.13);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.fs-live-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.fs-live-stats-grid div {
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fs-live-stats-grid strong {
+    display: block;
+    font-size: 1.6rem;
+    color: #22c55e;
+}
+
+.fs-live-stats-grid span {
+    opacity: 0.82;
+}
+
+.fs-live-log-item {
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 520px) {
+    .fs-live-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase4cfluttersdk1">
+    <link rel="stylesheet" href="style.css?v=leanliveaction1">
 </head>
 <body>
 
@@ -23871,6 +23871,406 @@ if (typeof goHome === "function" && !window.fsFlutterSdkGoHomeWrapped) {
 }
 
 refreshFlutterSdkSystems();
+
+
+/* Lean Build Live Action Mode */
+function fsLiveEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveGetState() {
+    try {
+        return JSON.parse(localStorage.getItem("fsLiveActionState") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsLiveSaveState(state) {
+    localStorage.setItem("fsLiveActionState", JSON.stringify(state || {}));
+}
+
+function fsLiveDefaultState() {
+    const state = fsLiveGetState();
+
+    return {
+        protectionOn: state.protectionOn ?? true,
+        attempts: Array.isArray(state.attempts) ? state.attempts : [],
+        recoveries: Array.isArray(state.recoveries) ? state.recoveries : [],
+        lastDecision: state.lastDecision || null,
+        demoStarted: state.demoStarted ?? false
+    };
+}
+
+function fsLiveStartDemo() {
+    const state = fsLiveDefaultState();
+    state.protectionOn = true;
+    state.demoStarted = true;
+    state.lastDecision = {
+        type: "READY",
+        title: "Protection demo started",
+        message: "Focus Shield is ready to check safe and blocked test domains.",
+        time: new Date().toISOString()
+    };
+    fsLiveSaveState(state);
+    openLiveActionModePage();
+}
+
+function fsLiveStopDemo() {
+    const state = fsLiveDefaultState();
+    state.protectionOn = false;
+    state.lastDecision = {
+        type: "PAUSED",
+        title: "Protection demo paused",
+        message: "Live demo protection is paused.",
+        time: new Date().toISOString()
+    };
+    fsLiveSaveState(state);
+    openLiveActionModePage();
+}
+
+function fsLiveResetDemo() {
+    fsLiveSaveState({
+        protectionOn: true,
+        attempts: [],
+        recoveries: [],
+        lastDecision: {
+            type: "RESET",
+            title: "Demo reset",
+            message: "Live demo stats were reset.",
+            time: new Date().toISOString()
+        },
+        demoStarted: true
+    });
+    openLiveActionModePage();
+}
+
+function fsLiveTestSafe() {
+    const state = fsLiveDefaultState();
+
+    state.lastDecision = {
+        type: "ALLOW",
+        title: "Safe site allowed",
+        domain: "study-example.com",
+        message: "This test domain was allowed. No intervention needed.",
+        time: new Date().toISOString()
+    };
+
+    fsLiveSaveState(state);
+    openLiveActionModePage();
+}
+
+function fsLiveTestBlocked() {
+    const state = fsLiveDefaultState();
+
+    const attempt = {
+        id: Date.now(),
+        domain: "blocked-example.com",
+        category: "focus risk",
+        reason: "This is a safe test domain used to simulate a blocked distraction.",
+        time: new Date().toISOString(),
+        recovered: false
+    };
+
+    state.attempts.unshift(attempt);
+    state.lastDecision = {
+        type: "BLOCK",
+        title: "Blocked test domain",
+        domain: attempt.domain,
+        message: "Focus Shield blocked this simulated distraction and opened an intervention.",
+        time: attempt.time
+    };
+
+    fsLiveSaveState(state);
+    openLiveInterventionPage(attempt.id);
+}
+
+function fsLiveCompleteRecovery(attemptId) {
+    const state = fsLiveDefaultState();
+
+    state.attempts = state.attempts.map(function(attempt) {
+        if (String(attempt.id) === String(attemptId)) {
+            return Object.assign({}, attempt, { recovered: true });
+        }
+        return attempt;
+    });
+
+    state.recoveries.unshift({
+        id: Date.now(),
+        attemptId: attemptId,
+        action: "I paused, reset, and returned to my goals.",
+        time: new Date().toISOString()
+    });
+
+    state.lastDecision = {
+        type: "RECOVERED",
+        title: "Recovery completed",
+        message: "You chose discipline and returned to your goals.",
+        time: new Date().toISOString()
+    };
+
+    fsLiveSaveState(state);
+    openLiveActionModePage();
+}
+
+function fsLiveStats() {
+    const state = fsLiveDefaultState();
+    const attempts = state.attempts || [];
+    const recoveries = state.recoveries || [];
+
+    const today = new Date().toISOString().slice(0, 10);
+    const attemptsToday = attempts.filter(function(item) {
+        return String(item.time || "").slice(0, 10) === today;
+    }).length;
+
+    const recovered = attempts.filter(function(item) {
+        return item.recovered;
+    }).length;
+
+    const recoveryRate = attempts.length ? Math.round((recovered / attempts.length) * 100) : 100;
+
+    return {
+        attemptsTotal: attempts.length,
+        attemptsToday: attemptsToday,
+        recoveriesTotal: recoveries.length,
+        recoveryRate: recoveryRate
+    };
+}
+
+function fsLiveLastDecisionHtml() {
+    const state = fsLiveDefaultState();
+    const decision = state.lastDecision;
+
+    if (!decision) {
+        return `
+            <div class="fs-live-decision fs-live-ready">
+                <h3>No decision yet</h3>
+                <p>Start the demo, then test a safe or blocked domain.</p>
+            </div>
+        `;
+    }
+
+    const typeClass = {
+        READY: "fs-live-ready",
+        ALLOW: "fs-live-allow",
+        BLOCK: "fs-live-block",
+        RECOVERED: "fs-live-recovered",
+        PAUSED: "fs-live-paused",
+        RESET: "fs-live-ready"
+    }[decision.type] || "fs-live-ready";
+
+    return `
+        <div class="fs-live-decision ${typeClass}">
+            <h3>${fsLiveEscape(decision.title)}</h3>
+            ${decision.domain ? `<p><strong>Domain:</strong> ${fsLiveEscape(decision.domain)}</p>` : ""}
+            <p>${fsLiveEscape(decision.message)}</p>
+        </div>
+    `;
+}
+
+function openLiveInterventionPage(attemptId) {
+    const state = fsLiveDefaultState();
+    const attempt = state.attempts.find(function(item) {
+        return String(item.id) === String(attemptId);
+    });
+
+    if (!attempt) {
+        openLiveActionModePage();
+        return;
+    }
+
+    showPage(`
+        <h1>Focus Shield Intervention</h1>
+
+        <div class="card fs-live-intervention-card">
+            <h2>Stop. Breathe. Choose your goal.</h2>
+            <p>Focus Shield blocked a simulated distraction:</p>
+            <h3>${fsLiveEscape(attempt.domain)}</h3>
+            <p>${fsLiveEscape(attempt.reason)}</p>
+        </div>
+
+        <div class="card fs-live-affirmation-card">
+            <h2>Your Discipline Statement</h2>
+            <p class="fs-live-affirmation">“I pause, I listen, and I follow my dreams.”</p>
+        </div>
+
+        <div class="card fs-live-choice-card">
+            <h2>Recovery Action</h2>
+            <p>Press the button below to complete the recovery and return to your goals.</p>
+            <button id="fsLiveRecoveryBtn">I choose my goals</button>
+        </div>
+
+        <button id="backBtn">Back to Live Mode</button>
+    `);
+
+    document.getElementById("fsLiveRecoveryBtn").addEventListener("click", function() {
+        fsLiveCompleteRecovery(attempt.id);
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openLiveActionModePage);
+}
+
+function openLiveActionModePage() {
+    const state = fsLiveDefaultState();
+    const stats = fsLiveStats();
+    const recentAttempts = state.attempts.slice(0, 5);
+
+    showPage(`
+        <h1>Live Action Mode</h1>
+
+        <div class="card fs-live-hero-card">
+            <h2>Focus Shield Live Demo</h2>
+            <h3>${state.protectionOn ? "Protection Demo ON" : "Protection Demo PAUSED"}</h3>
+            <p>This is the fastest live version of the app: protection simulation, intervention, recovery, and stats.</p>
+        </div>
+
+        <div class="card fs-live-control-card">
+            <h2>Controls</h2>
+            <button id="fsLiveStartBtn">Start Protection Demo</button>
+            <button id="fsLiveSafeBtn">Test Safe Domain</button>
+            <button id="fsLiveBlockedBtn">Test Blocked Domain</button>
+            <button id="fsLiveStopBtn">Pause Demo</button>
+            <button id="fsLiveResetBtn">Reset Demo Stats</button>
+        </div>
+
+        <div class="card fs-live-result-card">
+            <h2>Latest Protection Decision</h2>
+            ${fsLiveLastDecisionHtml()}
+        </div>
+
+        <div class="card fs-live-stats-card">
+            <h2>Live Stats</h2>
+            <div class="fs-live-stats-grid">
+                <div>
+                    <strong>${stats.attemptsToday}</strong>
+                    <span>Attempts Today</span>
+                </div>
+                <div>
+                    <strong>${stats.attemptsTotal}</strong>
+                    <span>Total Blocks</span>
+                </div>
+                <div>
+                    <strong>${stats.recoveriesTotal}</strong>
+                    <span>Recoveries</span>
+                </div>
+                <div>
+                    <strong>${stats.recoveryRate}%</strong>
+                    <span>Recovery Rate</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card fs-live-log-card">
+            <h2>Recent Blocked Attempts</h2>
+            ${
+                recentAttempts.length
+                    ? recentAttempts.map(function(attempt) {
+                        return `
+                            <div class="fs-live-log-item">
+                                <strong>${attempt.recovered ? "✅ Recovered" : "🛡️ Blocked"} — ${fsLiveEscape(attempt.domain)}</strong>
+                                <p>${fsLiveEscape(attempt.category)} • ${new Date(attempt.time).toLocaleString()}</p>
+                            </div>
+                        `;
+                    }).join("")
+                    : "<p>No blocked attempts yet. Test a blocked domain to see the system in action.</p>"
+            }
+        </div>
+
+        <div class="card fs-live-next-card">
+            <h2>What You Are Seeing</h2>
+            <p>This is the app behaving like a real protection system, but using safe test domains instead of real unsafe sites.</p>
+            <p>The real Android version will later connect this same logic to native VPN/DNS filtering.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("fsLiveStartBtn").addEventListener("click", fsLiveStartDemo);
+    document.getElementById("fsLiveSafeBtn").addEventListener("click", fsLiveTestSafe);
+    document.getElementById("fsLiveBlockedBtn").addEventListener("click", fsLiveTestBlocked);
+    document.getElementById("fsLiveStopBtn").addEventListener("click", fsLiveStopDemo);
+    document.getElementById("fsLiveResetBtn").addEventListener("click", fsLiveResetDemo);
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertLiveActionHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveActionHomeCard")) return;
+
+    const stats = fsLiveStats();
+
+    const insertAfter =
+        document.getElementById("flutterSdkHomeCard") ||
+        document.getElementById("flutterProjectHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveActionHomeCard";
+    card.className = "card fs-live-home-card";
+    card.innerHTML = `
+        <h2>Live Action Mode</h2>
+        <h3>See Focus Shield in action</h3>
+        <p>Test safe/block decisions, intervention screen, recovery, and live stats.</p>
+        <p><strong>Blocks:</strong> ${stats.attemptsTotal} • <strong>Recoveries:</strong> ${stats.recoveriesTotal}</p>
+        <button id="openLiveActionHomeBtn">Launch Live Mode</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openLiveActionHomeBtn").addEventListener("click", openLiveActionModePage);
+}
+
+function addLiveActionQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickLiveActionBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickLiveActionBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-main-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">LIVE</span>
+        <span class="premium-quick-label">Action Mode</span>
+        <span class="premium-quick-sub">Run demo</span>
+    `;
+
+    button.addEventListener("click", openLiveActionModePage);
+    grid.appendChild(button);
+}
+
+function refreshLiveActionSystems() {
+    setTimeout(insertLiveActionHomeCard, 900);
+    setTimeout(insertLiveActionHomeCard, 2200);
+    setTimeout(insertLiveActionHomeCard, 3600);
+
+    setTimeout(addLiveActionQuickButton, 1000);
+    setTimeout(addLiveActionQuickButton, 2300);
+    setTimeout(addLiveActionQuickButton, 3600);
+}
+
+if (typeof goHome === "function" && !window.fsLiveActionGoHomeWrapped) {
+    window.fsLiveActionGoHomeWrapped = true;
+
+    const oldGoHomeLiveAction = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAction.apply(this, arguments);
+        setTimeout(refreshLiveActionSystems, 1400);
+    };
+}
+
+refreshLiveActionSystems();
 
 </script>
 
