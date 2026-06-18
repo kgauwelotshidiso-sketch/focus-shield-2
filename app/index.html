@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv46progress1">
+    <link rel="stylesheet" href="style.css?v=liveappv47coach1">
 </head>
 <body>
 
@@ -28513,6 +28513,568 @@ if (typeof goHome === "function" && !window.fsLiveAppV46GoHomeWrapped) {
 
 setTimeout(fsLiveV46AutoOpen, 650);
 refreshLiveAppV46Systems();
+
+
+/* Live App v4.7 Coach System Integration */
+function fsLiveV47Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV47SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV47SaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function fsLiveV47Today() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function fsLiveV47NowLabel() {
+    return new Date().toLocaleString();
+}
+
+function fsLiveV47GetCoachState() {
+    const today = fsLiveV47Today();
+    const saved = fsLiveV47SafeJson("fsLiveV47CoachState", {});
+
+    const base = {
+        today,
+        morningCommandSet: false,
+        startPlanDone: false,
+        startPlansCount: Number(saved.startPlansCount || 0),
+        reviewsCount: Number(saved.reviewsCount || 0),
+        lastMainCommand: saved.lastMainCommand || "Complete today’s mission before the day gets noisy.",
+        lastWeakness: saved.lastWeakness || "Not enough data yet.",
+        memoryNotes: Array.isArray(saved.memoryNotes) ? saved.memoryNotes : []
+    };
+
+    if (saved.today !== today) {
+        return base;
+    }
+
+    return {
+        ...base,
+        morningCommandSet: Boolean(saved.morningCommandSet),
+        startPlanDone: Boolean(saved.startPlanDone),
+        lastMainCommand: saved.lastMainCommand || base.lastMainCommand,
+        lastWeakness: saved.lastWeakness || base.lastWeakness
+    };
+}
+
+function fsLiveV47SaveCoachState(state) {
+    fsLiveV47SaveJson("fsLiveV47CoachState", state);
+}
+
+function fsLiveV47GetReviews() {
+    const reviews = fsLiveV47SafeJson("fsLiveV47EndReviewHistory", []);
+    return Array.isArray(reviews) ? reviews : [];
+}
+
+function fsLiveV47SaveReviews(reviews) {
+    fsLiveV47SaveJson("fsLiveV47EndReviewHistory", reviews.slice(0, 60));
+}
+
+function fsLiveV47GetProgressState() {
+    if (typeof fsLiveV46GetProgressState === "function") {
+        return fsLiveV46GetProgressState();
+    }
+
+    return fsLiveV47SafeJson("fsLiveV46ProgressState", {
+        xp: 45,
+        level: 2,
+        listeningWinsToday: 0,
+        focusSessionsToday: 0,
+        reflectionsToday: 0,
+        concentrationWinsToday: 0
+    });
+}
+
+function fsLiveV47GetMission() {
+    if (typeof fsLiveV44GetMission === "function") {
+        return fsLiveV44GetMission();
+    }
+
+    const mission = fsLiveV47SafeJson("fsTodayMissionProgress", {});
+    return {
+        current: Number(mission.current || 0),
+        target: Number(mission.target || 3),
+        text: mission.text || "Pause and fully listen before speaking at least 3 times today."
+    };
+}
+
+function fsLiveV47GetLiveStats() {
+    if (typeof fsLiveV44GetLiveStats === "function") return fsLiveV44GetLiveStats();
+    if (typeof fsLiveV4Stats === "function") return fsLiveV4Stats();
+
+    return {
+        attemptsToday: 0,
+        attemptsTotal: 0,
+        recoveriesTotal: 0,
+        recoveryRate: 100
+    };
+}
+
+function fsLiveV47GetTimeline() {
+    if (typeof fsLiveV46GetTimeline === "function") return fsLiveV46GetTimeline();
+
+    const timeline = fsLiveV47SafeJson("fsLiveV46Timeline", []);
+    return Array.isArray(timeline) ? timeline : [];
+}
+
+function fsLiveV47AddTimelineEvent(type, title, detail) {
+    if (typeof fsLiveV46AddTimelineEvent === "function") {
+        fsLiveV46AddTimelineEvent(type, title, detail);
+        return;
+    }
+
+    const timeline = fsLiveV47GetTimeline();
+
+    timeline.unshift({
+        id: Date.now(),
+        date: fsLiveV47Today(),
+        time: fsLiveV47NowLabel(),
+        type,
+        title,
+        detail
+    });
+
+    fsLiveV47SaveJson("fsLiveV46Timeline", timeline.slice(0, 40));
+}
+
+function fsLiveV47AwardCoachXp(amount, title, detail) {
+    if (typeof fsLiveV46AwardXp === "function") {
+        fsLiveV46AwardXp(amount, title, detail);
+        return;
+    }
+
+    const progress = fsLiveV47GetProgressState();
+    progress.xp = Number(progress.xp || 0) + Number(amount || 0);
+    progress.level = Math.max(1, Math.floor(progress.xp / 100) + 1);
+    fsLiveV47SaveJson("fsLiveV46ProgressState", progress);
+    fsLiveV47AddTimelineEvent("Coach", title, detail + " +" + amount + " XP");
+}
+
+function fsLiveV47AnalyzeCoach() {
+    const coach = fsLiveV47GetCoachState();
+    const progress = fsLiveV47GetProgressState();
+    const mission = fsLiveV47GetMission();
+    const stats = fsLiveV47GetLiveStats();
+
+    const missionScore = Math.min(100, Math.round((mission.current / Math.max(1, mission.target)) * 100));
+    const activityScore = Math.min(
+        100,
+        (Number(progress.focusSessionsToday || 0) * 25) +
+        (Number(progress.reflectionsToday || 0) * 25) +
+        (Number(progress.concentrationWinsToday || 0) * 25)
+    );
+
+    const recoveryScore = Number(stats.attemptsToday || 0) === 0
+        ? 100
+        : Number(stats.recoveryRate || 0);
+
+    const dayScore = Math.round((missionScore * 0.45) + (activityScore * 0.25) + (recoveryScore * 0.30));
+
+    let weakness = "Maintain Discipline";
+    let suggestion = "Keep the system active and complete your daily review.";
+    let command = "Protect the streak by completing the mission and reviewing the day.";
+
+    if (!coach.morningCommandSet) {
+        weakness = "Morning Command";
+        suggestion = "Set your command before distractions decide your direction.";
+        command = "Set Morning Command now.";
+    } else if (mission.current < mission.target) {
+        weakness = "Listening Consistency";
+        suggestion = "Get the remaining listening wins before the day ends.";
+        command = "Pause, listen fully, then speak.";
+    } else if (Number(progress.focusSessionsToday || 0) < 1) {
+        weakness = "Focus Follow-Through";
+        suggestion = "Complete one focus session to convert discipline into action.";
+        command = "Start one focus session.";
+    } else if (Number(progress.reflectionsToday || 0) < 1) {
+        weakness = "Self-Review";
+        suggestion = "Write one short reflection so the day does not disappear without a lesson.";
+        command = "Complete Daily End Review.";
+    } else if (Number(stats.attemptsToday || 0) > 0 && Number(stats.recoveryRate || 0) < 100) {
+        weakness = "Recovery Completion";
+        suggestion = "Finish every recovery loop after a block.";
+        command = "Return to Recovery and mark control restored.";
+    }
+
+    return {
+        coach,
+        progress,
+        mission,
+        stats,
+        missionScore,
+        activityScore,
+        recoveryScore,
+        dayScore,
+        weakness,
+        suggestion,
+        command
+    };
+}
+
+function fsLiveV47SetMorningCommand() {
+    const state = fsLiveV47GetCoachState();
+    const analysis = fsLiveV47AnalyzeCoach();
+
+    state.morningCommandSet = true;
+    state.startPlanDone = true;
+    state.startPlansCount += 1;
+    state.lastMainCommand = "Pause, listen, protect the streak, and complete the mission.";
+    state.lastWeakness = analysis.weakness;
+
+    state.memoryNotes.unshift({
+        date: fsLiveV47Today(),
+        note: "Morning command set: protect the streak and complete the daily mission."
+    });
+
+    state.memoryNotes = state.memoryNotes.slice(0, 12);
+
+    fsLiveV47SaveCoachState(state);
+    fsLiveV47AwardCoachXp(10, "Daily Start Plan", "Morning command completed.");
+    openLiveAppV47CoachPage();
+}
+
+function fsLiveV47SaveEndReview() {
+    const analysis = fsLiveV47AnalyzeCoach();
+    const state = fsLiveV47GetCoachState();
+
+    const mood = document.getElementById("v47ReviewMood")?.value || "Disciplined";
+    const lesson = document.getElementById("v47ReviewLesson")?.value.trim() || "I returned to my goals today.";
+
+    const review = {
+        id: Date.now(),
+        date: fsLiveV47Today(),
+        time: fsLiveV47NowLabel(),
+        score: analysis.dayScore,
+        mood,
+        lesson,
+        weakness: analysis.weakness,
+        command: analysis.command,
+        mission: `${analysis.mission.current}/${analysis.mission.target}`,
+        recoveryRate: analysis.stats.recoveryRate
+    };
+
+    const reviews = fsLiveV47GetReviews();
+    reviews.unshift(review);
+    fsLiveV47SaveReviews(reviews);
+
+    state.reviewsCount += 1;
+    state.lastWeakness = analysis.weakness;
+    state.lastMainCommand = analysis.command;
+    state.memoryNotes.unshift({
+        date: fsLiveV47Today(),
+        note: "End review saved: " + lesson
+    });
+    state.memoryNotes = state.memoryNotes.slice(0, 12);
+
+    fsLiveV47SaveCoachState(state);
+    fsLiveV47AwardCoachXp(15, "Daily End Review", "End review completed.");
+    openLiveAppV47CoachPage();
+}
+
+function fsLiveV47WeeklyBars() {
+    const timeline = fsLiveV47GetTimeline();
+    const reviews = fsLiveV47GetReviews();
+    const days = [];
+
+    for (let i = 6; i >= 0; i -= 1) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+
+        const key = date.toISOString().slice(0, 10);
+        const label = date.toLocaleDateString(undefined, { weekday: "short" });
+
+        const activityCount = timeline.filter(function(event) {
+            return event.date === key;
+        }).length;
+
+        const review = reviews.find(function(item) {
+            return item.date === key;
+        });
+
+        const score = review ? Number(review.score || 0) : Math.min(100, activityCount * 20);
+
+        days.push({ key, label, score });
+    }
+
+    const max = Math.max(1, ...days.map(function(day) { return day.score; }));
+
+    return `
+        <div class="fs-v47-weekly-chart">
+            ${days.map(function(day) {
+                const height = Math.max(8, Math.round((day.score / max) * 100));
+                return `
+                    <div class="fs-v47-weekly-col">
+                        <div class="fs-v47-weekly-bar-wrap">
+                            <div class="fs-v47-weekly-bar" style="height:${height}%;"></div>
+                        </div>
+                        <strong>${day.score}</strong>
+                        <span>${fsLiveV47Escape(day.label)}</span>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+function fsLiveV47OpenModule(moduleKey) {
+    if (typeof fsLiveV41OpenModule === "function") {
+        fsLiveV41OpenModule(moduleKey);
+        return;
+    }
+
+    openLiveAppV47CoachPage();
+}
+
+function openLiveAppV47CoachPage() {
+    const analysis = fsLiveV47AnalyzeCoach();
+    const reviews = fsLiveV47GetReviews().slice(0, 6);
+    const memory = analysis.coach.memoryNotes.slice(0, 5);
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Coach", "Daily operating system") : "<h1>Coach</h1>"}
+
+        <div class="card fs-v47-command-card">
+            <h2>Main Coach Command</h2>
+            <h3>${fsLiveV47Escape(analysis.command)}</h3>
+            <p>Current weakness: <strong>${fsLiveV47Escape(analysis.weakness)}</strong></p>
+        </div>
+
+        <div class="card fs-v47-os-card">
+            <h2>Daily Operating System</h2>
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${analysis.dayScore}%</strong><span>Daily Score</span></div>
+                <div><strong>${analysis.mission.current}/${analysis.mission.target}</strong><span>Mission</span></div>
+                <div><strong>${analysis.stats.recoveryRate}%</strong><span>Recovery</span></div>
+                <div><strong>${analysis.progress.level || 1}</strong><span>Level</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v47-start-card">
+            <h2>Daily Start Plan</h2>
+            <p><strong>Status:</strong> ${analysis.coach.morningCommandSet ? "Command Set" : "Not Set"}</p>
+            <p>Today’s command: protect your streak, complete the listening mission, and use Focus Shield before temptation controls the moment.</p>
+            <button id="v47SetMorningCommandBtn">${analysis.coach.morningCommandSet ? "Reset Morning Command" : "Set Morning Command"}</button>
+        </div>
+
+        <div class="card fs-v47-smart-card">
+            <h2>Smart Coach</h2>
+            <h3>${fsLiveV47Escape(analysis.suggestion)}</h3>
+            <p>The app reads today’s mission, recovery rate, XP actions, and review history to decide your next command.</p>
+            <button id="v47DoCoachActionBtn">Do Coach Action</button>
+        </div>
+
+        <div class="card fs-v47-weakness-card">
+            <h2>Weakness Detection</h2>
+            <h3>${fsLiveV47Escape(analysis.weakness)}</h3>
+            <p>${fsLiveV47Escape(analysis.suggestion)}</p>
+        </div>
+
+        <div class="card fs-v47-review-card">
+            <h2>Daily End Review</h2>
+            <p>Score estimate: <strong>${analysis.dayScore}%</strong></p>
+
+            <label for="v47ReviewMood">Today’s control level</label>
+            <select id="v47ReviewMood">
+                <option>Disciplined</option>
+                <option>Improving</option>
+                <option>Unstable</option>
+                <option>Strong Recovery</option>
+            </select>
+
+            <label for="v47ReviewLesson">Lesson from today</label>
+            <textarea id="v47ReviewLesson" rows="4" placeholder="What did I learn about my attention, emotions, and discipline today?"></textarea>
+
+            <button id="v47SaveReviewBtn">Save End Review</button>
+        </div>
+
+        <div class="card fs-v47-weekly-card">
+            <h2>Weekly Intelligence</h2>
+            <p>Daily coach score based on activity, mission completion, and reviews.</p>
+            ${fsLiveV47WeeklyBars()}
+        </div>
+
+        <div class="card fs-v47-memory-card">
+            <h2>Coach Memory</h2>
+            <p><strong>Start Plans:</strong> ${analysis.coach.startPlansCount}</p>
+            <p><strong>End Reviews:</strong> ${analysis.coach.reviewsCount}</p>
+            <p><strong>Last Weakness:</strong> ${fsLiveV47Escape(analysis.coach.lastWeakness)}</p>
+            ${
+                memory.length
+                    ? memory.map(function(item) {
+                        return `<div class="fs-v47-memory-item"><strong>${fsLiveV47Escape(item.date)}</strong><p>${fsLiveV47Escape(item.note)}</p></div>`;
+                    }).join("")
+                    : "<p>No coach memory yet. Set your morning command or save an end review.</p>"
+            }
+        </div>
+
+        <div class="card fs-v47-history-card">
+            <h2>End Review History</h2>
+            ${
+                reviews.length
+                    ? reviews.map(function(review) {
+                        return `
+                            <div class="fs-v47-review-item">
+                                <strong>${fsLiveV47Escape(review.date)} • ${review.score}%</strong>
+                                <p>${fsLiveV47Escape(review.mood)} • ${fsLiveV47Escape(review.weakness)}</p>
+                                <p>${fsLiveV47Escape(review.lesson)}</p>
+                            </div>
+                        `;
+                    }).join("")
+                    : "<p>No end reviews saved yet.</p>"
+            }
+        </div>
+
+        <div class="card fs-v47-modules-card">
+            <h2>Old Coach Modules</h2>
+            <div class="fs-v47-action-grid">
+                <button id="v47OldSmartCoachBtn">Smart Coach Module</button>
+                <button id="v47OldStartPlanBtn">Start Plan Module</button>
+                <button id="v47OldEndReviewBtn">End Review Module</button>
+                <button id="v47OldChartsBtn">Weekly Charts Module</button>
+                <button id="v47OldTimelineBtn">Timeline Module</button>
+                <button id="v47OldHealthBtn">Health Check Module</button>
+            </div>
+        </div>
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("coach") : (typeof fsLiveV4BottomNav === "function" ? fsLiveV4BottomNav("coach") : "")}
+    `);
+
+    document.getElementById("v47SetMorningCommandBtn").addEventListener("click", fsLiveV47SetMorningCommand);
+
+    document.getElementById("v47SaveReviewBtn").addEventListener("click", fsLiveV47SaveEndReview);
+
+    document.getElementById("v47DoCoachActionBtn").addEventListener("click", function() {
+        if (analysis.weakness === "Morning Command") {
+            fsLiveV47SetMorningCommand();
+            return;
+        }
+
+        if (analysis.weakness === "Listening Consistency") {
+            if (typeof openLiveAppV46ProgressPage === "function") openLiveAppV46ProgressPage();
+            return;
+        }
+
+        if (analysis.weakness === "Focus Follow-Through") {
+            fsLiveV47OpenModule("focusTimer");
+            return;
+        }
+
+        if (analysis.weakness === "Self-Review") {
+            document.getElementById("v47ReviewLesson")?.focus();
+            return;
+        }
+
+        if (typeof openLiveAppV4RecoveryPage === "function") openLiveAppV4RecoveryPage();
+    });
+
+    document.getElementById("v47OldSmartCoachBtn").addEventListener("click", function() {
+        fsLiveV47OpenModule("smartCoach");
+    });
+
+    document.getElementById("v47OldStartPlanBtn").addEventListener("click", function() {
+        fsLiveV47OpenModule("dailyStartPlan");
+    });
+
+    document.getElementById("v47OldEndReviewBtn").addEventListener("click", function() {
+        fsLiveV47OpenModule("dailyEndReview");
+    });
+
+    document.getElementById("v47OldChartsBtn").addEventListener("click", function() {
+        fsLiveV47OpenModule("charts");
+    });
+
+    document.getElementById("v47OldTimelineBtn").addEventListener("click", function() {
+        fsLiveV47OpenModule("timeline");
+    });
+
+    document.getElementById("v47OldHealthBtn").addEventListener("click", function() {
+        fsLiveV47OpenModule("systemHealth");
+    });
+
+    if (typeof fsLiveV44BindNav === "function") {
+        fsLiveV44BindNav();
+    } else if (typeof fsLiveV4BindNav === "function") {
+        fsLiveV4BindNav();
+    }
+}
+
+/* Override coach tab */
+window.openLiveAppV47CoachPage = openLiveAppV47CoachPage;
+window.openLiveAppV44CoachPage = openLiveAppV47CoachPage;
+window.openLiveAppV4CoachPage = openLiveAppV47CoachPage;
+
+function fsLiveV47AutoOpen() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("liveappv47coach")) {
+        openLiveAppV47CoachPage();
+    }
+}
+
+function insertLiveAppV47Card() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV47HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV46HomeCard") ||
+        document.getElementById("liveAppV45HomeCard") ||
+        document.getElementById("liveAppV44HomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "liveAppV47HomeCard";
+    card.className = "card fs-v47-command-card";
+    card.innerHTML = `
+        <h2>Live App v4.7</h2>
+        <h3>Coach System</h3>
+        <p>Daily Start Plan, End Review, Smart Coach, Weekly Intelligence, Weakness Detection, and Coach Memory are now integrated.</p>
+        <button id="openLiveAppV47Btn">Open Coach System</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+    document.getElementById("openLiveAppV47Btn").addEventListener("click", openLiveAppV47CoachPage);
+}
+
+function refreshLiveAppV47Systems() {
+    setTimeout(insertLiveAppV47Card, 1500);
+    setTimeout(insertLiveAppV47Card, 3100);
+    setTimeout(insertLiveAppV47Card, 4500);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV47GoHomeWrapped) {
+    window.fsLiveAppV47GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV47 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV47.apply(this, arguments);
+        setTimeout(refreshLiveAppV47Systems, 2100);
+    };
+}
+
+setTimeout(fsLiveV47AutoOpen, 700);
+refreshLiveAppV47Systems();
 
 </script>
 
