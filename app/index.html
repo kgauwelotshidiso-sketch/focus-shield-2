@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=leanliveaction1">
+    <link rel="stylesheet" href="style.css?v=leanliveactionv2">
 </head>
 <body>
 
@@ -24271,6 +24271,375 @@ if (typeof goHome === "function" && !window.fsLiveActionGoHomeWrapped) {
 }
 
 refreshLiveActionSystems();
+
+
+/* Lean Build Live Action Mode v2 */
+function fsLiveNormalizeDomain(rawValue) {
+    const raw = String(rawValue || "").trim().toLowerCase();
+
+    if (!raw) return "";
+
+    try {
+        const withProtocol = raw.startsWith("http://") || raw.startsWith("https://")
+            ? raw
+            : "https://" + raw;
+
+        const url = new URL(withProtocol);
+        return url.hostname.replace(/^www\./, "");
+    } catch (error) {
+        return raw
+            .replace(/^https?:\/\//, "")
+            .replace(/^www\./, "")
+            .split("/")[0]
+            .split("?")[0]
+            .trim();
+    }
+}
+
+function fsLiveIsBlockedDomain(domain) {
+    const safeBlockedTests = [
+        "blocked-example.com",
+        "temptation-test.net",
+        "focus-risk.org"
+    ];
+
+    const safeRiskKeywords = [
+        "blocked",
+        "temptation",
+        "risk",
+        "unsafe",
+        "trigger"
+    ];
+
+    return safeBlockedTests.some(function(item) {
+        return domain === item || domain.endsWith("." + item);
+    }) || safeRiskKeywords.some(function(keyword) {
+        return domain.includes(keyword);
+    });
+}
+
+function fsLiveAnalyzeScannerValue(rawValue) {
+    const domain = fsLiveNormalizeDomain(rawValue);
+    const state = fsLiveDefaultState();
+
+    if (!domain) {
+        state.lastDecision = {
+            type: "PAUSED",
+            title: "Enter a domain first",
+            message: "Type a safe test domain, then press Scan Domain.",
+            time: new Date().toISOString()
+        };
+
+        fsLiveSaveState(state);
+        openLiveActionModePage();
+        return;
+    }
+
+    if (!state.protectionOn) {
+        state.lastDecision = {
+            type: "PAUSED",
+            title: "Protection demo is paused",
+            domain: domain,
+            message: "Start Protection Demo before scanning domains.",
+            time: new Date().toISOString()
+        };
+
+        fsLiveSaveState(state);
+        openLiveActionModePage();
+        return;
+    }
+
+    if (fsLiveIsBlockedDomain(domain)) {
+        const attempt = {
+            id: Date.now(),
+            domain: domain,
+            category: "focus risk",
+            reason: "This domain matched the Focus Shield safe test block rules.",
+            time: new Date().toISOString(),
+            recovered: false
+        };
+
+        state.attempts.unshift(attempt);
+        state.lastDecision = {
+            type: "BLOCK",
+            title: "Domain blocked",
+            domain: domain,
+            message: "Focus Shield blocked this test domain and opened an intervention.",
+            time: attempt.time
+        };
+
+        fsLiveSaveState(state);
+        openLiveInterventionPage(attempt.id);
+        return;
+    }
+
+    state.lastDecision = {
+        type: "ALLOW",
+        title: "Domain allowed",
+        domain: domain,
+        message: "This domain did not match the local test block rules.",
+        time: new Date().toISOString()
+    };
+
+    fsLiveSaveState(state);
+    openLiveActionModePage();
+}
+
+function fsLiveOpenEmergencyResetPage() {
+    showPage(`
+        <h1>Emergency Reset</h1>
+
+        <div class="card fs-live-reset-hero-card">
+            <h2>Pause. Breathe. Reset.</h2>
+            <p>This is your quick reset screen when you feel pulled away from your goals.</p>
+        </div>
+
+        <div class="card fs-live-breathing-card">
+            <div class="fs-live-breathing-circle">
+                <span>Breathe</span>
+            </div>
+            <h2>60-Second Reset</h2>
+            <p><strong>Step 1:</strong> Inhale slowly.</p>
+            <p><strong>Step 2:</strong> Hold for a moment.</p>
+            <p><strong>Step 3:</strong> Exhale slowly.</p>
+            <p><strong>Step 4:</strong> Repeat and return to your goals.</p>
+        </div>
+
+        <div class="card fs-live-affirmation-card">
+            <h2>Your Discipline Statement</h2>
+            <p class="fs-live-affirmation">“I pause, I listen, and I follow my dreams.”</p>
+        </div>
+
+        <button id="fsLiveResetCompleteBtn">I am back in control</button>
+        <button id="backBtn">Back to Live Mode</button>
+    `);
+
+    document.getElementById("fsLiveResetCompleteBtn").addEventListener("click", function() {
+        const state = fsLiveDefaultState();
+
+        state.recoveries.unshift({
+            id: Date.now(),
+            attemptId: null,
+            action: "Emergency reset completed.",
+            time: new Date().toISOString()
+        });
+
+        state.lastDecision = {
+            type: "RECOVERED",
+            title: "Emergency reset completed",
+            message: "You paused, reset, and returned to your goals.",
+            time: new Date().toISOString()
+        };
+
+        fsLiveSaveState(state);
+        openLiveActionModePage();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", openLiveActionModePage);
+}
+
+function fsLiveOpenFocusTimerSafe() {
+    const possibleFunctions = [
+        "openFocusTimerPage",
+        "openFocusPage",
+        "openTimerPage",
+        "openFocusModePage",
+        "showFocusTimerPage"
+    ];
+
+    for (const name of possibleFunctions) {
+        if (typeof window[name] === "function") {
+            window[name]();
+            return;
+        }
+    }
+
+    showPage(`
+        <h1>Focus Timer</h1>
+
+        <div class="card fs-live-focus-fallback-card">
+            <h2>Focus Timer Shortcut</h2>
+            <p>The direct Focus Timer function was not found, so use this quick fallback:</p>
+            <h3>10-Minute Focus Mission</h3>
+            <p>Put your phone down, choose one task, and focus for 10 minutes.</p>
+            <p class="fs-live-affirmation">“I pause, I listen, and I follow my dreams.”</p>
+        </div>
+
+        <button id="backBtn">Back to Live Mode</button>
+    `);
+
+    document.getElementById("backBtn").addEventListener("click", openLiveActionModePage);
+}
+
+function fsLiveProtectionStatusHtml() {
+    const state = fsLiveDefaultState();
+    const stats = fsLiveStats();
+
+    return `
+        <div class="fs-live-phone-status">
+            <div class="fs-live-phone-top">
+                <span class="fs-live-dot ${state.protectionOn ? "fs-live-dot-on" : "fs-live-dot-off"}"></span>
+                <strong>${state.protectionOn ? "Shield Active" : "Shield Paused"}</strong>
+                <span>${state.protectionOn ? "Live" : "Paused"}</span>
+            </div>
+            <div class="fs-live-phone-main">
+                <h2>${state.protectionOn ? "Protection Demo ON" : "Protection Demo PAUSED"}</h2>
+                <p>Blocks today: ${stats.attemptsToday} • Recovery rate: ${stats.recoveryRate}%</p>
+            </div>
+        </div>
+    `;
+}
+
+function openLiveInterventionPage(attemptId) {
+    const state = fsLiveDefaultState();
+    const attempt = state.attempts.find(function(item) {
+        return String(item.id) === String(attemptId);
+    });
+
+    if (!attempt) {
+        openLiveActionModePage();
+        return;
+    }
+
+    showPage(`
+        <h1>Focus Shield Intervention</h1>
+
+        <div class="card fs-live-intervention-card">
+            <h2>Shield Blocked A Distraction</h2>
+            <p>Focus Shield blocked this safe test domain:</p>
+            <h3>${fsLiveEscape(attempt.domain)}</h3>
+            <p>${fsLiveEscape(attempt.reason)}</p>
+        </div>
+
+        <div class="card fs-live-affirmation-card">
+            <h2>Your Discipline Statement</h2>
+            <p class="fs-live-affirmation">“I pause, I listen, and I follow my dreams.”</p>
+        </div>
+
+        <div class="card fs-live-choice-card">
+            <h2>Choose Your Recovery</h2>
+            <button id="fsLiveRecoveryBtn">I choose my goals</button>
+            <button id="fsLiveBreathingBtn">Emergency Reset</button>
+            <button id="fsLiveFocusTimerBtn">Take me to Focus Timer</button>
+        </div>
+
+        <button id="backBtn">Back to Live Mode</button>
+    `);
+
+    document.getElementById("fsLiveRecoveryBtn").addEventListener("click", function() {
+        fsLiveCompleteRecovery(attempt.id);
+    });
+
+    document.getElementById("fsLiveBreathingBtn").addEventListener("click", fsLiveOpenEmergencyResetPage);
+    document.getElementById("fsLiveFocusTimerBtn").addEventListener("click", fsLiveOpenFocusTimerSafe);
+    document.getElementById("backBtn").addEventListener("click", openLiveActionModePage);
+}
+
+function openLiveActionModePage() {
+    const state = fsLiveDefaultState();
+    const stats = fsLiveStats();
+    const recentAttempts = state.attempts.slice(0, 5);
+
+    showPage(`
+        <h1>Live Action Mode v2</h1>
+
+        <div class="card fs-live-hero-card">
+            <h2>Focus Shield Live Demo</h2>
+            ${fsLiveProtectionStatusHtml()}
+        </div>
+
+        <div class="card fs-live-scanner-card">
+            <h2>Live URL Scanner</h2>
+            <p>Type a safe test domain and scan it.</p>
+
+            <div class="fs-live-scanner-row">
+                <input id="fsLiveScannerInput" type="text" placeholder="example.com or blocked-example.com">
+                <button id="fsLiveScanBtn">Scan Domain</button>
+            </div>
+
+            <p class="fs-live-hint">Try: <strong>study-example.com</strong> or <strong>blocked-example.com</strong></p>
+        </div>
+
+        <div class="card fs-live-control-card">
+            <h2>Quick Controls</h2>
+            <button id="fsLiveStartBtn">Start Protection Demo</button>
+            <button id="fsLiveSafeBtn">Test Safe Domain</button>
+            <button id="fsLiveBlockedBtn">Test Blocked Domain</button>
+            <button id="fsLiveEmergencyBtn">Emergency Reset</button>
+            <button id="fsLiveStopBtn">Pause Demo</button>
+            <button id="fsLiveResetBtn">Reset Demo Stats</button>
+        </div>
+
+        <div class="card fs-live-result-card">
+            <h2>Latest Protection Decision</h2>
+            ${fsLiveLastDecisionHtml()}
+        </div>
+
+        <div class="card fs-live-stats-card">
+            <h2>Live Stats</h2>
+            <div class="fs-live-stats-grid">
+                <div>
+                    <strong>${stats.attemptsToday}</strong>
+                    <span>Attempts Today</span>
+                </div>
+                <div>
+                    <strong>${stats.attemptsTotal}</strong>
+                    <span>Total Blocks</span>
+                </div>
+                <div>
+                    <strong>${stats.recoveriesTotal}</strong>
+                    <span>Recoveries</span>
+                </div>
+                <div>
+                    <strong>${stats.recoveryRate}%</strong>
+                    <span>Recovery Rate</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card fs-live-log-card">
+            <h2>Recent Blocked Attempts</h2>
+            ${
+                recentAttempts.length
+                    ? recentAttempts.map(function(attempt) {
+                        return `
+                            <div class="fs-live-log-item">
+                                <strong>${attempt.recovered ? "✅ Recovered" : "🛡️ Blocked"} — ${fsLiveEscape(attempt.domain)}</strong>
+                                <p>${fsLiveEscape(attempt.category)} • ${new Date(attempt.time).toLocaleString()}</p>
+                            </div>
+                        `;
+                    }).join("")
+                    : "<p>No blocked attempts yet. Scan blocked-example.com to see the system in action.</p>"
+            }
+        </div>
+
+        <div class="card fs-live-next-card">
+            <h2>What Changed In v2</h2>
+            <p>This now feels more like a real protection app: shield status, scanner input, intervention, emergency reset, recovery, and live stats.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.getElementById("fsLiveStartBtn").addEventListener("click", fsLiveStartDemo);
+    document.getElementById("fsLiveSafeBtn").addEventListener("click", fsLiveTestSafe);
+    document.getElementById("fsLiveBlockedBtn").addEventListener("click", fsLiveTestBlocked);
+    document.getElementById("fsLiveEmergencyBtn").addEventListener("click", fsLiveOpenEmergencyResetPage);
+    document.getElementById("fsLiveStopBtn").addEventListener("click", fsLiveStopDemo);
+    document.getElementById("fsLiveResetBtn").addEventListener("click", fsLiveResetDemo);
+
+    document.getElementById("fsLiveScanBtn").addEventListener("click", function() {
+        fsLiveAnalyzeScannerValue(document.getElementById("fsLiveScannerInput").value);
+    });
+
+    document.getElementById("fsLiveScannerInput").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            fsLiveAnalyzeScannerValue(document.getElementById("fsLiveScannerInput").value);
+        }
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
 
 </script>
 
