@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv42concentration1">
+    <link rel="stylesheet" href="style.css?v=liveappv43featurevault1">
 </head>
 <body>
 
@@ -26485,6 +26485,575 @@ window.renderConcentrationTrainerPage = openConcentrationTrainerPage;
 window.renderConcentrationPage = openConcentrationTrainerPage;
 window.openAttentionTrainerPage = openConcentrationTrainerPage;
 window.openTapTrainerPage = openConcentrationTrainerPage;
+
+
+/* Live App v4.3 Feature Preservation Map */
+const fsLiveV43FeatureVault = [
+    {
+        phase: "Phase 1",
+        feature: "Dashboard",
+        location: "Home",
+        status: "Integrated",
+        priority: "Core MVP",
+        notes: "Live App Home now acts as the new dashboard shell."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Streak Counter",
+        location: "Home / Progress",
+        status: "Needs deeper integration",
+        priority: "Core MVP",
+        notes: "Must show current streak and longest streak directly on Home."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Goals Page",
+        location: "Coach / Home",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Goals must be displayed as live cards, not only old-module links."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Affirmations Page",
+        location: "Home / Recovery",
+        status: "Partly integrated",
+        priority: "Core MVP",
+        notes: "Main affirmation is visible, but full affirmations manager still needs live-card integration."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Focus Timer",
+        location: "Recovery / Progress",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Needs to become a direct recovery action after a block."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Concentration Trainer",
+        location: "Progress / Recovery",
+        status: "Integrated",
+        priority: "Core MVP",
+        notes: "Connected through v4.2 and usable from the live shell."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Progress Tracker",
+        location: "Progress",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Needs live XP, streak, and listening wins cards."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Listening Wins",
+        location: "Progress",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Should be shown as a fast daily counter inside Progress."
+    },
+    {
+        phase: "Phase 1",
+        feature: "XP System",
+        location: "Progress",
+        status: "Needs deeper integration",
+        priority: "Core MVP",
+        notes: "XP should update when user completes recovery, focus, reflection, or concentration drills."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Badges / Achievements",
+        location: "Progress",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Old module is connected; live badge cards should be added later."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Daily Reflection",
+        location: "Coach / Progress",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Needs direct journal/recovery prompt from intervention screen."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Daily Start Plan",
+        location: "Coach",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Should become a morning planning card."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Daily End Review",
+        location: "Coach",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Should become an evening review card."
+    },
+    {
+        phase: "Phase 1",
+        feature: "End Review History",
+        location: "Coach",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Needs history list inside Coach."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Timeline",
+        location: "Progress",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Should show blocks, recoveries, focus sessions, and reflections."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Smart Coach",
+        location: "Coach",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Needs live recommendations based on blocks and recoveries."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Charts / Weekly Intelligence",
+        location: "Progress / Coach",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Needs live summary cards and weekly trend view."
+    },
+    {
+        phase: "Phase 1",
+        feature: "Backup / Export",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Should remain privacy-aware."
+    },
+    {
+        phase: "Phase 1",
+        feature: "System Health Check",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Should be visible from Settings and used before major upgrades."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Offline Blocked Domain Database",
+        location: "Settings / Scanner",
+        status: "Prototype complete",
+        priority: "Core MVP",
+        notes: "Web prototype uses localStorage; future Flutter version uses SQLite blocked_domains table."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Protection Database Manager",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Add, remove, search, and categorize local test domains."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Local Domain Lookup",
+        location: "Scanner",
+        status: "Integrated",
+        priority: "Core MVP",
+        notes: "Live scanner uses safe local test rules."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Keyword Risk Check",
+        location: "Scanner",
+        status: "Integrated with safe placeholders",
+        priority: "Core MVP",
+        notes: "Uses safe test risk words in the web demo. Real rules remain private in app logic."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Blocked Attempt Log",
+        location: "Logs / Progress",
+        status: "Integrated",
+        priority: "Core MVP",
+        notes: "Live app logs blocked attempts and recovered status."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Privacy Mode",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Must support stats-only mode where exact sites are hidden."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Protection Backup Center",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Important",
+        notes: "Safe backup and full backup rules must remain preserved."
+    },
+    {
+        phase: "Phase 2",
+        feature: "Protection Dashboard Summary",
+        location: "Home / Settings",
+        status: "Partly integrated",
+        priority: "Core MVP",
+        notes: "Live Home has stats; still needs database, lock, backup, and privacy summary."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Protection Engine Flow",
+        location: "Scanner",
+        status: "Partly integrated",
+        priority: "Core MVP",
+        notes: "Request → domain check → keyword check → decision exists in demo form."
+    },
+    {
+        phase: "Phase 3",
+        feature: "URL Analysis Engine",
+        location: "Scanner / Settings",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Needs deeper merge with Live Scanner so both share one decision system."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Category Check",
+        location: "Scanner / Logs",
+        status: "Partly integrated",
+        priority: "Core MVP",
+        notes: "Logs show category; category rules should be editable later."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Classification Layer",
+        location: "Scanner",
+        status: "Planned later",
+        priority: "Later",
+        notes: "Do not depend on AI/classification until core local protection is reliable."
+    },
+    {
+        phase: "Phase 3",
+        feature: "DNS / VPN Filtering Layer",
+        location: "Android Native",
+        status: "Planned for Android",
+        priority: "Core Android MVP",
+        notes: "Requires real Flutter/Android environment and native Android VPN service."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Intervention Screen",
+        location: "Recovery",
+        status: "Integrated",
+        priority: "Core MVP",
+        notes: "Live app opens intervention after blocked test domains."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Read Goals Button",
+        location: "Intervention / Coach",
+        status: "Needs deeper integration",
+        priority: "Core MVP",
+        notes: "Intervention should have direct buttons for Goals, Focus Timer, Journal, and Breathing."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Start Focus Session Button",
+        location: "Intervention / Recovery",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Needs direct focus timer launch after block."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Journal Thoughts Button",
+        location: "Intervention / Coach",
+        status: "Needs deeper integration",
+        priority: "Core MVP",
+        notes: "Should open Daily Reflection from intervention."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Breathing Exercise",
+        location: "Recovery",
+        status: "Integrated",
+        priority: "Core MVP",
+        notes: "Emergency Reset breathing screen is integrated."
+    },
+    {
+        phase: "Phase 3",
+        feature: "SQLite Models",
+        location: "Flutter Starter",
+        status: "Planned / scaffolded",
+        priority: "Android MVP",
+        notes: "Goals, affirmations, streaks, blocked attempts, and security tables are planned in Flutter starter."
+    },
+    {
+        phase: "Phase 3",
+        feature: "PIN Protection",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Lock layer prototype exists; live settings must surface it clearly."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Delayed Disable",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Must stay protected in future Android app."
+    },
+    {
+        phase: "Phase 3",
+        feature: "Protected Settings",
+        location: "Settings",
+        status: "Mapped",
+        priority: "Core MVP",
+        notes: "Should protect blocklist, privacy mode, and disabling."
+    },
+    {
+        phase: "Phase 4",
+        feature: "Firebase Sync",
+        location: "Future Cloud Sync",
+        status: "Planned later",
+        priority: "Later",
+        notes: "Goals, affirmations, progress, streaks, and settings can sync later after local MVP works."
+    },
+    {
+        phase: "Phase 4",
+        feature: "Cloud Administration",
+        location: "Future Cloud",
+        status: "Avoid for MVP",
+        priority: "Later",
+        notes: "Do not add before core protection works reliably."
+    },
+    {
+        phase: "Phase 5",
+        feature: "AI Classification",
+        location: "Future Protection Engine",
+        status: "Avoid for MVP",
+        priority: "Later",
+        notes: "Use only after local blocklist, scanner, intervention, lock, and VPN layers are stable."
+    }
+];
+
+function fsLiveV43VaultStats() {
+    const total = fsLiveV43FeatureVault.length;
+    const integrated = fsLiveV43FeatureVault.filter(function(item) {
+        return item.status.toLowerCase().includes("integrated");
+    }).length;
+    const mapped = fsLiveV43FeatureVault.filter(function(item) {
+        return item.status.toLowerCase().includes("mapped");
+    }).length;
+    const needs = fsLiveV43FeatureVault.filter(function(item) {
+        return item.status.toLowerCase().includes("needs") ||
+               item.status.toLowerCase().includes("partly");
+    }).length;
+    const planned = fsLiveV43FeatureVault.filter(function(item) {
+        return item.status.toLowerCase().includes("planned") ||
+               item.status.toLowerCase().includes("avoid");
+    }).length;
+
+    return { total, integrated, mapped, needs, planned };
+}
+
+function fsLiveV43StatusClass(status) {
+    const lower = String(status || "").toLowerCase();
+
+    if (lower.includes("integrated") || lower.includes("complete")) return "fs-v43-good";
+    if (lower.includes("mapped")) return "fs-v43-mapped";
+    if (lower.includes("needs") || lower.includes("partly")) return "fs-v43-needs";
+    if (lower.includes("planned") || lower.includes("avoid")) return "fs-v43-planned";
+
+    return "fs-v43-mapped";
+}
+
+function fsLiveV43RenderFeatureRows(filter) {
+    let features = fsLiveV43FeatureVault.slice();
+
+    if (filter && filter !== "All") {
+        if (filter === "Needs Work") {
+            features = features.filter(function(item) {
+                const lower = item.status.toLowerCase();
+                return lower.includes("needs") || lower.includes("partly");
+            });
+        } else if (filter === "MVP") {
+            features = features.filter(function(item) {
+                return item.priority.toLowerCase().includes("mvp");
+            });
+        } else {
+            features = features.filter(function(item) {
+                return item.phase === filter;
+            });
+        }
+    }
+
+    return features.map(function(item) {
+        return `
+            <div class="fs-v43-feature-row">
+                <div class="fs-v43-feature-top">
+                    <strong>${fsLiveV4Escape(item.feature)}</strong>
+                    <span class="${fsLiveV43StatusClass(item.status)}">${fsLiveV4Escape(item.status)}</span>
+                </div>
+                <p><strong>Phase:</strong> ${fsLiveV4Escape(item.phase)} • <strong>Location:</strong> ${fsLiveV4Escape(item.location)}</p>
+                <p><strong>Priority:</strong> ${fsLiveV4Escape(item.priority)}</p>
+                <p>${fsLiveV4Escape(item.notes)}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+function openLiveAppV43FeatureVaultPage(filter) {
+    const stats = fsLiveV43VaultStats();
+    const activeFilter = filter || "All";
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Feature Vault", "Preserve every original feature") : "<h1>Feature Vault</h1>"}
+
+        <div class="card fs-v43-vault-hero-card">
+            <h2>Feature Preservation Map</h2>
+            <p>This page protects the original roadmap so features are not lost while the live app gets upgraded.</p>
+
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${stats.total}</strong><span>Total</span></div>
+                <div><strong>${stats.integrated}</strong><span>Integrated</span></div>
+                <div><strong>${stats.mapped}</strong><span>Mapped</span></div>
+                <div><strong>${stats.needs}</strong><span>Needs Work</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v43-vault-card">
+            <h2>Development Phases</h2>
+            <p><strong>Phase 1:</strong> Discipline ecosystem first — dashboard, streaks, goals, affirmations, focus timer, concentration trainer.</p>
+            <p><strong>Phase 2:</strong> Local offline blocklist and protection database.</p>
+            <p><strong>Phase 3:</strong> Protection engine, URL analysis, intervention screen, PIN/security, and Android VPN/DNS plan.</p>
+            <p><strong>Phase 4:</strong> Cloud/Firebase sync later, after local MVP works.</p>
+            <p><strong>Phase 5:</strong> AI classification later, not required for MVP.</p>
+        </div>
+
+        <div class="card fs-v43-vault-card">
+            <h2>Filters</h2>
+            <div class="fs-v43-filter-grid">
+                ${["All", "MVP", "Needs Work", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5"].map(function(name) {
+                    return `<button class="${activeFilter === name ? "active" : ""}" data-v43-filter="${name}">${name}</button>`;
+                }).join("")}
+            </div>
+        </div>
+
+        <div class="card fs-v43-vault-card">
+            <h2>${fsLiveV4Escape(activeFilter)} Features</h2>
+            <div class="fs-v43-feature-list">
+                ${fsLiveV43RenderFeatureRows(activeFilter)}
+            </div>
+        </div>
+
+        <div class="card fs-v43-vault-card">
+            <h2>Next Integration Order</h2>
+            <p><strong>1.</strong> Put streak, goals preview, and affirmation on Live Home.</p>
+            <p><strong>2.</strong> Add Focus Timer and Journal buttons directly to Intervention.</p>
+            <p><strong>3.</strong> Add XP, badges, and listening wins inside Progress.</p>
+            <p><strong>4.</strong> Add Daily Start Plan, Daily End Review, and Smart Coach inside Coach.</p>
+            <p><strong>5.</strong> Add Protection Database, PIN Lock, Backup, Privacy Mode, and Health Check inside Settings.</p>
+        </div>
+
+        ${typeof fsLiveV4BottomNav === "function" ? fsLiveV4BottomNav("settings") : ""}
+    `);
+
+    document.querySelectorAll("[data-v43-filter]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            openLiveAppV43FeatureVaultPage(button.getAttribute("data-v43-filter"));
+        });
+    });
+
+    if (typeof fsLiveV4BindNav === "function") {
+        fsLiveV4BindNav();
+    }
+}
+
+function fsLiveV43InsertHomeFeatureVaultCard() {
+    const nav = document.querySelector(".fs-live-v4-bottom-nav");
+    if (!nav) return;
+    if (document.getElementById("fsLiveV43VaultCard")) return;
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV43VaultCard";
+    card.className = "card fs-v43-vault-card";
+    card.innerHTML = `
+        <h2>Feature Vault</h2>
+        <p>Track every original Focus Shield feature so nothing gets lost during live app upgrades.</p>
+        <button id="fsLiveV43OpenVaultBtn">Open Feature Vault</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+    document.getElementById("fsLiveV43OpenVaultBtn").addEventListener("click", function() {
+        openLiveAppV43FeatureVaultPage("All");
+    });
+}
+
+if (!window.fsLiveV43HomeWrapped && typeof openLiveAppV4HomePage === "function") {
+    window.fsLiveV43HomeWrapped = true;
+
+    const oldOpenLiveAppV4HomePageForVault = openLiveAppV4HomePage;
+
+    window.openLiveAppV4HomePage = function() {
+        oldOpenLiveAppV4HomePageForVault.apply(this, arguments);
+        setTimeout(fsLiveV43InsertHomeFeatureVaultCard, 120);
+    };
+}
+
+function insertLiveAppV43DashboardCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("liveAppV43HomeCard")) return;
+
+    const insertAfter =
+        document.getElementById("liveAppV41HomeCard") ||
+        document.getElementById("liveAppV4HomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const stats = fsLiveV43VaultStats();
+
+    const card = document.createElement("div");
+    card.id = "liveAppV43HomeCard";
+    card.className = "card fs-v43-vault-card";
+    card.innerHTML = `
+        <h2>Live App v4.3</h2>
+        <h3>Feature Vault</h3>
+        <p>${stats.total} original roadmap features are now tracked so they are not lost.</p>
+        <button id="openLiveAppV43HomeBtn">Open Feature Vault</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openLiveAppV43HomeBtn").addEventListener("click", function() {
+        openLiveAppV43FeatureVaultPage("All");
+    });
+}
+
+function refreshLiveAppV43Systems() {
+    setTimeout(insertLiveAppV43DashboardCard, 1200);
+    setTimeout(insertLiveAppV43DashboardCard, 2600);
+    setTimeout(insertLiveAppV43DashboardCard, 4000);
+}
+
+if (typeof goHome === "function" && !window.fsLiveAppV43GoHomeWrapped) {
+    window.fsLiveAppV43GoHomeWrapped = true;
+
+    const oldGoHomeLiveAppV43 = goHome;
+
+    goHome = function() {
+        oldGoHomeLiveAppV43.apply(this, arguments);
+        setTimeout(refreshLiveAppV43Systems, 1700);
+    };
+}
+
+refreshLiveAppV43Systems();
 
 </script>
 
