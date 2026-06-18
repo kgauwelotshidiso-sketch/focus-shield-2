@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv50audit1">
+    <link rel="stylesheet" href="style.css?v=liveappv51routes1">
 </head>
 <body>
 
@@ -30530,6 +30530,200 @@ window.openLiveAppV50AuditPage = openLiveAppV50AuditPage;
 setTimeout(fsLiveV50AutoOpen, 850);
 setTimeout(fsLiveV50WrapHome, 1800);
 setTimeout(fsLiveV50AddHomeAuditCard, 2600);
+
+
+/* Live App v5.1 Navigation Route Stabilizer */
+function fsLiveV51OpenHome() {
+    const fn =
+        window.openLiveAppV50HomePage ||
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV44HomePage;
+
+    if (typeof fn === "function" && fn !== fsLiveV51OpenHome) {
+        fn();
+    }
+}
+
+function fsLiveV51OpenScanner() {
+    if (typeof window.openLiveAppV4ScannerPage === "function") {
+        window.openLiveAppV4ScannerPage();
+    }
+}
+
+function fsLiveV51OpenRecovery() {
+    if (typeof window.openLiveAppV4RecoveryPage === "function") {
+        window.openLiveAppV4RecoveryPage();
+    }
+}
+
+function fsLiveV51OpenProgress() {
+    if (typeof window.openLiveAppV46ProgressPage === "function") {
+        window.openLiveAppV46ProgressPage();
+        return;
+    }
+
+    if (typeof window.fsLiveV41OpenProgressPage === "function") {
+        window.fsLiveV41OpenProgressPage();
+    }
+}
+
+function fsLiveV51OpenCoach() {
+    if (typeof window.openLiveAppV47CoachPage === "function") {
+        window.openLiveAppV47CoachPage();
+        return;
+    }
+
+    if (typeof window.openLiveAppV44CoachPage === "function" && window.openLiveAppV44CoachPage !== fsLiveV51OpenCoach) {
+        window.openLiveAppV44CoachPage();
+    }
+}
+
+function fsLiveV51OpenSettings() {
+    if (typeof window.fsLiveV48OpenSettingsHome === "function") {
+        window.fsLiveV48OpenSettingsHome();
+        return;
+    }
+
+    if (typeof window.openLiveAppV48SettingsPage === "function" && window.openLiveAppV48SettingsPage !== fsLiveV51OpenSettings) {
+        window.openLiveAppV48SettingsPage();
+        return;
+    }
+
+    if (typeof window.openLiveAppV44SettingsPage === "function" && window.openLiveAppV44SettingsPage !== fsLiveV51OpenSettings) {
+        window.openLiveAppV44SettingsPage();
+    }
+}
+
+function fsLiveV51OpenAudit() {
+    if (typeof window.openLiveAppV50AuditPage === "function") {
+        window.openLiveAppV50AuditPage();
+    }
+}
+
+function fsLiveV51InstallRoutes() {
+    window.openLiveAppV51HomePage = fsLiveV51OpenHome;
+    window.openLiveAppV51ScannerPage = fsLiveV51OpenScanner;
+    window.openLiveAppV51RecoveryPage = fsLiveV51OpenRecovery;
+    window.openLiveAppV51ProgressPage = fsLiveV51OpenProgress;
+    window.openLiveAppV51CoachPage = fsLiveV51OpenCoach;
+    window.openLiveAppV51SettingsPage = fsLiveV51OpenSettings;
+
+    window.openLiveAppV4ProgressPage = fsLiveV51OpenProgress;
+    window.fsLiveV41OpenProgressPage = fsLiveV51OpenProgress;
+
+    window.openLiveAppV4CoachPage = fsLiveV51OpenCoach;
+    window.openLiveAppV44CoachPage = fsLiveV51OpenCoach;
+    window.fsLiveV41OpenCoachPage = fsLiveV51OpenCoach;
+
+    window.openLiveAppV4SettingsPage = fsLiveV51OpenSettings;
+    window.openLiveAppV44SettingsPage = fsLiveV51OpenSettings;
+    window.fsLiveV41OpenSettingsPage = fsLiveV51OpenSettings;
+}
+
+function fsLiveV51RouteFromButton(button) {
+    if (!button) return false;
+
+    const data =
+        button.getAttribute("data-v44-nav") ||
+        button.getAttribute("data-v50-action") ||
+        button.getAttribute("data-v51-action") ||
+        "";
+
+    const text = String(button.textContent || "").trim().toLowerCase();
+
+    const route = String(data || "").toLowerCase();
+
+    if (route.includes("home") || text === "home") {
+        fsLiveV51OpenHome();
+        return true;
+    }
+
+    if (route.includes("scanner") || text === "scanner") {
+        fsLiveV51OpenScanner();
+        return true;
+    }
+
+    if (route.includes("recovery") || text === "recovery") {
+        fsLiveV51OpenRecovery();
+        return true;
+    }
+
+    if (route.includes("progress") || text === "progress") {
+        fsLiveV51OpenProgress();
+        return true;
+    }
+
+    if (route.includes("coach") || text === "coach") {
+        fsLiveV51OpenCoach();
+        return true;
+    }
+
+    if (route.includes("settings") || text === "settings") {
+        fsLiveV51OpenSettings();
+        return true;
+    }
+
+    return false;
+}
+
+function fsLiveV51GlobalRouteGuard(event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    const routed = fsLiveV51RouteFromButton(button);
+
+    if (routed) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+    }
+}
+
+function fsLiveV51AddRouteCard() {
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+    if (document.getElementById("fsLiveV51RouteCard")) return;
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV51RouteCard";
+    card.className = "card fs-v51-route-card";
+    card.innerHTML = `
+        <h2>Live App v5.1</h2>
+        <h3>Navigation Routes Stabilized</h3>
+        <p>Coach and Settings now route to the newest integrated systems instead of old connector pages.</p>
+        <button data-v51-action="coach">Test Coach Route</button>
+        <button data-v51-action="settings">Test Settings Route</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+}
+
+function fsLiveV51AutoOpen() {
+    fsLiveV51InstallRoutes();
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has("liveappv51routes")) {
+        fsLiveV51OpenHome();
+        setTimeout(fsLiveV51AddRouteCard, 500);
+    }
+}
+
+if (!window.fsLiveV51RouteGuardInstalled) {
+    window.fsLiveV51RouteGuardInstalled = true;
+    document.addEventListener("click", fsLiveV51GlobalRouteGuard, true);
+}
+
+fsLiveV51InstallRoutes();
+
+setTimeout(fsLiveV51InstallRoutes, 700);
+setTimeout(fsLiveV51InstallRoutes, 1800);
+setTimeout(fsLiveV51AutoOpen, 900);
+setTimeout(fsLiveV51AddRouteCard, 2600);
 
 </script>
 

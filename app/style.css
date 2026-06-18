@@ -5407,3 +5407,20 @@ textarea:focus {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Live App v5.1 Navigation Route Stabilizer */
+.fs-v51-route-card {
+    border: 1px solid rgba(34, 197, 94, 0.52);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(21, 128, 61, 0.24));
+}
+
+.fs-v51-route-card h3 {
+    color: #bbf7d0;
+}
+
+.fs-v51-route-card button {
+    margin-top: 10px;
+}
