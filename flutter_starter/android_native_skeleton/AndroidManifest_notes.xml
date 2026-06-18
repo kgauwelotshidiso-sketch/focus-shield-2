@@ -1,0 +1,28 @@
+<!--
+Focus Shield Native VPN Manifest Notes
+
+This is not an active manifest. These are notes for the future Android project.
+
+Future service declaration example:
+
+<service
+    android:name=".nativevpn.FocusShieldVpnService"
+    android:permission="android.permission.BIND_VPN_SERVICE"
+    android:exported="false">
+    <intent-filter>
+        <action android:name="android.net.VpnService" />
+    </intent-filter>
+</service>
+
+Future permission activity example:
+
+<activity
+    android:name=".nativevpn.VpnPermissionActivity"
+    android:exported="false" />
+
+Safety:
+- VPN must only start after clear user action.
+- Protection status must be visible.
+- Delayed disable must be respected.
+- Native layer must not bypass ProtectionEngine.
+-->

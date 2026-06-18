@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=phase3inativevpn1">
+    <link rel="stylesheet" href="style.css?v=phase3jvpnskeleton1">
 </head>
 <body>
 
@@ -22373,6 +22373,287 @@ if (typeof goHome === "function" && !window.fsNativeVpnGoHomeWrapped) {
 }
 
 refreshNativeVpnSystems();
+
+
+/* Phase 3J Native VPN Service Starter Skeleton */
+function fsVpnSkeletonEscape(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsVpnSkeletonGetChecklist() {
+    try {
+        return JSON.parse(localStorage.getItem("fsPhase3JChecklist") || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function fsVpnSkeletonSaveChecklist(data) {
+    localStorage.setItem("fsPhase3JChecklist", JSON.stringify(data || {}));
+}
+
+function fsVpnSkeletonToggleItem(key) {
+    const data = fsVpnSkeletonGetChecklist();
+    data[key] = !data[key];
+    fsVpnSkeletonSaveChecklist(data);
+    openNativeVpnSkeletonPage();
+}
+
+function fsVpnSkeletonItems() {
+    return [
+        "vpnService",
+        "dnsParser",
+        "decisionBridge",
+        "permissionActivity",
+        "statusReceiver",
+        "manifestNotes",
+        "safetyLimits",
+        "docs"
+    ];
+}
+
+function fsVpnSkeletonProgress() {
+    const items = fsVpnSkeletonItems();
+    const data = fsVpnSkeletonGetChecklist();
+    const done = items.filter(function(key) { return data[key]; }).length;
+
+    return {
+        done: done,
+        total: items.length,
+        percent: Math.round((done / items.length) * 100)
+    };
+}
+
+function fsVpnSkeletonCheckItem(key, label, detail) {
+    const data = fsVpnSkeletonGetChecklist();
+    const checked = Boolean(data[key]);
+
+    return `
+        <div class="fs-vpn-skeleton-check-row">
+            <div>
+                <strong>${checked ? "✅" : "⬜"} ${fsVpnSkeletonEscape(label)}</strong>
+                <p>${fsVpnSkeletonEscape(detail)}</p>
+            </div>
+            <button data-vpn-skeleton-key="${fsVpnSkeletonEscape(key)}">${checked ? "Mark Pending" : "Mark Done"}</button>
+        </div>
+    `;
+}
+
+function openNativeVpnSkeletonPage() {
+    const progress = fsVpnSkeletonProgress();
+
+    showPage(`
+        <h1>Phase 3J Native VPN Skeleton</h1>
+
+        <div class="card fs-vpn-skeleton-hero-card">
+            <h2>Native VPN Service Starter Skeleton</h2>
+            <h3>${progress.percent}% Confirmed</h3>
+            <p>This creates non-active Kotlin starter files for the future Android native protection layer.</p>
+            <p><strong>Status:</strong> ${progress.done}/${progress.total} skeleton groups confirmed.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-warning-card">
+            <h2>Important</h2>
+            <p>This is not active VPN filtering. It is only a safe native Android skeleton.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-service-card">
+            <h2>FocusShieldVpnService.kt</h2>
+            <p>Future Android VPN service skeleton.</p>
+            <p><strong>Current state:</strong> non-active placeholder.</p>
+            <p><strong>Future role:</strong> start local VPN tunnel and observe domain-level DNS metadata.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-parser-card">
+            <h2>DnsPacketParser.kt</h2>
+            <p>Future DNS metadata parser skeleton.</p>
+            <p><strong>Safety rule:</strong> extract domain only.</p>
+            <p><strong>Limit:</strong> do not store full packets or inspect private content.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-bridge-card">
+            <h2>DomainDecisionBridge.kt</h2>
+            <p>Future bridge between native Android and Flutter ProtectionEngine.</p>
+            <p><strong>Rule:</strong> native layer must not write directly to SQLite.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-permission-card">
+            <h2>VpnPermissionActivity.kt</h2>
+            <p>Future Android VPN permission request flow.</p>
+            <p><strong>Rule:</strong> VPN protection must only start after clear user permission.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-status-card">
+            <h2>VpnStatusReceiver.kt</h2>
+            <p>Future protection status tracker.</p>
+            <p><strong>Status values:</strong> stopped, starting, running, error.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-manifest-card">
+            <h2>AndroidManifest Notes</h2>
+            <p>Manifest notes were created for the future VPN service declaration.</p>
+            <p><strong>File:</strong> flutter_starter/android_native_skeleton/AndroidManifest_notes.xml</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-safety-card">
+            <h2>Safety Limits</h2>
+            <p><strong>1.</strong> No active VPN filtering in this phase.</p>
+            <p><strong>2.</strong> No private content inspection.</p>
+            <p><strong>3.</strong> No full packet storage.</p>
+            <p><strong>4.</strong> No direct SQLite writes from native layer.</p>
+            <p><strong>5.</strong> No hidden protection status.</p>
+            <p><strong>6.</strong> No delayed-disable bypass.</p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-files-card">
+            <h2>Created Files</h2>
+            <p><strong>flutter_starter/android_native_skeleton/app/src/main/kotlin/com/focusshield/nativevpn/FocusShieldVpnService.kt</strong></p>
+            <p><strong>flutter_starter/android_native_skeleton/app/src/main/kotlin/com/focusshield/nativevpn/DnsPacketParser.kt</strong></p>
+            <p><strong>flutter_starter/android_native_skeleton/app/src/main/kotlin/com/focusshield/nativevpn/DomainDecisionBridge.kt</strong></p>
+            <p><strong>flutter_starter/android_native_skeleton/app/src/main/kotlin/com/focusshield/nativevpn/VpnPermissionActivity.kt</strong></p>
+            <p><strong>flutter_starter/android_native_skeleton/app/src/main/kotlin/com/focusshield/nativevpn/VpnStatusReceiver.kt</strong></p>
+            <p><strong>flutter_starter/android_native_skeleton/AndroidManifest_notes.xml</strong></p>
+            <p><strong>flutter_starter/docs/native_vpn_service_skeleton.md</strong></p>
+        </div>
+
+        <div class="card fs-vpn-skeleton-checklist-card">
+            <h2>Phase 3J Checklist</h2>
+            ${fsVpnSkeletonCheckItem("vpnService", "VPN service skeleton confirmed", "FocusShieldVpnService.kt created as non-active starter.")}
+            ${fsVpnSkeletonCheckItem("dnsParser", "DNS parser skeleton confirmed", "DnsPacketParser.kt created with safety limits.")}
+            ${fsVpnSkeletonCheckItem("decisionBridge", "Decision bridge confirmed", "DomainDecisionBridge.kt created.")}
+            ${fsVpnSkeletonCheckItem("permissionActivity", "Permission activity confirmed", "VpnPermissionActivity.kt created.")}
+            ${fsVpnSkeletonCheckItem("statusReceiver", "Status receiver confirmed", "VpnStatusReceiver.kt created.")}
+            ${fsVpnSkeletonCheckItem("manifestNotes", "Manifest notes confirmed", "AndroidManifest_notes.xml created.")}
+            ${fsVpnSkeletonCheckItem("safetyLimits", "Safety limits confirmed", "No active filtering, no private content inspection, no packet storage.")}
+            ${fsVpnSkeletonCheckItem("docs", "Documentation confirmed", "Native VPN service skeleton documentation created.")}
+        </div>
+
+        <div class="card fs-vpn-skeleton-next-card">
+            <h2>Next Step</h2>
+            <h3>Phase 3K: MethodChannel Contract Expansion</h3>
+            <p>Next we define the exact Flutter ↔ Android method calls and event payloads before native implementation.</p>
+        </div>
+
+        <button id="backBtn">Back</button>
+    `);
+
+    document.querySelectorAll("[data-vpn-skeleton-key]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            fsVpnSkeletonToggleItem(button.getAttribute("data-vpn-skeleton-key"));
+        });
+    });
+
+    document.getElementById("backBtn").addEventListener("click", goHome);
+}
+
+function insertVpnSkeletonHomeCard() {
+    if (!document.getElementById("homeMissionProgress")) return;
+    if (document.getElementById("vpnSkeletonHomeCard")) return;
+
+    const progress = fsVpnSkeletonProgress();
+
+    const insertAfter =
+        document.getElementById("nativeVpnHomeCard") ||
+        document.getElementById("engineDbHomeCard") ||
+        document.querySelector(".card");
+
+    if (!insertAfter) return;
+
+    const card = document.createElement("div");
+    card.id = "vpnSkeletonHomeCard";
+    card.className = "card fs-vpn-skeleton-home-card";
+    card.innerHTML = `
+        <h2>Phase 3J VPN Skeleton</h2>
+        <h3>${progress.percent}% Confirmed</h3>
+        <p>Non-active Kotlin starter files for the future Android VPN layer.</p>
+        <button id="openVpnSkeletonHomeBtn">Open VPN Skeleton</button>
+    `;
+
+    insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+    document.getElementById("openVpnSkeletonHomeBtn").addEventListener("click", openNativeVpnSkeletonPage);
+}
+
+function addVpnSkeletonQuickButton() {
+    const grid =
+        document.getElementById("premiumReviewGrid") ||
+        document.getElementById("premiumPlanGrid") ||
+        document.getElementById("premiumPrimaryGrid");
+
+    if (!grid) return;
+    if (document.getElementById("quickVpnSkeletonBtn")) return;
+
+    const button = document.createElement("button");
+    button.id = "quickVpnSkeletonBtn";
+    button.type = "button";
+    button.className = "premium-quick-btn premium-secondary-action";
+    button.innerHTML = `
+        <span class="premium-quick-code">3J</span>
+        <span class="premium-quick-label">VPN Skeleton</span>
+        <span class="premium-quick-sub">Kotlin starters</span>
+    `;
+
+    button.addEventListener("click", openNativeVpnSkeletonPage);
+    grid.appendChild(button);
+}
+
+/* Add Phase 3J to Health Check */
+if (typeof runFocusShieldHealthChecks === "function" && !window.fsVpnSkeletonHealthWrapped) {
+    window.fsVpnSkeletonHealthWrapped = true;
+
+    const oldRunFocusShieldHealthChecksVpnSkeleton = runFocusShieldHealthChecks;
+
+    runFocusShieldHealthChecks = function() {
+        const checks = oldRunFocusShieldHealthChecksVpnSkeleton();
+        const progress = fsVpnSkeletonProgress();
+
+        const alreadyExists = checks.some(function(check) {
+            return check.name === "Phase 3J Native VPN Service Starter Skeleton";
+        });
+
+        if (!alreadyExists) {
+            checks.push(makeHealthCheck(
+                "Phase 3J Native VPN Service Starter Skeleton",
+                progress.percent >= 100 ? "PASS" : "WARN",
+                "Native VPN skeleton progress: " + progress.percent + "%.",
+                "Open Phase 3J VPN Skeleton and confirm all skeleton groups."
+            ));
+        }
+
+        return checks;
+    };
+}
+
+function refreshVpnSkeletonSystems() {
+    setTimeout(insertVpnSkeletonHomeCard, 1250);
+    setTimeout(insertVpnSkeletonHomeCard, 2600);
+    setTimeout(insertVpnSkeletonHomeCard, 3900);
+
+    setTimeout(addVpnSkeletonQuickButton, 1350);
+    setTimeout(addVpnSkeletonQuickButton, 2700);
+    setTimeout(addVpnSkeletonQuickButton, 3900);
+
+    if (typeof refreshSystemHealthHomeCard === "function") {
+        refreshSystemHealthHomeCard();
+    }
+}
+
+if (typeof goHome === "function" && !window.fsVpnSkeletonGoHomeWrapped) {
+    window.fsVpnSkeletonGoHomeWrapped = true;
+
+    const oldGoHomeVpnSkeleton = goHome;
+
+    goHome = function() {
+        oldGoHomeVpnSkeleton.apply(this, arguments);
+        setTimeout(refreshVpnSkeletonSystems, 1950);
+    };
+}
+
+refreshVpnSkeletonSystems();
 
 </script>
 
