@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv51routes1">
+    <link rel="stylesheet" href="style.css?v=liveappv52data1">
 </head>
 <body>
 
@@ -30724,6 +30724,647 @@ setTimeout(fsLiveV51InstallRoutes, 700);
 setTimeout(fsLiveV51InstallRoutes, 1800);
 setTimeout(fsLiveV51AutoOpen, 900);
 setTimeout(fsLiveV51AddRouteCard, 2600);
+
+
+/* Live App v5.2 Demo Data Control Center */
+function fsLiveV52Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV52SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV52SaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function fsLiveV52Today() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function fsLiveV52NowIso() {
+    return new Date().toISOString();
+}
+
+function fsLiveV52NowLabel() {
+    return new Date().toLocaleString();
+}
+
+function fsLiveV52TrackedKeys() {
+    return [
+        "fsTodayMissionProgress",
+        "fsLiveV46ProgressState",
+        "fsLiveV46Timeline",
+        "fsLiveV47CoachState",
+        "fsLiveV47EndReviewHistory",
+        "fsLiveV48ProtectionSettings",
+        "fsLiveV48BlockedDomains",
+        "fsLiveV48LastAnalysis",
+        "fsLiveV50LastSmokeTest",
+        "fsProtectionBlockedAttempts",
+        "fsBlockedAttempts",
+        "fsProtectionSettings",
+        "fsProtectionLockSettings",
+        "fsProtectionEnabled"
+    ];
+}
+
+function fsLiveV52GetBackups() {
+    const backups = fsLiveV52SafeJson("fsLiveV52Backups", []);
+    return Array.isArray(backups) ? backups : [];
+}
+
+function fsLiveV52SaveBackups(backups) {
+    fsLiveV52SaveJson("fsLiveV52Backups", backups.slice(0, 8));
+}
+
+function fsLiveV52CreateBackup(label) {
+    const data = {};
+
+    fsLiveV52TrackedKeys().forEach(function(key) {
+        data[key] = localStorage.getItem(key);
+    });
+
+    let liveState = null;
+
+    if (typeof fsLiveV4GetState === "function") {
+        try {
+            liveState = fsLiveV4GetState();
+        } catch (error) {
+            liveState = null;
+        }
+    }
+
+    const backup = {
+        id: Date.now(),
+        label: label || "Manual backup",
+        time: fsLiveV52NowLabel(),
+        iso: fsLiveV52NowIso(),
+        data,
+        liveState
+    };
+
+    const backups = fsLiveV52GetBackups();
+    backups.unshift(backup);
+    fsLiveV52SaveBackups(backups);
+
+    return backup;
+}
+
+function fsLiveV52SaveLiveState(state) {
+    if (typeof fsLiveV4SaveState === "function") {
+        fsLiveV4SaveState(state);
+        return;
+    }
+
+    if (typeof fsLiveSaveState === "function") {
+        fsLiveSaveState(state);
+        return;
+    }
+
+    localStorage.setItem("fsLiveV4State", JSON.stringify(state));
+}
+
+function fsLiveV52GetLiveState() {
+    if (typeof fsLiveV4GetState === "function") {
+        try {
+            return fsLiveV4GetState();
+        } catch (error) {}
+    }
+
+    if (typeof fsLiveDefaultState === "function") {
+        return fsLiveDefaultState();
+    }
+
+    return {
+        protectionOn: true,
+        attempts: [],
+        lastDecision: null
+    };
+}
+
+function fsLiveV52DefaultDomains() {
+    if (typeof fsLiveV48DefaultDomains === "function") {
+        return fsLiveV48DefaultDomains();
+    }
+
+    return [
+        {
+            id: 1,
+            domain: "blocked-example.com",
+            category: "test-risk",
+            updated_at: fsLiveV52NowIso()
+        },
+        {
+            id: 2,
+            domain: "temptation-test.net",
+            category: "test-risk",
+            updated_at: fsLiveV52NowIso()
+        },
+        {
+            id: 3,
+            domain: "focus-risk.org",
+            category: "test-risk",
+            updated_at: fsLiveV52NowIso()
+        }
+    ];
+}
+
+function fsLiveV52DefaultProtectionSettings() {
+    return {
+        protectionEnabled: true,
+        pinSet: true,
+        lockEnabled: true,
+        protectedSettings: true,
+        delayedDisableHours: 24,
+        privacyMode: "stats-only",
+        lastBackup: null,
+        disableRequestedAt: null,
+        disableAvailableAt: null,
+        updatedAt: fsLiveV52NowIso()
+    };
+}
+
+function fsLiveV52DefaultProgress() {
+    return {
+        today: fsLiveV52Today(),
+        xp: 45,
+        level: 2,
+        listeningWinsToday: 0,
+        focusSessionsToday: 0,
+        reflectionsToday: 0,
+        concentrationWinsToday: 0,
+        totalListeningWins: 0,
+        totalFocusSessions: 0,
+        totalReflections: 0,
+        totalConcentrationWins: 0
+    };
+}
+
+function fsLiveV52DefaultCoach() {
+    return {
+        today: fsLiveV52Today(),
+        morningCommandSet: false,
+        startPlanDone: false,
+        startPlansCount: 0,
+        reviewsCount: 0,
+        lastMainCommand: "Complete today’s mission before the day gets noisy.",
+        lastWeakness: "Not enough data yet.",
+        memoryNotes: []
+    };
+}
+
+function fsLiveV52ApplyCleanDefaults() {
+    fsLiveV52SaveJson("fsTodayMissionProgress", {
+        current: 0,
+        target: 3,
+        text: "Pause and fully listen before speaking at least 3 times today."
+    });
+
+    fsLiveV52SaveJson("fsLiveV46ProgressState", fsLiveV52DefaultProgress());
+    fsLiveV52SaveJson("fsLiveV46Timeline", []);
+    fsLiveV52SaveJson("fsLiveV47CoachState", fsLiveV52DefaultCoach());
+    fsLiveV52SaveJson("fsLiveV47EndReviewHistory", []);
+    fsLiveV52SaveJson("fsLiveV48ProtectionSettings", fsLiveV52DefaultProtectionSettings());
+    fsLiveV52SaveJson("fsLiveV48BlockedDomains", fsLiveV52DefaultDomains());
+    fsLiveV52SaveJson("fsLiveV48LastAnalysis", null);
+    localStorage.removeItem("fsLiveV50LastSmokeTest");
+
+    localStorage.setItem("fsProtectionEnabled", "true");
+
+    localStorage.setItem("fsProtectionBlockedAttempts", JSON.stringify([]));
+    localStorage.setItem("fsBlockedAttempts", JSON.stringify([]));
+
+    const state = fsLiveV52GetLiveState();
+    state.protectionOn = true;
+    state.attempts = [];
+    state.lastDecision = {
+        type: "RESET",
+        title: "Clean demo reset complete",
+        message: "Demo data is clean and ready.",
+        time: fsLiveV52NowIso()
+    };
+
+    fsLiveV52SaveLiveState(state);
+}
+
+function fsLiveV52SeedDemoData() {
+    fsLiveV52SaveJson("fsTodayMissionProgress", {
+        current: 2,
+        target: 3,
+        text: "Pause and fully listen before speaking at least 3 times today."
+    });
+
+    fsLiveV52SaveJson("fsLiveV46ProgressState", {
+        today: fsLiveV52Today(),
+        xp: 180,
+        level: 2,
+        listeningWinsToday: 2,
+        focusSessionsToday: 1,
+        reflectionsToday: 1,
+        concentrationWinsToday: 1,
+        totalListeningWins: 12,
+        totalFocusSessions: 4,
+        totalReflections: 3,
+        totalConcentrationWins: 3
+    });
+
+    fsLiveV52SaveJson("fsLiveV46Timeline", [
+        {
+            id: Date.now() + 1,
+            date: fsLiveV52Today(),
+            time: fsLiveV52NowLabel(),
+            type: "Listening Win",
+            title: "Listening win logged",
+            detail: "You paused and listened before speaking. +10 XP"
+        },
+        {
+            id: Date.now() + 2,
+            date: fsLiveV52Today(),
+            time: fsLiveV52NowLabel(),
+            type: "Focus Session",
+            title: "Focus session completed",
+            detail: "You returned your attention to your goals. +20 XP"
+        },
+        {
+            id: Date.now() + 3,
+            date: fsLiveV52Today(),
+            time: fsLiveV52NowLabel(),
+            type: "Reflection",
+            title: "Daily reflection completed",
+            detail: "You reviewed your mind and strengthened self-awareness. +15 XP"
+        }
+    ]);
+
+    fsLiveV52SaveJson("fsLiveV47CoachState", {
+        today: fsLiveV52Today(),
+        morningCommandSet: true,
+        startPlanDone: true,
+        startPlansCount: 3,
+        reviewsCount: 2,
+        lastMainCommand: "Pause, listen, protect the streak, and complete the mission.",
+        lastWeakness: "Listening Consistency",
+        memoryNotes: [
+            {
+                date: fsLiveV52Today(),
+                note: "Morning command set: protect the streak and complete the daily mission."
+            },
+            {
+                date: fsLiveV52Today(),
+                note: "Coach reminder: finish every recovery loop after a block."
+            }
+        ]
+    });
+
+    fsLiveV52SaveJson("fsLiveV47EndReviewHistory", [
+        {
+            id: Date.now() + 4,
+            date: fsLiveV52Today(),
+            time: fsLiveV52NowLabel(),
+            score: 88,
+            mood: "Strong Recovery",
+            lesson: "I returned to my goals instead of following the distraction.",
+            weakness: "Listening Consistency",
+            command: "Complete one more listening win.",
+            mission: "2/3",
+            recoveryRate: 100
+        }
+    ]);
+
+    fsLiveV52SaveJson("fsLiveV48ProtectionSettings", {
+        protectionEnabled: true,
+        pinSet: true,
+        lockEnabled: true,
+        protectedSettings: true,
+        delayedDisableHours: 24,
+        privacyMode: "stats-only",
+        lastBackup: fsLiveV52NowLabel(),
+        disableRequestedAt: null,
+        disableAvailableAt: null,
+        updatedAt: fsLiveV52NowIso()
+    });
+
+    fsLiveV52SaveJson("fsLiveV48BlockedDomains", fsLiveV52DefaultDomains());
+
+    const state = fsLiveV52GetLiveState();
+
+    state.protectionOn = true;
+    state.attempts = [
+        {
+            id: Date.now() + 5,
+            domain: "blocked-example.com",
+            category: "test-risk",
+            recovered: true,
+            time: fsLiveV52NowIso()
+        },
+        {
+            id: Date.now() + 6,
+            domain: "focus-risk.org",
+            category: "test-risk",
+            recovered: true,
+            time: fsLiveV52NowIso()
+        }
+    ];
+
+    state.lastDecision = {
+        type: "BLOCK",
+        title: "Domain blocked",
+        message: "Focus Shield blocked this test domain and recovery was completed.",
+        time: fsLiveV52NowIso()
+    };
+
+    fsLiveV52SaveLiveState(state);
+    localStorage.setItem("fsProtectionEnabled", "true");
+}
+
+function fsLiveV52ClearAttempts() {
+    const state = fsLiveV52GetLiveState();
+
+    state.attempts = [];
+    state.lastDecision = {
+        type: "CLEAR",
+        title: "Attempts cleared",
+        message: "Blocked attempt history has been cleared.",
+        time: fsLiveV52NowIso()
+    };
+
+    fsLiveV52SaveLiveState(state);
+
+    localStorage.setItem("fsProtectionBlockedAttempts", JSON.stringify([]));
+    localStorage.setItem("fsBlockedAttempts", JSON.stringify([]));
+}
+
+function fsLiveV52ResetProgress() {
+    fsLiveV52SaveJson("fsTodayMissionProgress", {
+        current: 0,
+        target: 3,
+        text: "Pause and fully listen before speaking at least 3 times today."
+    });
+
+    fsLiveV52SaveJson("fsLiveV46ProgressState", fsLiveV52DefaultProgress());
+    fsLiveV52SaveJson("fsLiveV46Timeline", []);
+}
+
+function fsLiveV52ResetCoach() {
+    fsLiveV52SaveJson("fsLiveV47CoachState", fsLiveV52DefaultCoach());
+    fsLiveV52SaveJson("fsLiveV47EndReviewHistory", []);
+}
+
+function fsLiveV52ResetProtection() {
+    fsLiveV52SaveJson("fsLiveV48ProtectionSettings", fsLiveV52DefaultProtectionSettings());
+    fsLiveV52SaveJson("fsLiveV48BlockedDomains", fsLiveV52DefaultDomains());
+    fsLiveV52SaveJson("fsLiveV48LastAnalysis", null);
+    localStorage.setItem("fsProtectionEnabled", "true");
+}
+
+function fsLiveV52FullCleanReset() {
+    fsLiveV52CreateBackup("Auto backup before clean reset");
+    fsLiveV52ApplyCleanDefaults();
+    openLiveAppV52DataCenterPage();
+}
+
+function fsLiveV52RestoreLatestBackup() {
+    const backups = fsLiveV52GetBackups();
+
+    if (!backups.length) {
+        alert("No backup found yet.");
+        return;
+    }
+
+    const latest = backups[0];
+
+    Object.entries(latest.data || {}).forEach(function(entry) {
+        const key = entry[0];
+        const value = entry[1];
+
+        if (value === null || value === undefined) {
+            localStorage.removeItem(key);
+        } else {
+            localStorage.setItem(key, value);
+        }
+    });
+
+    if (latest.liveState) {
+        fsLiveV52SaveLiveState(latest.liveState);
+    }
+
+    openLiveAppV52DataCenterPage();
+}
+
+function fsLiveV52Counts() {
+    const backups = fsLiveV52GetBackups();
+    const domains =
+        typeof fsLiveV48GetDomains === "function"
+            ? fsLiveV48GetDomains()
+            : fsLiveV52SafeJson("fsLiveV48BlockedDomains", []);
+
+    const state = fsLiveV52GetLiveState();
+    const attempts = Array.isArray(state.attempts) ? state.attempts : [];
+
+    const progress = fsLiveV52SafeJson("fsLiveV46ProgressState", fsLiveV52DefaultProgress());
+    const coach = fsLiveV52SafeJson("fsLiveV47CoachState", fsLiveV52DefaultCoach());
+    const reviews = fsLiveV52SafeJson("fsLiveV47EndReviewHistory", []);
+
+    return {
+        backups: backups.length,
+        domains: Array.isArray(domains) ? domains.length : 0,
+        attempts: attempts.length,
+        xp: Number(progress.xp || 0),
+        level: Number(progress.level || 1),
+        coachMemory: Array.isArray(coach.memoryNotes) ? coach.memoryNotes.length : 0,
+        reviews: Array.isArray(reviews) ? reviews.length : 0
+    };
+}
+
+function fsLiveV52Button(title, sub, action) {
+    return `
+        <button data-v52-action="${action}">
+            <strong>${fsLiveV52Escape(title)}</strong>
+            <span>${fsLiveV52Escape(sub)}</span>
+        </button>
+    `;
+}
+
+function openLiveAppV52DataCenterPage() {
+    const counts = fsLiveV52Counts();
+    const backups = fsLiveV52GetBackups();
+    const latest = backups[0] || null;
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Demo Data Center", "Reset, seed, backup, restore") : "<h1>Demo Data Center</h1>"}
+
+        <div class="card fs-v52-hero-card">
+            <h2>Live App v5.2</h2>
+            <h3>Demo Data Control Center</h3>
+            <p>Prepare Focus Shield for testing, screenshots, or demonstrations without manually clearing browser storage.</p>
+
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${counts.backups}</strong><span>Backups</span></div>
+                <div><strong>${counts.domains}</strong><span>Domains</span></div>
+                <div><strong>${counts.attempts}</strong><span>Attempts</span></div>
+                <div><strong>${counts.xp}</strong><span>XP</span></div>
+            </div>
+        </div>
+
+        <div class="card fs-v52-backup-card">
+            <h2>Backup Status</h2>
+            <p><strong>Latest Backup:</strong> ${latest ? fsLiveV52Escape(latest.time) : "No backup yet"}</p>
+            <p><strong>Label:</strong> ${latest ? fsLiveV52Escape(latest.label) : "None"}</p>
+            <button id="v52BackupBtn">Create Backup Now</button>
+            <button id="v52RestoreBtn">Restore Latest Backup</button>
+        </div>
+
+        <div class="card fs-v52-actions-card">
+            <h2>Demo Actions</h2>
+            <div class="fs-v52-grid">
+                ${fsLiveV52Button("Seed Demo Data", "Fill app with sample progress", "seed")}
+                ${fsLiveV52Button("Clean Demo Reset", "Backup then reset everything", "clean")}
+                ${fsLiveV52Button("Clear Attempts", "Remove block history", "attempts")}
+                ${fsLiveV52Button("Reset Progress", "XP, mission, timeline", "progress")}
+                ${fsLiveV52Button("Reset Coach", "Memory and review history", "coach")}
+                ${fsLiveV52Button("Reset Protection", "Settings and local domains", "protection")}
+                ${fsLiveV52Button("Restore Defaults", "Safe clean baseline", "defaults")}
+                ${fsLiveV52Button("Run Audit", "Open Demo Test Center", "audit")}
+            </div>
+        </div>
+
+        <div class="card fs-v52-summary-card">
+            <h2>Current Data Summary</h2>
+            <p><strong>Level:</strong> ${counts.level}</p>
+            <p><strong>XP:</strong> ${counts.xp}</p>
+            <p><strong>Coach Memory Notes:</strong> ${counts.coachMemory}</p>
+            <p><strong>End Reviews:</strong> ${counts.reviews}</p>
+            <p><strong>Blocked Domains:</strong> ${counts.domains}</p>
+            <p><strong>Attempts:</strong> ${counts.attempts}</p>
+        </div>
+
+        <div class="card fs-v52-backups-card">
+            <h2>Recent Backups</h2>
+            ${
+                backups.length
+                    ? backups.slice(0, 5).map(function(backup) {
+                        return `
+                            <div class="fs-v52-backup-row">
+                                <strong>${fsLiveV52Escape(backup.label)}</strong>
+                                <p>${fsLiveV52Escape(backup.time)}</p>
+                            </div>
+                        `;
+                    }).join("")
+                    : "<p>No backups created yet.</p>"
+            }
+        </div>
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("settings") : ""}
+    `);
+
+    document.getElementById("v52BackupBtn").addEventListener("click", function() {
+        fsLiveV52CreateBackup("Manual backup");
+        openLiveAppV52DataCenterPage();
+    });
+
+    document.getElementById("v52RestoreBtn").addEventListener("click", fsLiveV52RestoreLatestBackup);
+
+    document.querySelectorAll("[data-v52-action]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const action = button.getAttribute("data-v52-action");
+
+            if (action === "seed") {
+                fsLiveV52CreateBackup("Auto backup before seed");
+                fsLiveV52SeedDemoData();
+                openLiveAppV52DataCenterPage();
+            }
+
+            if (action === "clean") fsLiveV52FullCleanReset();
+
+            if (action === "attempts") {
+                fsLiveV52CreateBackup("Auto backup before clearing attempts");
+                fsLiveV52ClearAttempts();
+                openLiveAppV52DataCenterPage();
+            }
+
+            if (action === "progress") {
+                fsLiveV52CreateBackup("Auto backup before progress reset");
+                fsLiveV52ResetProgress();
+                openLiveAppV52DataCenterPage();
+            }
+
+            if (action === "coach") {
+                fsLiveV52CreateBackup("Auto backup before coach reset");
+                fsLiveV52ResetCoach();
+                openLiveAppV52DataCenterPage();
+            }
+
+            if (action === "protection") {
+                fsLiveV52CreateBackup("Auto backup before protection reset");
+                fsLiveV52ResetProtection();
+                openLiveAppV52DataCenterPage();
+            }
+
+            if (action === "defaults") {
+                fsLiveV52CreateBackup("Auto backup before restoring defaults");
+                fsLiveV52ApplyCleanDefaults();
+                openLiveAppV52DataCenterPage();
+            }
+
+            if (action === "audit" && typeof openLiveAppV50AuditPage === "function") {
+                openLiveAppV50AuditPage();
+            }
+        });
+    });
+
+    if (typeof fsLiveV44BindNav === "function") fsLiveV44BindNav();
+}
+
+function fsLiveV52AddDataCenterCard() {
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+    if (document.getElementById("fsLiveV52DataCard")) return;
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV52DataCard";
+    card.className = "card fs-v52-hero-card";
+    card.innerHTML = `
+        <h2>Live App v5.2</h2>
+        <h3>Demo Data Center</h3>
+        <p>Backup, seed, reset, clear, and restore demo data safely.</p>
+        <button id="fsLiveV52OpenBtn">Open Demo Data Center</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+
+    document.getElementById("fsLiveV52OpenBtn").addEventListener("click", openLiveAppV52DataCenterPage);
+}
+
+function fsLiveV52AutoOpen() {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has("liveappv52data")) {
+        openLiveAppV52DataCenterPage();
+    }
+}
+
+window.openLiveAppV52DataCenterPage = openLiveAppV52DataCenterPage;
+
+setTimeout(fsLiveV52AutoOpen, 800);
+setTimeout(fsLiveV52AddDataCenterCard, 2700);
+setTimeout(fsLiveV52AddDataCenterCard, 4500);
 
 </script>
 
