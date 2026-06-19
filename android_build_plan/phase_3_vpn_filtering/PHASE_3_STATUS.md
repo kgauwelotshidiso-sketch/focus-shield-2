@@ -60,6 +60,10 @@ Status: COMPLETE
 
 Status: COMPLETE
 
+## Phase 3.14 — Android SDK Environment Setup Plan
+
+Status: COMPLETE
+
 ## Next
 
-Phase 3.14 — Android SDK Environment Setup Plan
+Phase 3.15 — Android SDK Setup Script
