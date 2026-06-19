@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv53presentation1">
+    <link rel="stylesheet" href="style.css?v=liveappv54polish1">
 </head>
 <body>
 
@@ -31843,6 +31843,390 @@ window.openLiveAppV53PresentationPage = openLiveAppV53PresentationPage;
 setTimeout(fsLiveV53AutoOpen, 850);
 setTimeout(fsLiveV53AddHomeCard, 2800);
 setInterval(fsLiveV53AddPresenterCard, 1300);
+
+
+/* Live App v5.4 MVP Polish + Install-Ready App Mode */
+function fsLiveV54Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV54SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV54GetMvpScore() {
+    if (typeof fsLiveV50RunAudit === "function") {
+        try {
+            const audit = fsLiveV50RunAudit();
+            return audit.score || 0;
+        } catch (error) {
+            return 0;
+        }
+    }
+
+    return 100;
+}
+
+function fsLiveV54GetSummary() {
+    const progress = fsLiveV54SafeJson("fsLiveV46ProgressState", {});
+    const coach = fsLiveV54SafeJson("fsLiveV47CoachState", {});
+    const settings = fsLiveV54SafeJson("fsLiveV48ProtectionSettings", {});
+    const mission = fsLiveV54SafeJson("fsTodayMissionProgress", { current: 0, target: 3 });
+
+    let attempts = 0;
+
+    try {
+        if (typeof fsLiveV4GetState === "function") {
+            const state = fsLiveV4GetState();
+            attempts = Array.isArray(state.attempts) ? state.attempts.length : 0;
+        }
+    } catch (error) {
+        attempts = 0;
+    }
+
+    return {
+        score: fsLiveV54GetMvpScore(),
+        level: Number(progress.level || 1),
+        xp: Number(progress.xp || 0),
+        missionCurrent: Number(mission.current || 0),
+        missionTarget: Number(mission.target || 3),
+        coachReady: Boolean(coach.morningCommandSet),
+        protectionEnabled: Boolean(settings.protectionEnabled),
+        attempts: attempts
+    };
+}
+
+function fsLiveV54OpenHome() {
+    const fn =
+        window.openLiveAppV51HomePage ||
+        window.openLiveAppV50HomePage ||
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage;
+
+    if (typeof fn === "function" && fn !== fsLiveV54OpenHome) {
+        fn();
+        setTimeout(fsLiveV54PolishHome, 350);
+        setTimeout(fsLiveV54PolishHome, 1200);
+    }
+}
+
+function fsLiveV54OpenClassic() {
+    const url = new URL(window.location.href);
+    url.search = "?classic=1";
+    window.location.href = url.toString();
+}
+
+function fsLiveV54OpenPresentation() {
+    if (typeof openLiveAppV53PresentationPage === "function") {
+        openLiveAppV53PresentationPage();
+    }
+}
+
+function fsLiveV54OpenDataCenter() {
+    if (typeof openLiveAppV52DataCenterPage === "function") {
+        openLiveAppV52DataCenterPage();
+    }
+}
+
+function fsLiveV54OpenAudit() {
+    if (typeof openLiveAppV50AuditPage === "function") {
+        openLiveAppV50AuditPage();
+    }
+}
+
+function fsLiveV54OpenSettings() {
+    if (typeof fsLiveV48OpenSettingsHome === "function") {
+        fsLiveV48OpenSettingsHome();
+    }
+}
+
+function fsLiveV54OpenProgress() {
+    if (typeof openLiveAppV46ProgressPage === "function") {
+        openLiveAppV46ProgressPage();
+    }
+}
+
+function fsLiveV54OpenCoach() {
+    if (typeof openLiveAppV47CoachPage === "function") {
+        openLiveAppV47CoachPage();
+    }
+}
+
+function fsLiveV54OpenScanner() {
+    if (typeof openLiveAppV4ScannerPage === "function") {
+        openLiveAppV4ScannerPage();
+    }
+}
+
+function fsLiveV54OpenRecovery() {
+    if (typeof openLiveAppV4RecoveryPage === "function") {
+        openLiveAppV4RecoveryPage();
+    }
+}
+
+function fsLiveV54RemoveDuplicateVersionCards() {
+    const ids = [
+        "liveAppV43HomeCard",
+        "liveAppV44HomeCard",
+        "liveAppV45HomeCard",
+        "liveAppV46HomeCard",
+        "liveAppV47HomeCard",
+        "liveAppV48HomeCard",
+        "liveAppV49HomeCard",
+        "fsLiveV49ClassicCard",
+        "fsLiveV50HomeAuditCard",
+        "fsLiveV51RouteCard",
+        "fsLiveV52DataCard",
+        "fsLiveV53HomeCard"
+    ];
+
+    ids.forEach(function(id) {
+        const element = document.getElementById(id);
+        if (element) element.remove();
+    });
+
+    document.querySelectorAll(".card").forEach(function(card) {
+        const text = String(card.textContent || "");
+
+        if (
+            text.includes("Live App v4.3") ||
+            text.includes("Live App v4.4") ||
+            text.includes("Live App v4.5") ||
+            text.includes("Live App v4.6") ||
+            text.includes("Live App v4.7") ||
+            text.includes("Live App v4.8") ||
+            text.includes("Live App v4.9") ||
+            text.includes("Live App v5.0") ||
+            text.includes("Live App v5.1") ||
+            text.includes("Live App v5.2") ||
+            text.includes("Live App v5.3")
+        ) {
+            if (!card.classList.contains("fs-v54-keep")) {
+                card.remove();
+            }
+        }
+    });
+}
+
+function fsLiveV54ToolButton(title, sub, action) {
+    return `
+        <button data-v54-action="${action}">
+            <strong>${fsLiveV54Escape(title)}</strong>
+            <span>${fsLiveV54Escape(sub)}</span>
+        </button>
+    `;
+}
+
+function fsLiveV54InsertMvpCards() {
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+
+    if (!document.getElementById("fsLiveV54StatusCard")) {
+        const summary = fsLiveV54GetSummary();
+
+        const statusCard = document.createElement("div");
+        statusCard.id = "fsLiveV54StatusCard";
+        statusCard.className = "card fs-v54-status-card fs-v54-keep";
+        statusCard.innerHTML = `
+            <div class="fs-v54-status-top">
+                <div>
+                    <h2>Focus Shield MVP</h2>
+                    <h3>Install-Ready Web Demo</h3>
+                </div>
+                <span>${summary.score}% Ready</span>
+            </div>
+
+            <p>Clean showcase build with dashboard, scanner, intervention, recovery, progress, coach, protection settings, data control, and presentation mode.</p>
+
+            <div class="fs-v54-mini-stats">
+                <div><strong>${summary.level}</strong><span>Level</span></div>
+                <div><strong>${summary.xp}</strong><span>XP</span></div>
+                <div><strong>${summary.missionCurrent}/${summary.missionTarget}</strong><span>Mission</span></div>
+                <div><strong>${summary.protectionEnabled ? "ON" : "OFF"}</strong><span>Protection</span></div>
+            </div>
+
+            <button id="fsLiveV54StartBtn">Start Focus Shield</button>
+        `;
+
+        nav.parentNode.insertBefore(statusCard, nav);
+
+        document.getElementById("fsLiveV54StartBtn").addEventListener("click", function() {
+            if (typeof openLiveAppV4ScannerPage === "function") {
+                openLiveAppV4ScannerPage();
+            }
+        });
+    }
+
+    if (!document.getElementById("fsLiveV54InstallCard")) {
+        const installCard = document.createElement("div");
+        installCard.id = "fsLiveV54InstallCard";
+        installCard.className = "card fs-v54-install-card fs-v54-keep";
+        installCard.innerHTML = `
+            <h2>Install Mode</h2>
+            <p>On Android Chrome, open the menu and choose <strong>Add to Home screen</strong> or <strong>Install app</strong> if available.</p>
+            <p>This keeps the demo feeling like a real mobile app while the future Flutter/Android build is prepared.</p>
+        `;
+
+        nav.parentNode.insertBefore(installCard, nav);
+    }
+
+    if (!document.getElementById("fsLiveV54ToolsCard")) {
+        const toolsCard = document.createElement("div");
+        toolsCard.id = "fsLiveV54ToolsCard";
+        toolsCard.className = "card fs-v54-tools-card fs-v54-keep";
+        toolsCard.innerHTML = `
+            <h2>MVP Tools</h2>
+            <p>All old version cards are now cleaned into this single professional control area.</p>
+
+            <div class="fs-v54-tools-grid">
+                ${fsLiveV54ToolButton("Presentation", "Guided showcase", "presentation")}
+                ${fsLiveV54ToolButton("Demo Data", "Seed/reset/backup", "data")}
+                ${fsLiveV54ToolButton("Test Center", "Audit + smoke test", "audit")}
+                ${fsLiveV54ToolButton("Scanner", "Start protection demo", "scanner")}
+                ${fsLiveV54ToolButton("Progress", "XP + badges", "progress")}
+                ${fsLiveV54ToolButton("Coach", "Daily OS", "coach")}
+                ${fsLiveV54ToolButton("Settings", "Protection center", "settings")}
+                ${fsLiveV54ToolButton("Classic", "Old dashboard", "classic")}
+            </div>
+        `;
+
+        nav.parentNode.insertBefore(toolsCard, nav);
+    }
+
+    document.querySelectorAll("[data-v54-action]").forEach(function(button) {
+        if (button.dataset.v54Bound === "1") return;
+        button.dataset.v54Bound = "1";
+
+        button.addEventListener("click", function() {
+            const action = button.getAttribute("data-v54-action");
+
+            if (action === "presentation") fsLiveV54OpenPresentation();
+            if (action === "data") fsLiveV54OpenDataCenter();
+            if (action === "audit") fsLiveV54OpenAudit();
+            if (action === "scanner") fsLiveV54OpenScanner();
+            if (action === "progress") fsLiveV54OpenProgress();
+            if (action === "coach") fsLiveV54OpenCoach();
+            if (action === "settings") fsLiveV54OpenSettings();
+            if (action === "classic") fsLiveV54OpenClassic();
+        });
+    });
+}
+
+function fsLiveV54PolishHome() {
+    fsLiveV54RemoveDuplicateVersionCards();
+    fsLiveV54InsertMvpCards();
+    document.body.classList.add("fs-v54-polished");
+}
+
+function fsLiveV54OpenLaunchPage() {
+    const summary = fsLiveV54GetSummary();
+
+    showPage(`
+        <div class="fs-v54-launch-wrap">
+            <div class="fs-v54-launch-logo">
+                <span>🛡️</span>
+            </div>
+
+            <h1>Focus Shield</h1>
+            <h2>Discipline + Protection MVP</h2>
+
+            <p>Build self-control first. Add protection second. Recover fast when pressure appears.</p>
+
+            <div class="fs-v54-launch-badges">
+                <span>${summary.score}% Ready</span>
+                <span>Web Demo</span>
+                <span>MVP Showcase</span>
+            </div>
+
+            <div class="fs-v54-launch-actions">
+                <button id="v54LaunchStartBtn">Start Focus Shield</button>
+                <button id="v54LaunchPresentationBtn">Presentation Mode</button>
+                <button id="v54LaunchAuditBtn">Run Test Center</button>
+                <button id="v54LaunchClassicBtn">Classic Dashboard</button>
+            </div>
+
+            <p class="fs-v54-launch-note">Future Android system-wide filtering will use the native VPN/DNS layer. This web build is the MVP showcase and logic demo.</p>
+        </div>
+    `);
+
+    document.body.classList.add("fs-v54-polished");
+
+    document.getElementById("v54LaunchStartBtn").addEventListener("click", fsLiveV54OpenHome);
+    document.getElementById("v54LaunchPresentationBtn").addEventListener("click", fsLiveV54OpenPresentation);
+    document.getElementById("v54LaunchAuditBtn").addEventListener("click", fsLiveV54OpenAudit);
+    document.getElementById("v54LaunchClassicBtn").addEventListener("click", fsLiveV54OpenClassic);
+}
+
+function fsLiveV54WrapHome() {
+    if (window.fsLiveV54HomeWrapped) return;
+
+    const oldHome =
+        window.openLiveAppV51HomePage ||
+        window.openLiveAppV50HomePage ||
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage;
+
+    if (typeof oldHome !== "function") return;
+
+    window.fsLiveV54HomeWrapped = true;
+
+    window.openLiveAppV54HomePage = function() {
+        oldHome.apply(this, arguments);
+        setTimeout(fsLiveV54PolishHome, 250);
+        setTimeout(fsLiveV54PolishHome, 900);
+        setTimeout(fsLiveV54PolishHome, 2200);
+    };
+
+    window.openLiveAppV51HomePage = window.openLiveAppV54HomePage;
+    window.openLiveAppV50HomePage = window.openLiveAppV54HomePage;
+    window.openLiveAppV49HomePage = window.openLiveAppV54HomePage;
+    window.openLiveAppV4HomePage = window.openLiveAppV54HomePage;
+}
+
+function fsLiveV54AutoOpen() {
+    fsLiveV54WrapHome();
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has("liveappv54polish")) {
+        fsLiveV54OpenLaunchPage();
+        return;
+    }
+
+    if (params.has("live") || window.location.search === "" || window.location.search === "?") {
+        setTimeout(fsLiveV54PolishHome, 1800);
+        setTimeout(fsLiveV54PolishHome, 3400);
+    }
+}
+
+window.openLiveAppV54LaunchPage = fsLiveV54OpenLaunchPage;
+window.openLiveAppV54HomePage = window.openLiveAppV54HomePage || fsLiveV54OpenHome;
+
+setTimeout(fsLiveV54AutoOpen, 900);
+setTimeout(fsLiveV54WrapHome, 1700);
+setInterval(function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("classic") === "1") return;
+    if (document.querySelector(".fs-live-v44-bottom-nav") || document.querySelector(".fs-live-v4-bottom-nav")) {
+        fsLiveV54PolishHome();
+    }
+}, 2200);
 
 </script>
 
