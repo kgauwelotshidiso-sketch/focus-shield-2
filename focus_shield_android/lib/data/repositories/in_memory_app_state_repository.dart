@@ -29,24 +29,9 @@ class InMemoryAppStateRepository implements AppStateRepository {
     final now = DateTime.now();
 
     return [
-      BlockedDomain(
-        id: 1,
-        domain: 'blocked-example.com',
-        category: 'local-blocklist',
-        updatedAt: now,
-      ),
-      BlockedDomain(
-        id: 2,
-        domain: 'temptation-test.net',
-        category: 'local-blocklist',
-        updatedAt: now,
-      ),
-      BlockedDomain(
-        id: 3,
-        domain: 'focus-risk.org',
-        category: 'local-blocklist',
-        updatedAt: now,
-      ),
+      BlockedDomain(id: 1, domain: 'blocked-example.com', category: 'local-blocklist', updatedAt: now),
+      BlockedDomain(id: 2, domain: 'temptation-test.net', category: 'local-blocklist', updatedAt: now),
+      BlockedDomain(id: 3, domain: 'focus-risk.org', category: 'local-blocklist', updatedAt: now),
     ];
   }
 
@@ -77,10 +62,18 @@ class InMemoryAppStateRepository implements AppStateRepository {
 
   @override
   Future<void> markLatestAttemptRecovered() async {
-    if (_attempts.isEmpty) return;
+    final index = _attempts.lastIndexWhere((attempt) => !attempt.recovered);
+    if (index < 0) return;
 
-    final latest = _attempts.last;
-    _attempts[_attempts.length - 1] = latest.copyWith(recovered: true);
+    _attempts[index] = _attempts[index].copyWith(recovered: true);
+  }
+
+  @override
+  Future<void> markAttemptRecovered(int id) async {
+    final index = _attempts.indexWhere((attempt) => attempt.id == id);
+    if (index < 0) return;
+
+    _attempts[index] = _attempts[index].copyWith(recovered: true);
   }
 
   @override
@@ -103,9 +96,7 @@ class InMemoryAppStateRepository implements AppStateRepository {
     final normalizedDomain = blockedDomain.domain.trim().toLowerCase();
     if (normalizedDomain.isEmpty) return;
 
-    final existingIndex = _blockedDomains.indexWhere(
-      (item) => item.domain == normalizedDomain,
-    );
+    final existingIndex = _blockedDomains.indexWhere((item) => item.domain == normalizedDomain);
 
     if (existingIndex >= 0) {
       _blockedDomains[existingIndex] = _blockedDomains[existingIndex].copyWith(

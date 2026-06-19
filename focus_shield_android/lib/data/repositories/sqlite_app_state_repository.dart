@@ -140,6 +140,18 @@ class SqliteAppStateRepository implements AppStateRepository {
   }
 
   @override
+  Future<void> markAttemptRecovered(int id) async {
+    final db = await _db;
+
+    await db.update(
+      DatabaseContract.tableBlockedAttempts,
+      {'recovered': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  @override
   Future<void> saveSettings(SettingsRecord settings) async {
     final db = await _db;
 

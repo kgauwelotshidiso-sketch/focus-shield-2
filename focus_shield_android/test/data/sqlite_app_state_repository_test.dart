@@ -66,6 +66,28 @@ void main() {
     expect(attempts.first.recovered, true);
   });
 
+  test('SQLite repository marks a specific attempt recovered', () async {
+    await repository.saveAttempt(
+      AttemptRecord(
+        id: 0,
+        domain: 'blocked-example.com',
+        category: 'local-blocklist',
+        confidence: 0.96,
+        recovered: false,
+        createdAt: DateTime(2026),
+      ),
+    );
+
+    final attempts = await repository.loadAttempts();
+    final attemptId = attempts.first.id;
+
+    await repository.markAttemptRecovered(attemptId);
+
+    final updatedAttempts = await repository.loadAttempts();
+
+    expect(updatedAttempts.first.recovered, true);
+  });
+
   test('SQLite repository saves and loads settings', () async {
     await repository.saveSettings(
       SettingsRecord(

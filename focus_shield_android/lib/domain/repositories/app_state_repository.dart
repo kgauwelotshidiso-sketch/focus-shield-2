@@ -15,6 +15,8 @@ abstract class AppStateRepository {
 
   Future<void> markLatestAttemptRecovered();
 
+  Future<void> markAttemptRecovered(int id);
+
   Future<void> saveSettings(SettingsRecord settings);
 
   Future<SettingsRecord> loadSettings();

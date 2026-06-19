@@ -67,6 +67,30 @@ void main() {
     expect(settings.delayedDisableHours, 24);
   });
 
+  test('repository marks a specific attempt recovered', () async {
+    final repository = InMemoryAppStateRepository();
+
+    await repository.saveAttempt(
+      AttemptRecord(
+        id: 0,
+        domain: 'blocked-example.com',
+        category: 'local-blocklist',
+        confidence: 0.96,
+        recovered: false,
+        createdAt: DateTime(2026),
+      ),
+    );
+
+    final attempts = await repository.loadAttempts();
+    final attemptId = attempts.first.id;
+
+    await repository.markAttemptRecovered(attemptId);
+
+    final updatedAttempts = await repository.loadAttempts();
+
+    expect(updatedAttempts.first.recovered, true);
+  });
+
   test('repository saves and deletes blocked domains', () async {
     final repository = InMemoryAppStateRepository();
 

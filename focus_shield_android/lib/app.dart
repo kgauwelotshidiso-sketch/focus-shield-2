@@ -95,7 +95,11 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
 
     setState(() {
       _attempts = attempts;
+      _state.blockedAttempts = attempts.length;
+      _state.recoveredAttempts = attempts.where((attempt) => attempt.recovered).length;
     });
+
+    _persistState();
   }
 
   Future<void> _refreshBlockedDomains() async {
@@ -306,6 +310,19 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     _persistState();
   }
 
+  void _markAttemptRecoveredById(int id) {
+    final attempt = _attempts.where((item) => item.id == id).firstOrNull;
+    final shouldReward = attempt != null && !attempt.recovered;
+
+    setState(() {
+      if (shouldReward) {
+        _state.xp += 10;
+      }
+    });
+
+    _repository.markAttemptRecovered(id).then((_) => _refreshAttempts());
+  }
+
   void _setMorningCommand() {
     setState(() {
       if (!_state.morningCommandSet) {
@@ -375,6 +392,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
             onBack: _closeDebugCenter,
             onResetAppData: _resetAppData,
             onRefresh: _refreshAttempts,
+            onMarkAttemptRecovered: _markAttemptRecoveredById,
           ),
         ),
         bottomNavigationBar: FocusShieldBottomNav(

@@ -7,7 +7,13 @@ import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
-class DebugCenterScreen extends StatelessWidget {
+enum AttemptFilter {
+  all,
+  pending,
+  recovered,
+}
+
+class DebugCenterScreen extends StatefulWidget {
   const DebugCenterScreen({
     super.key,
     required this.state,
@@ -15,6 +21,7 @@ class DebugCenterScreen extends StatelessWidget {
     required this.onBack,
     required this.onResetAppData,
     required this.onRefresh,
+    required this.onMarkAttemptRecovered,
   });
 
   final FocusShieldState state;
@@ -22,11 +29,56 @@ class DebugCenterScreen extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onResetAppData;
   final VoidCallback onRefresh;
+  final ValueChanged<int> onMarkAttemptRecovered;
+
+  @override
+  State<DebugCenterScreen> createState() => _DebugCenterScreenState();
+}
+
+class _DebugCenterScreenState extends State<DebugCenterScreen> {
+  AttemptFilter _filter = AttemptFilter.all;
+  AttemptRecord? _selectedAttempt;
+
+  List<AttemptRecord> get _filteredAttempts {
+    final attempts = [...widget.attempts];
+
+    switch (_filter) {
+      case AttemptFilter.pending:
+        attempts.removeWhere((attempt) => attempt.recovered);
+        break;
+      case AttemptFilter.recovered:
+        attempts.removeWhere((attempt) => !attempt.recovered);
+        break;
+      case AttemptFilter.all:
+        break;
+    }
+
+    return attempts;
+  }
+
+  String get _coachFeedback {
+    final pending = widget.attempts.where((attempt) => !attempt.recovered).length;
+
+    if (widget.attempts.isEmpty) {
+      return 'No saved attempts yet. Keep protection active and continue building discipline.';
+    }
+
+    if (pending == 0) {
+      return 'Strong recovery discipline. Every saved attempt has been closed.';
+    }
+
+    if (pending == 1) {
+      return 'One attempt still needs recovery. Close the loop before moving on.';
+    }
+
+    return '$pending attempts still need recovery. Your next mission is not perfection — it is returning quickly.';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final recovered = attempts.where((attempt) => attempt.recovered).length;
-    final pending = attempts.where((attempt) => !attempt.recovered).length;
+    final recovered = widget.attempts.where((attempt) => attempt.recovered).length;
+    final pending = widget.attempts.where((attempt) => !attempt.recovered).length;
+    final filteredAttempts = _filteredAttempts;
 
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -34,7 +86,7 @@ class DebugCenterScreen extends StatelessWidget {
         Row(
           children: [
             IconButton(
-              onPressed: onBack,
+              onPressed: widget.onBack,
               icon: const Icon(Icons.arrow_back_rounded),
             ),
             const SizedBox(width: 8),
@@ -46,16 +98,16 @@ class DebugCenterScreen extends StatelessWidget {
             ),
           ],
         ),
-        const Text('SQLite data tools and attempt history'),
+        const Text('Attempt history, recovery intelligence, and SQLite tools'),
         const SizedBox(height: 18),
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: StatGrid(
             items: {
-              'XP': '${state.xp}',
-              'Level': '${state.level}',
-              'Mission': '${state.listeningWinsToday}/${state.missionTarget}',
-              'Coach': '${state.coachScore}%',
+              'XP': '${widget.state.xp}',
+              'Level': '${widget.state.level}',
+              'Mission': '${widget.state.listeningWinsToday}/${widget.state.missionTarget}',
+              'Coach': '${widget.state.coachScore}%',
             },
           ),
         ),
@@ -63,26 +115,21 @@ class DebugCenterScreen extends StatelessWidget {
           borderColor: AppTheme.primary,
           child: StatGrid(
             items: {
-              'Attempts': '${attempts.length}',
+              'Attempts': '${widget.attempts.length}',
               'Recovered': '$recovered',
               'Pending': '$pending',
-              'Recovery': '${state.recoveryRate}%',
+              'Recovery': '${widget.state.recoveryRate}%',
             },
           ),
         ),
         ShieldCard(
-          borderColor: state.protectionEnabled ? AppTheme.primary : AppTheme.warning,
+          borderColor: pending == 0 ? AppTheme.primary : AppTheme.warning,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Protection State'),
+              const Text('Recovery Intelligence'),
               const SizedBox(height: 8),
-              Text('Protection enabled: ${state.protectionEnabled ? "YES" : "NO"}'),
-              Text('Morning command set: ${state.morningCommandSet ? "YES" : "NO"}'),
-              Text('Focus sessions today: ${state.focusSessionsToday}'),
-              Text('Reflections today: ${state.reflectionsToday}'),
-              Text('Concentration wins today: ${state.concentrationWinsToday}'),
-              Text('End reviews today: ${state.endReviewsToday}'),
+              Text(_coachFeedback),
             ],
           ),
         ),
@@ -91,12 +138,71 @@ class DebugCenterScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text('Attempt Filters'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('All'),
+                    selected: _filter == AttemptFilter.all,
+                    onSelected: (_) => setState(() => _filter = AttemptFilter.all),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Pending'),
+                    selected: _filter == AttemptFilter.pending,
+                    onSelected: (_) => setState(() => _filter = AttemptFilter.pending),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Recovered'),
+                    selected: _filter == AttemptFilter.recovered,
+                    onSelected: (_) => setState(() => _filter = AttemptFilter.recovered),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (_selectedAttempt != null)
+          ShieldCard(
+            borderColor: _selectedAttempt!.recovered ? AppTheme.primary : AppTheme.warning,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Attempt Details', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text('Domain: ${_selectedAttempt!.domain}'),
+                Text('Category: ${_selectedAttempt!.category}'),
+                Text('Confidence: ${(_selectedAttempt!.confidence * 100).round()}%'),
+                Text('Recovered: ${_selectedAttempt!.recovered ? "YES" : "NO"}'),
+                Text('Saved: ${_selectedAttempt!.createdAt.toIso8601String()}'),
+                const SizedBox(height: 12),
+                if (!_selectedAttempt!.recovered)
+                  ActionButton(
+                    label: 'Mark This Attempt Recovered',
+                    subtitle: 'Close this recovery loop',
+                    onPressed: () {
+                      widget.onMarkAttemptRecovered(_selectedAttempt!.id);
+                      setState(() {
+                        _selectedAttempt = _selectedAttempt!.copyWith(recovered: true);
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               const Text('Attempt History'),
               const SizedBox(height: 12),
-              if (attempts.isEmpty)
-                const Text('No blocked attempts saved yet.')
+              if (filteredAttempts.isEmpty)
+                const Text('No attempts match this filter.')
               else
-                ...attempts.map((attempt) {
+                ...filteredAttempts.map((attempt) {
                   return Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 10),
@@ -113,14 +219,29 @@ class DebugCenterScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          attempt.domain,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
+                        Text(attempt.domain, style: Theme.of(context).textTheme.titleLarge),
                         Text('Category: ${attempt.category}'),
                         Text('Confidence: ${(attempt.confidence * 100).round()}%'),
                         Text('Recovered: ${attempt.recovered ? "YES" : "NO"}'),
                         Text('Saved: ${attempt.createdAt.toIso8601String()}'),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => setState(() => _selectedAttempt = attempt),
+                              icon: const Icon(Icons.info_outline_rounded),
+                              label: const Text('Details'),
+                            ),
+                            if (!attempt.recovered)
+                              OutlinedButton.icon(
+                                onPressed: () => widget.onMarkAttemptRecovered(attempt.id),
+                                icon: const Icon(Icons.check_circle_outline_rounded),
+                                label: const Text('Mark Recovered'),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   );
@@ -135,13 +256,13 @@ class DebugCenterScreen extends StatelessWidget {
               ActionButton(
                 label: 'Refresh Database View',
                 subtitle: 'Reload saved data',
-                onPressed: onRefresh,
+                onPressed: widget.onRefresh,
               ),
               const SizedBox(height: 10),
               ActionButton(
                 label: 'Reset App Data',
                 subtitle: 'Clear local SQLite app state',
-                onPressed: onResetAppData,
+                onPressed: widget.onResetAppData,
               ),
             ],
           ),

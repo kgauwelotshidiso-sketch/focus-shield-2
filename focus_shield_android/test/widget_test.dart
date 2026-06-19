@@ -99,6 +99,35 @@ void main() {
     expect(find.text('Attempt History'), findsOneWidget);
   });
 
+  testWidgets('Debug center can mark attempt recovered', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.shield_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Test Blocked Domain'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Back to Scanner'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open Database Debug Center'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pending'), findsOneWidget);
+
+    await tester.tap(find.text('Mark Recovered').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recovered'), findsWidgets);
+  });
+
   testWidgets('Protection database manager adds custom blocked domain', (tester) async {
     await tester.pumpWidget(
       FocusShieldApp(repository: InMemoryAppStateRepository()),

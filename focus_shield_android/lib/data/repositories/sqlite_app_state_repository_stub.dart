@@ -34,6 +34,11 @@ class SqliteAppStateRepositoryStub implements AppStateRepository {
   }
 
   @override
+  Future<void> markAttemptRecovered(int id) {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
   Future<void> saveSettings(SettingsRecord settings) {
     throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
   }
