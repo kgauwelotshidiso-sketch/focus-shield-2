@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv52data1">
+    <link rel="stylesheet" href="style.css?v=liveappv53presentation1">
 </head>
 <body>
 
@@ -31365,6 +31365,484 @@ window.openLiveAppV52DataCenterPage = openLiveAppV52DataCenterPage;
 setTimeout(fsLiveV52AutoOpen, 800);
 setTimeout(fsLiveV52AddDataCenterCard, 2700);
 setTimeout(fsLiveV52AddDataCenterCard, 4500);
+
+
+/* Live App v5.3 Demo Presentation Mode */
+function fsLiveV53Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV53SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV53SaveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+const fsLiveV53Steps = [
+    {
+        id: "start",
+        title: "Start Demo",
+        subtitle: "Prepare the showcase",
+        script: "This opens a clean product-demo flow and can seed sample data so the app looks ready.",
+        actionLabel: "Seed Demo Data",
+        screen: "Demo Presentation"
+    },
+    {
+        id: "home",
+        title: "Home Dashboard",
+        subtitle: "Daily command center",
+        script: "Show Today’s Mission, Shield Status, Protection Summary, XP snapshot, Quick Actions, and the discipline statement.",
+        actionLabel: "Open Home",
+        screen: "Home"
+    },
+    {
+        id: "scanner",
+        title: "Scanner",
+        subtitle: "Safe URL testing",
+        script: "Show the live scanner and explain that this web demo uses safe test domains before the Android VPN/DNS layer is built.",
+        actionLabel: "Open Scanner",
+        screen: "Scanner"
+    },
+    {
+        id: "block",
+        title: "Safe Block Demo",
+        subtitle: "Trigger a test block",
+        script: "Trigger blocked-example.com to show how Focus Shield reacts when a risk signal appears.",
+        actionLabel: "Trigger Block Demo",
+        screen: "Scanner → Intervention"
+    },
+    {
+        id: "intervention",
+        title: "Intervention Screen",
+        subtitle: "Temptation detected response",
+        script: "Show the recovery message, current streak, affirmation, goals, focus session, journal, and breathing options.",
+        actionLabel: "Open Intervention",
+        screen: "Intervention"
+    },
+    {
+        id: "recovery",
+        title: "Recovery",
+        subtitle: "Reset and return",
+        script: "Show breathing reset, recovery controls, and the discipline statement.",
+        actionLabel: "Open Recovery",
+        screen: "Recovery"
+    },
+    {
+        id: "progress",
+        title: "Progress",
+        subtitle: "XP, streaks, badges, timeline",
+        script: "Show XP, level, listening wins, badges, progress actions, 7-day chart, and daily timeline.",
+        actionLabel: "Open Progress",
+        screen: "Progress"
+    },
+    {
+        id: "coach",
+        title: "Coach",
+        subtitle: "Daily operating system",
+        script: "Show Main Coach Command, Daily OS, Daily Start Plan, Smart Coach, Weakness Detection, End Review, Weekly Intelligence, and Coach Memory.",
+        actionLabel: "Open Coach",
+        screen: "Coach"
+    },
+    {
+        id: "settings",
+        title: "Settings",
+        subtitle: "Protection Control Center",
+        script: "Show Database, URL Engine, Attempt Intelligence, Lock Layer, Backup, Privacy, Health Check, and Feature Vault.",
+        actionLabel: "Open Settings",
+        screen: "Settings"
+    },
+    {
+        id: "audit",
+        title: "Demo Test Center",
+        subtitle: "End with proof",
+        script: "End the presentation by showing the integration audit score and smoke test results.",
+        actionLabel: "Open Test Center",
+        screen: "Demo Test Center"
+    }
+];
+
+function fsLiveV53GetState() {
+    const saved = fsLiveV53SafeJson("fsLiveV53PresentationState", {});
+    return {
+        active: Boolean(saved.active),
+        step: Number(saved.step || 0),
+        startedAt: saved.startedAt || null,
+        completed: Array.isArray(saved.completed) ? saved.completed : []
+    };
+}
+
+function fsLiveV53SaveState(state) {
+    fsLiveV53SaveJson("fsLiveV53PresentationState", state);
+}
+
+function fsLiveV53SetStep(index) {
+    const state = fsLiveV53GetState();
+    state.active = true;
+    state.step = Math.max(0, Math.min(fsLiveV53Steps.length - 1, Number(index || 0)));
+    if (!state.startedAt) state.startedAt = new Date().toLocaleString();
+    fsLiveV53SaveState(state);
+}
+
+function fsLiveV53MarkComplete(index) {
+    const state = fsLiveV53GetState();
+    const stepIndex = Number(index);
+
+    if (!state.completed.includes(stepIndex)) {
+        state.completed.push(stepIndex);
+    }
+
+    state.active = true;
+    state.step = Math.max(0, Math.min(fsLiveV53Steps.length - 1, stepIndex));
+    fsLiveV53SaveState(state);
+}
+
+function fsLiveV53StartDemo() {
+    const state = {
+        active: true,
+        step: 0,
+        startedAt: new Date().toLocaleString(),
+        completed: []
+    };
+
+    fsLiveV53SaveState(state);
+    openLiveAppV53PresentationPage();
+}
+
+function fsLiveV53EndDemo() {
+    const state = fsLiveV53GetState();
+    state.active = false;
+    fsLiveV53SaveState(state);
+    openLiveAppV53PresentationPage();
+}
+
+function fsLiveV53SeedDemo() {
+    if (typeof fsLiveV52CreateBackup === "function") {
+        fsLiveV52CreateBackup("Auto backup before presentation demo seed");
+    }
+
+    if (typeof fsLiveV52SeedDemoData === "function") {
+        fsLiveV52SeedDemoData();
+    }
+
+    fsLiveV53MarkComplete(0);
+    fsLiveV53SetStep(1);
+    openLiveAppV53PresentationPage();
+}
+
+function fsLiveV53OpenLatestIntervention() {
+    let attempt = null;
+
+    if (typeof fsLiveV4AddBlockedAttempt === "function") {
+        attempt = fsLiveV4AddBlockedAttempt("blocked-example.com");
+    }
+
+    if (typeof openLiveAppV45InterventionPage === "function") {
+        openLiveAppV45InterventionPage(attempt ? attempt.id : null);
+        return;
+    }
+
+    if (typeof openLiveAppV4InterventionPage === "function") {
+        openLiveAppV4InterventionPage(attempt ? attempt.id : null);
+    }
+}
+
+function fsLiveV53OpenHome() {
+    const fn =
+        window.openLiveAppV51HomePage ||
+        window.openLiveAppV50HomePage ||
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage;
+
+    if (typeof fn === "function") fn();
+}
+
+function fsLiveV53OpenStep(index) {
+    const stepIndex = Number(index);
+    const step = fsLiveV53Steps[stepIndex];
+
+    if (!step) return;
+
+    fsLiveV53MarkComplete(stepIndex);
+
+    if (step.id === "start") {
+        fsLiveV53SeedDemo();
+        return;
+    }
+
+    if (step.id === "home") fsLiveV53OpenHome();
+
+    if (step.id === "scanner" && typeof openLiveAppV4ScannerPage === "function") {
+        openLiveAppV4ScannerPage();
+    }
+
+    if (step.id === "block") {
+        fsLiveV53OpenLatestIntervention();
+    }
+
+    if (step.id === "intervention") {
+        fsLiveV53OpenLatestIntervention();
+    }
+
+    if (step.id === "recovery" && typeof openLiveAppV4RecoveryPage === "function") {
+        openLiveAppV4RecoveryPage();
+    }
+
+    if (step.id === "progress" && typeof openLiveAppV46ProgressPage === "function") {
+        openLiveAppV46ProgressPage();
+    }
+
+    if (step.id === "coach" && typeof openLiveAppV47CoachPage === "function") {
+        openLiveAppV47CoachPage();
+    }
+
+    if (step.id === "settings") {
+        if (typeof fsLiveV48OpenSettingsHome === "function") fsLiveV48OpenSettingsHome();
+        else if (typeof openLiveAppV48SettingsPage === "function") openLiveAppV48SettingsPage();
+    }
+
+    if (step.id === "audit" && typeof openLiveAppV50AuditPage === "function") {
+        openLiveAppV50AuditPage();
+    }
+
+    setTimeout(fsLiveV53AddPresenterCard, 500);
+    setTimeout(fsLiveV53AddPresenterCard, 1400);
+}
+
+function fsLiveV53NextStep(openScreen) {
+    const state = fsLiveV53GetState();
+    const next = Math.min(fsLiveV53Steps.length - 1, state.step + 1);
+
+    fsLiveV53SetStep(next);
+
+    if (openScreen) {
+        fsLiveV53OpenStep(next);
+    } else {
+        openLiveAppV53PresentationPage();
+    }
+}
+
+function fsLiveV53PrevStep() {
+    const state = fsLiveV53GetState();
+    const prev = Math.max(0, state.step - 1);
+    fsLiveV53SetStep(prev);
+    openLiveAppV53PresentationPage();
+}
+
+function fsLiveV53ProgressPercent() {
+    const state = fsLiveV53GetState();
+    return Math.round(((state.step + 1) / fsLiveV53Steps.length) * 100);
+}
+
+function fsLiveV53StepListHtml() {
+    const state = fsLiveV53GetState();
+
+    return fsLiveV53Steps.map(function(step, index) {
+        const active = index === state.step;
+        const done = state.completed.includes(index);
+
+        return `
+            <button class="fs-v53-step-row ${active ? "active" : ""} ${done ? "done" : ""}" data-v53-step="${index}">
+                <span>${done ? "✅" : active ? "▶️" : "○"}</span>
+                <div>
+                    <strong>${index + 1}. ${fsLiveV53Escape(step.title)}</strong>
+                    <p>${fsLiveV53Escape(step.subtitle)}</p>
+                </div>
+            </button>
+        `;
+    }).join("");
+}
+
+function openLiveAppV53PresentationPage() {
+    const state = fsLiveV53GetState();
+    const current = fsLiveV53Steps[state.step] || fsLiveV53Steps[0];
+    const percent = fsLiveV53ProgressPercent();
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("Presentation Mode", "Guided Focus Shield demo") : "<h1>Presentation Mode</h1>"}
+
+        <div class="card fs-v53-hero-card">
+            <h2>Live App v5.3</h2>
+            <h3>${state.active ? "Presentation Active" : "Presentation Ready"}</h3>
+            <p>Use this guided sequence to present Focus Shield as a real product demo.</p>
+
+            <div class="fs-v53-progress-bar">
+                <div style="width:${percent}%;"></div>
+            </div>
+
+            <p><strong>Step:</strong> ${state.step + 1} / ${fsLiveV53Steps.length}</p>
+            <p><strong>Started:</strong> ${state.startedAt ? fsLiveV53Escape(state.startedAt) : "Not started yet"}</p>
+
+            <button id="v53StartBtn">${state.active ? "Restart Demo" : "Start Demo"}</button>
+            <button id="v53EndBtn">End Presentation</button>
+        </div>
+
+        <div class="card fs-v53-current-card">
+            <h2>${fsLiveV53Escape(current.title)}</h2>
+            <h3>${fsLiveV53Escape(current.subtitle)}</h3>
+            <p>${fsLiveV53Escape(current.script)}</p>
+            <p><strong>Screen:</strong> ${fsLiveV53Escape(current.screen)}</p>
+
+            <button id="v53OpenCurrentBtn">${fsLiveV53Escape(current.actionLabel)}</button>
+            <button id="v53NextOpenBtn">Next + Open Screen</button>
+            <button id="v53NextBtn">Next Step Only</button>
+            <button id="v53PrevBtn">Previous</button>
+        </div>
+
+        <div class="card fs-v53-script-card">
+            <h2>Presenter Script</h2>
+            <p><strong>Opening:</strong> Focus Shield is a discipline and protection system. It first builds self-control, then adds protection tools.</p>
+            <p><strong>MVP point:</strong> The web demo shows the product flow. Real system-wide blocking belongs in the future Android VPN/DNS layer.</p>
+            <p><strong>Closing:</strong> The goal is not only blocking. The goal is recovery, progress, coaching, and long-term discipline.</p>
+        </div>
+
+        <div class="card fs-v53-steps-card">
+            <h2>Demo Flow</h2>
+            <div class="fs-v53-steps-list">
+                ${fsLiveV53StepListHtml()}
+            </div>
+        </div>
+
+        <div class="card fs-v53-tools-card">
+            <h2>Demo Tools</h2>
+            <div class="fs-v53-tool-grid">
+                <button id="v53SeedBtn"><strong>Seed Demo Data</strong><span>Fill with sample progress</span></button>
+                <button id="v53DataBtn"><strong>Demo Data Center</strong><span>Backup/reset/restore</span></button>
+                <button id="v53AuditBtn"><strong>Demo Test Center</strong><span>Check integration score</span></button>
+                <button id="v53ClassicBtn"><strong>Classic Dashboard</strong><span>Old app preserved</span></button>
+            </div>
+        </div>
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("home") : ""}
+    `);
+
+    document.getElementById("v53StartBtn").addEventListener("click", fsLiveV53StartDemo);
+    document.getElementById("v53EndBtn").addEventListener("click", fsLiveV53EndDemo);
+    document.getElementById("v53OpenCurrentBtn").addEventListener("click", function() {
+        fsLiveV53OpenStep(state.step);
+    });
+    document.getElementById("v53NextOpenBtn").addEventListener("click", function() {
+        fsLiveV53NextStep(true);
+    });
+    document.getElementById("v53NextBtn").addEventListener("click", function() {
+        fsLiveV53NextStep(false);
+    });
+    document.getElementById("v53PrevBtn").addEventListener("click", fsLiveV53PrevStep);
+
+    document.querySelectorAll("[data-v53-step]").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const index = Number(button.getAttribute("data-v53-step"));
+            fsLiveV53SetStep(index);
+            openLiveAppV53PresentationPage();
+        });
+    });
+
+    document.getElementById("v53SeedBtn").addEventListener("click", fsLiveV53SeedDemo);
+
+    document.getElementById("v53DataBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV52DataCenterPage === "function") openLiveAppV52DataCenterPage();
+    });
+
+    document.getElementById("v53AuditBtn").addEventListener("click", function() {
+        if (typeof openLiveAppV50AuditPage === "function") openLiveAppV50AuditPage();
+    });
+
+    document.getElementById("v53ClassicBtn").addEventListener("click", function() {
+        const url = new URL(window.location.href);
+        url.search = "?classic=1";
+        window.location.href = url.toString();
+    });
+
+    if (typeof fsLiveV44BindNav === "function") fsLiveV44BindNav();
+}
+
+function fsLiveV53AddPresenterCard() {
+    const state = fsLiveV53GetState();
+    if (!state.active) return;
+
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+    if (document.getElementById("fsLiveV53PresenterCard")) return;
+
+    const current = fsLiveV53Steps[state.step] || fsLiveV53Steps[0];
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV53PresenterCard";
+    card.className = "card fs-v53-mini-card";
+    card.innerHTML = `
+        <h2>Presentation Mode</h2>
+        <h3>${state.step + 1}. ${fsLiveV53Escape(current.title)}</h3>
+        <p>${fsLiveV53Escape(current.subtitle)}</p>
+        <button id="fsLiveV53BackBtn">Back to Presentation</button>
+        <button id="fsLiveV53NextBtn">Next Step</button>
+        <button id="fsLiveV53StopBtn">Stop Demo</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+
+    document.getElementById("fsLiveV53BackBtn").addEventListener("click", openLiveAppV53PresentationPage);
+
+    document.getElementById("fsLiveV53NextBtn").addEventListener("click", function() {
+        fsLiveV53NextStep(true);
+    });
+
+    document.getElementById("fsLiveV53StopBtn").addEventListener("click", fsLiveV53EndDemo);
+}
+
+function fsLiveV53AddHomeCard() {
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+    if (document.getElementById("fsLiveV53HomeCard")) return;
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV53HomeCard";
+    card.className = "card fs-v53-hero-card";
+    card.innerHTML = `
+        <h2>Live App v5.3</h2>
+        <h3>Demo Presentation Mode</h3>
+        <p>Start a guided product-demo flow for Home, Scanner, Intervention, Recovery, Progress, Coach, Settings, and Test Center.</p>
+        <button id="fsLiveV53OpenBtn">Open Presentation Mode</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+
+    document.getElementById("fsLiveV53OpenBtn").addEventListener("click", openLiveAppV53PresentationPage);
+}
+
+function fsLiveV53AutoOpen() {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has("liveappv53presentation")) {
+        openLiveAppV53PresentationPage();
+    }
+}
+
+window.openLiveAppV53PresentationPage = openLiveAppV53PresentationPage;
+
+setTimeout(fsLiveV53AutoOpen, 850);
+setTimeout(fsLiveV53AddHomeCard, 2800);
+setInterval(fsLiveV53AddPresenterCard, 1300);
 
 </script>
 
