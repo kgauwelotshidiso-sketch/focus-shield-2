@@ -427,6 +427,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       ),
       CoachScreen(
         state: _state,
+        attempts: _attempts,
         onMorningCommand: _setMorningCommand,
         onEndReview: _saveEndReview,
         onNavigate: _goTo,

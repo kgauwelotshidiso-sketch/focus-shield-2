@@ -99,6 +99,29 @@ void main() {
     expect(find.text('Attempt History'), findsOneWidget);
   });
 
+  testWidgets('Coach screen reacts to pending attempt history', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.shield_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Test Blocked Domain'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Back to Scanner'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.psychology_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recovery Intelligence'), findsOneWidget);
+    expect(find.text('Needs Action'), findsOneWidget);
+    expect(find.text('Recovery Discipline'), findsOneWidget);
+  });
+
   testWidgets('Debug center can mark attempt recovered', (tester) async {
     await tester.pumpWidget(
       FocusShieldApp(repository: InMemoryAppStateRepository()),
