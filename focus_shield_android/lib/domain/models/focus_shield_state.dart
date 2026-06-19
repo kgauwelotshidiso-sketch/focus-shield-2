@@ -14,6 +14,9 @@ class FocusShieldState {
     required this.morningCommandSet,
     required this.endReviewsToday,
     required this.lastActiveDate,
+    required this.currentStreak,
+    required this.longestStreak,
+    required this.completedDays,
   });
 
   factory FocusShieldState.initial() {
@@ -30,6 +33,9 @@ class FocusShieldState {
       morningCommandSet: false,
       endReviewsToday: 0,
       lastActiveDate: DateKey.today(),
+      currentStreak: 0,
+      longestStreak: 0,
+      completedDays: 0,
     );
   }
 
@@ -47,6 +53,9 @@ class FocusShieldState {
       morningCommandSet: (map['morningCommandSet'] as bool?) ?? false,
       endReviewsToday: (map['endReviewsToday'] as int?) ?? 0,
       lastActiveDate: (map['lastActiveDate'] as String?) ?? DateKey.today(),
+      currentStreak: (map['currentStreak'] as int?) ?? 0,
+      longestStreak: (map['longestStreak'] as int?) ?? 0,
+      completedDays: (map['completedDays'] as int?) ?? 0,
     );
   }
 
@@ -62,6 +71,9 @@ class FocusShieldState {
   bool morningCommandSet;
   int endReviewsToday;
   String lastActiveDate;
+  int currentStreak;
+  int longestStreak;
+  int completedDays;
 
   int get level => (xp ~/ 100) + 1;
 
@@ -90,6 +102,20 @@ class FocusShieldState {
   }
 
   bool get missionComplete => listeningWinsToday >= missionTarget;
+
+  void recordCompletedDay({required bool missionWasComplete}) {
+    completedDays += 1;
+
+    if (missionWasComplete) {
+      currentStreak += 1;
+      if (currentStreak > longestStreak) {
+        longestStreak = currentStreak;
+      }
+      return;
+    }
+
+    currentStreak = 0;
+  }
 
   bool applyDailyResetIfNeeded({DateTime? now}) {
     final todayKey = DateKey.today(now);
@@ -123,6 +149,9 @@ class FocusShieldState {
       morningCommandSet: morningCommandSet,
       endReviewsToday: endReviewsToday,
       lastActiveDate: lastActiveDate,
+      currentStreak: currentStreak,
+      longestStreak: longestStreak,
+      completedDays: completedDays,
     );
   }
 
@@ -140,6 +169,9 @@ class FocusShieldState {
       'morningCommandSet': morningCommandSet,
       'endReviewsToday': endReviewsToday,
       'lastActiveDate': lastActiveDate,
+      'currentStreak': currentStreak,
+      'longestStreak': longestStreak,
+      'completedDays': completedDays,
       'level': level,
       'recoveryRate': recoveryRate,
       'coachScore': coachScore,

@@ -109,6 +109,8 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
               'Level': '${widget.state.level}',
               'Mission': '${widget.state.listeningWinsToday}/${widget.state.missionTarget}',
               'Coach': '${widget.state.coachScore}%',
+              'Streak': '${widget.state.currentStreak}',
+              'Best': '${widget.state.longestStreak}',
             },
           ),
         ),

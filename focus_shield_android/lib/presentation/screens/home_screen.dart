@@ -58,6 +58,8 @@ class HomeScreen extends StatelessWidget {
               'Recovery': '${state.recoveryRate}%',
               'Level': '${state.level}',
               'XP': '${state.xp}',
+              'Streak': '${state.currentStreak}',
+              'Best': '${state.longestStreak}',
             },
           ),
         ),

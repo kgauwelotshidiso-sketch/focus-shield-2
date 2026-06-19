@@ -1,6 +1,7 @@
 import '../../domain/models/app_snapshot.dart';
 import '../../domain/models/attempt_record.dart';
 import '../../domain/models/blocked_domain.dart';
+import '../../domain/models/daily_summary.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../../domain/models/settings_record.dart';
 import '../../domain/repositories/app_state_repository.dart';
@@ -24,6 +25,7 @@ class InMemoryAppStateRepository implements AppStateRepository {
   SettingsRecord _settings;
   final List<AttemptRecord> _attempts = [];
   final List<BlockedDomain> _blockedDomains = [];
+  final List<DailySummary> _dailySummaries = [];
 
   List<BlockedDomain> _defaultBlockedDomains() {
     final now = DateTime.now();
@@ -125,9 +127,35 @@ class InMemoryAppStateRepository implements AppStateRepository {
   }
 
   @override
+  Future<void> saveDailySummary(DailySummary summary) async {
+    final existingIndex = _dailySummaries.indexWhere((item) => item.dateKey == summary.dateKey);
+
+    if (existingIndex >= 0) {
+      _dailySummaries[existingIndex] = summary.copyWith(
+        id: _dailySummaries[existingIndex].id,
+        createdAt: DateTime.now(),
+      );
+      return;
+    }
+
+    final nextId = _dailySummaries.isEmpty
+        ? 1
+        : _dailySummaries.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
+
+    _dailySummaries.add(summary.copyWith(id: nextId));
+  }
+
+  @override
+  Future<List<DailySummary>> loadDailySummaries() async {
+    final summaries = [..._dailySummaries]..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    return List<DailySummary>.unmodifiable(summaries);
+  }
+
+  @override
   Future<void> clearAll() async {
     _state = FocusShieldState.initial();
     _attempts.clear();
+    _dailySummaries.clear();
     _blockedDomains
       ..clear()
       ..addAll(_defaultBlockedDomains());

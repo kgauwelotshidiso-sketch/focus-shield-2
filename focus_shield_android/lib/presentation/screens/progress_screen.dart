@@ -14,6 +14,7 @@ class ProgressScreen extends StatelessWidget {
     required this.onFocusSession,
     required this.onReflection,
     required this.onConcentration,
+    required this.onOpenDailyHistory,
   });
 
   final FocusShieldState state;
@@ -21,6 +22,7 @@ class ProgressScreen extends StatelessWidget {
   final VoidCallback onFocusSession;
   final VoidCallback onReflection;
   final VoidCallback onConcentration;
+  final VoidCallback onOpenDailyHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +66,8 @@ class ProgressScreen extends StatelessWidget {
               ActionButton(label: 'Complete Reflection', subtitle: '+15 XP', onPressed: onReflection),
               const SizedBox(height: 10),
               ActionButton(label: 'Complete Concentration', subtitle: '+15 XP', onPressed: onConcentration),
+              const SizedBox(height: 10),
+              ActionButton(label: 'Open Daily History', onPressed: onOpenDailyHistory),
             ],
           ),
         ),

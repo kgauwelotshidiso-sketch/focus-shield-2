@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS app_state (
   morning_command_set INTEGER NOT NULL DEFAULT 0,
   end_reviews_today INTEGER NOT NULL DEFAULT 0,
   last_active_date TEXT NOT NULL,
+  current_streak INTEGER NOT NULL DEFAULT 0,
+  longest_streak INTEGER NOT NULL DEFAULT 0,
+  completed_days INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL
 );
 ''',
@@ -63,20 +66,33 @@ CREATE TABLE IF NOT EXISTS blocked_domains (
   updated_at TEXT NOT NULL
 );
 ''',
+    '''
+CREATE TABLE IF NOT EXISTS daily_summaries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date_key TEXT UNIQUE NOT NULL,
+  listening_wins INTEGER NOT NULL DEFAULT 0,
+  mission_target INTEGER NOT NULL DEFAULT 3,
+  mission_complete INTEGER NOT NULL DEFAULT 0,
+  xp_total INTEGER NOT NULL DEFAULT 45,
+  focus_sessions INTEGER NOT NULL DEFAULT 0,
+  reflections INTEGER NOT NULL DEFAULT 0,
+  concentration_wins INTEGER NOT NULL DEFAULT 0,
+  blocked_attempts INTEGER NOT NULL DEFAULT 0,
+  recovered_attempts INTEGER NOT NULL DEFAULT 0,
+  recovery_rate INTEGER NOT NULL DEFAULT 100,
+  coach_score INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+''',
   ];
 
   static const schema = '''
-Focus Shield SQLite schema version 2.
+Focus Shield SQLite schema version 3.
 
-Tables:
-- app_state
-- blocked_attempts
-- settings
-- goals
-- affirmations
-- blocked_domains
-
-Version 2 adds:
-- app_state.last_active_date
+Version 3 adds:
+- app_state.current_streak
+- app_state.longest_streak
+- app_state.completed_days
+- daily_summaries table
 ''';
 }

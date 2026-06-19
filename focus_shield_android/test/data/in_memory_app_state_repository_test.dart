@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_shield_android/data/repositories/in_memory_app_state_repository.dart';
 import 'package:focus_shield_android/domain/models/attempt_record.dart';
 import 'package:focus_shield_android/domain/models/blocked_domain.dart';
+import 'package:focus_shield_android/domain/models/daily_summary.dart';
 import 'package:focus_shield_android/domain/models/focus_shield_state.dart';
 import 'package:focus_shield_android/domain/models/settings_record.dart';
 
@@ -113,6 +114,35 @@ void main() {
     domains = await repository.loadBlockedDomains();
 
     expect(domains.any((item) => item.domain == 'custom-risk.test'), false);
+  });
+
+  test('repository saves and loads daily summaries', () async {
+    final repository = ${"InMemoryAppStateRepository()" if "in_memory" in file else "SqliteAppStateRepository(databaseProvider: provider)"};
+
+    await repository.saveDailySummary(
+      DailySummary(
+        id: 0,
+        dateKey: '2026-01-01',
+        listeningWins: 3,
+        missionTarget: 3,
+        missionComplete: true,
+        xpTotal: 250,
+        focusSessions: 2,
+        reflections: 1,
+        concentrationWins: 1,
+        blockedAttempts: 1,
+        recoveredAttempts: 1,
+        recoveryRate: 100,
+        coachScore: 90,
+        createdAt: DateTime(2026),
+      ),
+    );
+
+    final summaries = await repository.loadDailySummaries();
+
+    expect(summaries.length, 1);
+    expect(summaries.first.dateKey, '2026-01-01');
+    expect(summaries.first.missionComplete, true);
   });
 
   test('repository clearAll resets state and attempts', () async {

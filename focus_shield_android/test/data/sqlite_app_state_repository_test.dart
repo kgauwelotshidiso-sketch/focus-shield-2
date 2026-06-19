@@ -3,6 +3,7 @@ import 'package:focus_shield_android/data/database/database_provider.dart';
 import 'package:focus_shield_android/data/repositories/sqlite_app_state_repository.dart';
 import 'package:focus_shield_android/domain/models/attempt_record.dart';
 import 'package:focus_shield_android/domain/models/blocked_domain.dart';
+import 'package:focus_shield_android/domain/models/daily_summary.dart';
 import 'package:focus_shield_android/domain/models/focus_shield_state.dart';
 import 'package:focus_shield_android/domain/models/settings_record.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';

@@ -17,6 +17,9 @@ class FocusShieldStateMapper {
       'morning_command_set': state.morningCommandSet ? 1 : 0,
       'end_reviews_today': state.endReviewsToday,
       'last_active_date': state.lastActiveDate,
+      'current_streak': state.currentStreak,
+      'longest_streak': state.longestStreak,
+      'completed_days': state.completedDays,
       'updated_at': DateTime.now().toIso8601String(),
     };
   }
@@ -35,6 +38,9 @@ class FocusShieldStateMapper {
       morningCommandSet: ((map['morning_command_set'] as int?) ?? 0) == 1,
       endReviewsToday: (map['end_reviews_today'] as int?) ?? 0,
       lastActiveDate: (map['last_active_date'] as String?) ?? DateKey.today(),
+      currentStreak: (map['current_streak'] as int?) ?? 0,
+      longestStreak: (map['longest_streak'] as int?) ?? 0,
+      completedDays: (map['completed_days'] as int?) ?? 0,
     );
   }
 }

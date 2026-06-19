@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/utils/date_key.dart';
 import 'data/repositories/sqlite_app_state_repository.dart';
 import 'domain/models/attempt_record.dart';
 import 'domain/models/blocked_domain.dart';
+import 'domain/models/daily_summary.dart';
 import 'domain/models/focus_shield_state.dart';
 import 'domain/models/settings_record.dart';
 import 'domain/repositories/app_state_repository.dart';
 import 'domain/services/protection_engine.dart';
 import 'presentation/screens/coach_screen.dart';
 import 'presentation/screens/debug_center_screen.dart';
+import 'presentation/screens/daily_history_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/intervention_screen.dart';
 import 'presentation/screens/progress_screen.dart';
@@ -55,12 +58,15 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   bool _showIntervention = false;
   bool _showDebugCenter = false;
   bool _showProtectionDatabase = false;
+      _showDailyHistory = false;
+  bool _showDailyHistory = false;
   bool _loading = true;
 
   ProtectionDecision? _lastBlockedDecision;
   FocusShieldState _state = FocusShieldState.initial();
   List<AttemptRecord> _attempts = [];
   List<BlockedDomain> _blockedDomains = [];
+  List<DailySummary> _dailySummaries = [];
 
   late final AppStateRepository _repository;
 
@@ -77,22 +83,29 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     final attempts = await _repository.loadAttempts();
     final blockedDomains = await _repository.loadBlockedDomains();
 
-    if (!mounted) return;
-
     final loadedState = snapshot.state;
     loadedState.protectionEnabled = settings.protectionEnabled;
-    final dailyResetApplied = loadedState.applyDailyResetIfNeeded();
+
+    final needsDailyReset = loadedState.lastActiveDate != DateKey.today();
+    if (needsDailyReset) {
+      final summary = DailySummary.fromState(loadedState);
+      await _repository.saveDailySummary(summary);
+      loadedState.recordCompletedDay(missionWasComplete: summary.missionComplete);
+      loadedState.applyDailyResetIfNeeded();
+      await _repository.saveState(loadedState.copy());
+    }
+
+    final dailySummaries = await _repository.loadDailySummaries();
+
+    if (!mounted) return;
 
     setState(() {
       _state = loadedState;
       _attempts = attempts;
       _blockedDomains = blockedDomains;
+      _dailySummaries = dailySummaries;
       _loading = false;
     });
-
-    if (dailyResetApplied) {
-      _persistState();
-    }
   }
 
   Future<void> _refreshAttempts() async {
@@ -107,6 +120,16 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     });
 
     _persistState();
+  }
+
+  Future<void> _refreshDailySummaries() async {
+    final summaries = await _repository.loadDailySummaries();
+
+    if (!mounted) return;
+
+    setState(() {
+      _dailySummaries = summaries;
+    });
   }
 
   Future<void> _refreshBlockedDomains() async {
@@ -140,6 +163,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showIntervention = false;
       _showDebugCenter = false;
       _showProtectionDatabase = false;
+      _showDailyHistory = false;
     });
   }
 
@@ -148,6 +172,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showDebugCenter = true;
       _showIntervention = false;
       _showProtectionDatabase = false;
+      _showDailyHistory = false;
     });
 
     _refreshAttempts();
@@ -157,6 +182,25 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showDebugCenter = false;
       _selectedIndex = 5;
+    });
+  }
+
+  void _openDailyHistory() {
+    setState(() {
+      _showDailyHistory = true;
+      _showProtectionDatabase = false;
+      _showDailyHistory = false;
+      _showDebugCenter = false;
+      _showIntervention = false;
+    });
+
+    _refreshDailySummaries();
+  }
+
+  void _closeDailyHistory() {
+    setState(() {
+      _showDailyHistory = false;
+      _selectedIndex = 3;
     });
   }
 
@@ -173,6 +217,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   void _closeProtectionDatabase() {
     setState(() {
       _showProtectionDatabase = false;
+      _showDailyHistory = false;
       _selectedIndex = 5;
     });
   }
@@ -226,6 +271,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showIntervention = false;
       _showDebugCenter = false;
       _showProtectionDatabase = false;
+      _showDailyHistory = false;
       _lastBlockedDecision = null;
     });
   }
@@ -238,6 +284,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showIntervention = true;
       _showDebugCenter = false;
       _showProtectionDatabase = false;
+      _showDailyHistory = false;
     });
 
     _repository
@@ -262,6 +309,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showIntervention = false;
       _showDebugCenter = false;
       _showProtectionDatabase = false;
+      _showDailyHistory = false;
     });
   }
 
@@ -310,6 +358,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showIntervention = false;
       _showDebugCenter = false;
       _showProtectionDatabase = false;
+      _showDailyHistory = false;
       _selectedIndex = 2;
     });
 
@@ -368,6 +417,22 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
           child: Center(
             child: Text('Loading Focus Shield...'),
           ),
+        ),
+      );
+    }
+
+    if (_showDailyHistory) {
+      return Scaffold(
+        body: SafeArea(
+          child: DailyHistoryScreen(
+            state: _state,
+            summaries: _dailySummaries,
+            onBack: _closeDailyHistory,
+          ),
+        ),
+        bottomNavigationBar: FocusShieldBottomNav(
+          currentIndex: _selectedIndex,
+          onTap: _goTo,
         ),
       );
     }
@@ -431,6 +496,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
         onFocusSession: _completeFocusSession,
         onReflection: _completeReflection,
         onConcentration: _completeConcentration,
+        onOpenDailyHistory: _openDailyHistory,
       ),
       CoachScreen(
         state: _state,

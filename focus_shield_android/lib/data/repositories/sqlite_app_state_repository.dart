@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart' as sqflite;
 import '../../domain/models/app_snapshot.dart';
 import '../../domain/models/attempt_record.dart';
 import '../../domain/models/blocked_domain.dart';
+import '../../domain/models/daily_summary.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../../domain/models/settings_record.dart';
 import '../../domain/repositories/app_state_repository.dart';
@@ -10,6 +11,7 @@ import '../contracts/database_contract.dart';
 import '../database/database_provider.dart';
 import '../mappers/attempt_record_mapper.dart';
 import '../mappers/blocked_domain_mapper.dart';
+import '../mappers/daily_summary_mapper.dart';
 import '../mappers/focus_shield_state_mapper.dart';
 import '../mappers/settings_record_mapper.dart';
 
@@ -251,6 +253,34 @@ class SqliteAppStateRepository implements AppStateRepository {
   }
 
   @override
+  Future<void> saveDailySummary(DailySummary summary) async {
+    final db = await _db;
+    final map = DailySummaryMapper.toDatabaseMap(summary);
+
+    if (summary.id == 0) {
+      map.remove('id');
+    }
+
+    await db.insert(
+      DatabaseContract.tableDailySummaries,
+      map,
+      conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<DailySummary>> loadDailySummaries() async {
+    final db = await _db;
+
+    final rows = await db.query(
+      DatabaseContract.tableDailySummaries,
+      orderBy: 'date_key DESC',
+    );
+
+    return rows.map(DailySummaryMapper.fromDatabaseMap).toList();
+  }
+
+  @override
   Future<void> clearAll() async {
     final db = await _db;
 
@@ -258,6 +288,7 @@ class SqliteAppStateRepository implements AppStateRepository {
     await db.delete(DatabaseContract.tableAppState);
     await db.delete(DatabaseContract.tableSettings);
     await db.delete(DatabaseContract.tableBlockedDomains);
+    await db.delete(DatabaseContract.tableDailySummaries);
 
     await saveState(FocusShieldState.initial());
     await saveSettings(

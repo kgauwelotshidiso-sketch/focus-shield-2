@@ -1,6 +1,7 @@
 import '../models/app_snapshot.dart';
 import '../models/attempt_record.dart';
 import '../models/blocked_domain.dart';
+import '../models/daily_summary.dart';
 import '../models/focus_shield_state.dart';
 import '../models/settings_record.dart';
 
@@ -26,6 +27,10 @@ abstract class AppStateRepository {
   Future<void> saveBlockedDomain(BlockedDomain blockedDomain);
 
   Future<void> deleteBlockedDomain(int id);
+
+  Future<void> saveDailySummary(DailySummary summary);
+
+  Future<List<DailySummary>> loadDailySummaries();
 
   Future<void> clearAll();
 }

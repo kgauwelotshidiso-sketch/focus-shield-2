@@ -1,6 +1,7 @@
 import '../../domain/models/app_snapshot.dart';
 import '../../domain/models/attempt_record.dart';
 import '../../domain/models/blocked_domain.dart';
+import '../../domain/models/daily_summary.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../../domain/models/settings_record.dart';
 import '../../domain/repositories/app_state_repository.dart';
@@ -60,6 +61,16 @@ class SqliteAppStateRepositoryStub implements AppStateRepository {
 
   @override
   Future<void> deleteBlockedDomain(int id) {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<void> saveDailySummary(DailySummary summary) {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<List<DailySummary>> loadDailySummaries() {
     throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
   }
 
