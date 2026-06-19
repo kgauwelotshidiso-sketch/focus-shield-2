@@ -11,12 +11,14 @@ class SettingsScreen extends StatelessWidget {
     super.key,
     required this.state,
     required this.onToggleProtection,
+    required this.onOpenProtectionDatabase,
     required this.onOpenDebugCenter,
     required this.onResetAppData,
   });
 
   final FocusShieldState state;
   final VoidCallback onToggleProtection;
+  final VoidCallback onOpenProtectionDatabase;
   final VoidCallback onOpenDebugCenter;
   final VoidCallback onResetAppData;
 
@@ -51,7 +53,11 @@ class SettingsScreen extends StatelessWidget {
                 onPressed: onToggleProtection,
               ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Protection Database', onPressed: () {}),
+              ActionButton(
+                label: 'Protection Database',
+                subtitle: 'Manage saved blocklist',
+                onPressed: onOpenProtectionDatabase,
+              ),
               const SizedBox(height: 10),
               ActionButton(label: 'URL Analysis Engine', onPressed: () {}),
               const SizedBox(height: 10),

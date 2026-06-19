@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/sqlite_app_state_repository.dart';
 import 'domain/models/attempt_record.dart';
+import 'domain/models/blocked_domain.dart';
 import 'domain/models/focus_shield_state.dart';
 import 'domain/models/settings_record.dart';
 import 'domain/repositories/app_state_repository.dart';
@@ -12,6 +13,7 @@ import 'presentation/screens/debug_center_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/intervention_screen.dart';
 import 'presentation/screens/progress_screen.dart';
+import 'presentation/screens/protection_database_screen.dart';
 import 'presentation/screens/recovery_screen.dart';
 import 'presentation/screens/scanner_screen.dart';
 import 'presentation/screens/settings_screen.dart';
@@ -52,11 +54,13 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   int _selectedIndex = 0;
   bool _showIntervention = false;
   bool _showDebugCenter = false;
+  bool _showProtectionDatabase = false;
   bool _loading = true;
 
   ProtectionDecision? _lastBlockedDecision;
   FocusShieldState _state = FocusShieldState.initial();
   List<AttemptRecord> _attempts = [];
+  List<BlockedDomain> _blockedDomains = [];
 
   late final AppStateRepository _repository;
 
@@ -71,6 +75,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     final snapshot = await _repository.loadSnapshot();
     final settings = await _repository.loadSettings();
     final attempts = await _repository.loadAttempts();
+    final blockedDomains = await _repository.loadBlockedDomains();
 
     if (!mounted) return;
 
@@ -78,6 +83,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state = snapshot.state;
       _state.protectionEnabled = settings.protectionEnabled;
       _attempts = attempts;
+      _blockedDomains = blockedDomains;
       _loading = false;
     });
   }
@@ -89,6 +95,16 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
 
     setState(() {
       _attempts = attempts;
+    });
+  }
+
+  Future<void> _refreshBlockedDomains() async {
+    final blockedDomains = await _repository.loadBlockedDomains();
+
+    if (!mounted) return;
+
+    setState(() {
+      _blockedDomains = blockedDomains;
     });
   }
 
@@ -112,6 +128,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _selectedIndex = index;
       _showIntervention = false;
       _showDebugCenter = false;
+      _showProtectionDatabase = false;
     });
   }
 
@@ -119,6 +136,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showDebugCenter = true;
       _showIntervention = false;
+      _showProtectionDatabase = false;
     });
 
     _refreshAttempts();
@@ -131,12 +149,60 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     });
   }
 
+  void _openProtectionDatabase() {
+    setState(() {
+      _showProtectionDatabase = true;
+      _showDebugCenter = false;
+      _showIntervention = false;
+    });
+
+    _refreshBlockedDomains();
+  }
+
+  void _closeProtectionDatabase() {
+    setState(() {
+      _showProtectionDatabase = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  String _normalizeDomain(String input) {
+    var value = input.trim().toLowerCase();
+    value = value.replaceFirst(RegExp(r'^https?://'), '');
+    value = value.replaceFirst(RegExp(r'^www\.'), '');
+    value = value.split('/').first;
+    value = value.split('?').first;
+    value = value.split('#').first;
+    return value;
+  }
+
+  void _addBlockedDomain(String domain, String category) {
+    final normalizedDomain = _normalizeDomain(domain);
+    if (normalizedDomain.isEmpty) return;
+
+    _repository
+        .saveBlockedDomain(
+          BlockedDomain(
+            id: 0,
+            domain: normalizedDomain,
+            category: category.trim().isEmpty ? 'custom-blocklist' : category.trim(),
+            updatedAt: DateTime.now(),
+          ),
+        )
+        .then((_) => _refreshBlockedDomains());
+  }
+
+  void _deleteBlockedDomain(int id) {
+    _repository.deleteBlockedDomain(id).then((_) => _refreshBlockedDomains());
+  }
+
   Future<void> _resetAppData() async {
     await _repository.clearAll();
 
     final snapshot = await _repository.loadSnapshot();
     final settings = await _repository.loadSettings();
     final attempts = await _repository.loadAttempts();
+    final blockedDomains = await _repository.loadBlockedDomains();
 
     if (!mounted) return;
 
@@ -144,9 +210,11 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state = snapshot.state;
       _state.protectionEnabled = settings.protectionEnabled;
       _attempts = attempts;
+      _blockedDomains = blockedDomains;
       _selectedIndex = 0;
       _showIntervention = false;
       _showDebugCenter = false;
+      _showProtectionDatabase = false;
       _lastBlockedDecision = null;
     });
   }
@@ -158,6 +226,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _selectedIndex = 1;
       _showIntervention = true;
       _showDebugCenter = false;
+      _showProtectionDatabase = false;
     });
 
     _repository
@@ -181,6 +250,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _selectedIndex = 1;
       _showIntervention = false;
       _showDebugCenter = false;
+      _showProtectionDatabase = false;
     });
   }
 
@@ -228,6 +298,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       }
       _showIntervention = false;
       _showDebugCenter = false;
+      _showProtectionDatabase = false;
       _selectedIndex = 2;
     });
 
@@ -277,6 +348,24 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       );
     }
 
+    if (_showProtectionDatabase) {
+      return Scaffold(
+        body: SafeArea(
+          child: ProtectionDatabaseScreen(
+            blockedDomains: _blockedDomains,
+            onBack: _closeProtectionDatabase,
+            onAddDomain: _addBlockedDomain,
+            onDeleteDomain: _deleteBlockedDomain,
+            onRefresh: _refreshBlockedDomains,
+          ),
+        ),
+        bottomNavigationBar: FocusShieldBottomNav(
+          currentIndex: _selectedIndex,
+          onTap: _goTo,
+        ),
+      );
+    }
+
     if (_showDebugCenter) {
       return Scaffold(
         body: SafeArea(
@@ -303,6 +392,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       ),
       ScannerScreen(
         protectionEnabled: _state.protectionEnabled,
+        blockedDomains: _blockedDomains,
         onBlocked: _openIntervention,
       ),
       RecoveryScreen(
@@ -326,6 +416,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       SettingsScreen(
         state: _state,
         onToggleProtection: _toggleProtection,
+        onOpenProtectionDatabase: _openProtectionDatabase,
         onOpenDebugCenter: _openDebugCenter,
         onResetAppData: _resetAppData,
       ),

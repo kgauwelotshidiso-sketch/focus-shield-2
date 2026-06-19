@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_shield_android/data/database/database_provider.dart';
 import 'package:focus_shield_android/data/repositories/sqlite_app_state_repository.dart';
 import 'package:focus_shield_android/domain/models/attempt_record.dart';
+import 'package:focus_shield_android/domain/models/blocked_domain.dart';
 import 'package:focus_shield_android/domain/models/focus_shield_state.dart';
 import 'package:focus_shield_android/domain/models/settings_record.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -82,7 +83,33 @@ void main() {
     expect(settings.delayedDisableHours, 48);
   });
 
-  test('SQLite repository clearAll resets data', () async {
+  test('SQLite repository seeds, saves, and deletes blocked domains', () async {
+    var domains = await repository.loadBlockedDomains();
+
+    expect(domains.any((item) => item.domain == 'blocked-example.com'), true);
+
+    await repository.saveBlockedDomain(
+      BlockedDomain(
+        id: 0,
+        domain: 'custom-risk.test',
+        category: 'custom-blocklist',
+        updatedAt: DateTime(2026),
+      ),
+    );
+
+    domains = await repository.loadBlockedDomains();
+
+    expect(domains.any((item) => item.domain == 'custom-risk.test'), true);
+
+    final customDomain = domains.firstWhere((item) => item.domain == 'custom-risk.test');
+    await repository.deleteBlockedDomain(customDomain.id);
+
+    domains = await repository.loadBlockedDomains();
+
+    expect(domains.any((item) => item.domain == 'custom-risk.test'), false);
+  });
+
+  test('SQLite repository clearAll resets data and restores default blocklist', () async {
     final state = FocusShieldState.initial()..xp = 500;
 
     await repository.saveState(state);
@@ -101,8 +128,10 @@ void main() {
 
     final snapshot = await repository.loadSnapshot();
     final attempts = await repository.loadAttempts();
+    final domains = await repository.loadBlockedDomains();
 
     expect(snapshot.state.xp, 45);
     expect(attempts, isEmpty);
+    expect(domains.any((item) => item.domain == 'blocked-example.com'), true);
   });
 }

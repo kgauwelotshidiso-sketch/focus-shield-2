@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_shield_android/data/repositories/in_memory_app_state_repository.dart';
 import 'package:focus_shield_android/domain/models/attempt_record.dart';
+import 'package:focus_shield_android/domain/models/blocked_domain.dart';
 import 'package:focus_shield_android/domain/models/focus_shield_state.dart';
 import 'package:focus_shield_android/domain/models/settings_record.dart';
 
@@ -66,6 +67,30 @@ void main() {
     expect(settings.delayedDisableHours, 24);
   });
 
+  test('repository saves and deletes blocked domains', () async {
+    final repository = InMemoryAppStateRepository();
+
+    await repository.saveBlockedDomain(
+      BlockedDomain(
+        id: 0,
+        domain: 'custom-risk.test',
+        category: 'custom-blocklist',
+        updatedAt: DateTime(2026),
+      ),
+    );
+
+    var domains = await repository.loadBlockedDomains();
+
+    expect(domains.any((item) => item.domain == 'custom-risk.test'), true);
+
+    final customDomain = domains.firstWhere((item) => item.domain == 'custom-risk.test');
+    await repository.deleteBlockedDomain(customDomain.id);
+
+    domains = await repository.loadBlockedDomains();
+
+    expect(domains.any((item) => item.domain == 'custom-risk.test'), false);
+  });
+
   test('repository clearAll resets state and attempts', () async {
     final repository = InMemoryAppStateRepository();
 
@@ -87,8 +112,10 @@ void main() {
 
     final snapshot = await repository.loadSnapshot();
     final attempts = await repository.loadAttempts();
+    final domains = await repository.loadBlockedDomains();
 
     expect(snapshot.state.xp, 45);
     expect(attempts, isEmpty);
+    expect(domains.any((item) => item.domain == 'blocked-example.com'), true);
   });
 }

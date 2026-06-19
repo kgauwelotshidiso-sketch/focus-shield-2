@@ -99,6 +99,56 @@ void main() {
     expect(find.text('Attempt History'), findsOneWidget);
   });
 
+  testWidgets('Protection database manager adds custom blocked domain', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Protection Database'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Protection Database'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('blockedDomainInput')), 'custom-risk.test');
+    await tester.enterText(find.byKey(const Key('blockedCategoryInput')), 'custom-blocklist');
+
+    await tester.tap(find.text('Add Domain'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('custom-risk.test'), findsOneWidget);
+  });
+
+  testWidgets('Scanner blocks custom saved domain', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Protection Database'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('blockedDomainInput')), 'custom-risk.test');
+    await tester.tap(find.text('Add Domain'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.shield_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('scannerDomainInput')), 'custom-risk.test');
+    await tester.tap(find.text('Scan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Intervention'), findsOneWidget);
+    expect(find.text('custom-risk.test'), findsOneWidget);
+  });
+
   testWidgets('Reset app data clears progress', (tester) async {
     await tester.pumpWidget(
       FocusShieldApp(repository: InMemoryAppStateRepository()),
