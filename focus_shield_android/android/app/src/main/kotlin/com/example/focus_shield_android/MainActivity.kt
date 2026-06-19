@@ -25,6 +25,8 @@ class MainActivity : FlutterActivity() {
                 "stopProtection" -> stopProtection(result)
                 "protectionStatus" -> protectionStatus(result)
                 "reloadBlocklist" -> reloadBlocklist(result)
+                "prepareLiveObservation" -> prepareLiveObservation(result)
+                "disableLiveObservation" -> disableLiveObservation(result)
                 else -> result.notImplemented()
             }
         }
@@ -70,5 +72,23 @@ class MainActivity : FlutterActivity() {
 
         startService(serviceIntent)
         result.success("reloaded")
+    }
+
+    private fun prepareLiveObservation(result: MethodChannel.Result) {
+        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
+            action = FocusShieldVpnService.ACTION_PREPARE_LIVE_OBSERVATION
+        }
+
+        startService(serviceIntent)
+        result.success("observation_prepared_locked")
+    }
+
+    private fun disableLiveObservation(result: MethodChannel.Result) {
+        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
+            action = FocusShieldVpnService.ACTION_DISABLE_LIVE_OBSERVATION
+        }
+
+        startService(serviceIntent)
+        result.success("observation_disabled")
     }
 }

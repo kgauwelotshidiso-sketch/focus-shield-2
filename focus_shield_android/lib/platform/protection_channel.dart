@@ -20,6 +20,9 @@ class ProtectionStatus {
     required this.lastDryRunDecision,
     required this.liveTrafficReadEnabled,
     required this.blockingEnabled,
+    required this.liveObservationToggleAvailable,
+    required this.liveObservationRequested,
+    required this.liveObservationSafetyGate,
     required this.statusMessage,
     required this.blocklistError,
   });
@@ -42,6 +45,9 @@ class ProtectionStatus {
   final String lastDryRunDecision;
   final bool liveTrafficReadEnabled;
   final bool blockingEnabled;
+  final bool liveObservationToggleAvailable;
+  final bool liveObservationRequested;
+  final String liveObservationSafetyGate;
   final String statusMessage;
   final String blocklistError;
 
@@ -66,6 +72,9 @@ class ProtectionStatus {
         lastDryRunDecision: '',
         liveTrafficReadEnabled: false,
         blockingEnabled: false,
+        liveObservationToggleAvailable: false,
+        liveObservationRequested: false,
+        liveObservationSafetyGate: '',
         statusMessage: 'Native protection status is unavailable.',
         blocklistError: '',
       );
@@ -90,6 +99,11 @@ class ProtectionStatus {
       lastDryRunDecision: _readString(map['lastDryRunDecision']),
       liveTrafficReadEnabled: _readBool(map['liveTrafficReadEnabled']),
       blockingEnabled: _readBool(map['blockingEnabled']),
+      liveObservationToggleAvailable: _readBool(
+        map['liveObservationToggleAvailable'],
+      ),
+      liveObservationRequested: _readBool(map['liveObservationRequested']),
+      liveObservationSafetyGate: _readString(map['liveObservationSafetyGate']),
       statusMessage: _readString(map['statusMessage']),
       blocklistError: _readString(map['blocklistError']),
     );
@@ -97,6 +111,11 @@ class ProtectionStatus {
 
   bool get isSafeMode {
     return !liveTrafficReadEnabled && !blockingEnabled;
+  }
+
+  bool get observationLocked {
+    return liveObservationSafetyGate.isNotEmpty &&
+        liveObservationSafetyGate != 'unlocked';
   }
 
   static bool _readBool(Object? value) {
@@ -142,6 +161,20 @@ class ProtectionChannel {
 
   Future<String> reloadBlocklist() async {
     final response = await _channel.invokeMethod<String>('reloadBlocklist');
+    return response ?? 'unknown';
+  }
+
+  Future<String> prepareLiveObservation() async {
+    final response = await _channel.invokeMethod<String>(
+      'prepareLiveObservation',
+    );
+    return response ?? 'unknown';
+  }
+
+  Future<String> disableLiveObservation() async {
+    final response = await _channel.invokeMethod<String>(
+      'disableLiveObservation',
+    );
     return response ?? 'unknown';
   }
 

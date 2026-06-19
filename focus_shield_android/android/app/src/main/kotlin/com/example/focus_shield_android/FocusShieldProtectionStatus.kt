@@ -19,6 +19,9 @@ data class FocusShieldProtectionStatus(
     val lastDryRunDecision: String,
     val liveTrafficReadEnabled: Boolean,
     val blockingEnabled: Boolean,
+    val liveObservationToggleAvailable: Boolean,
+    val liveObservationRequested: Boolean,
+    val liveObservationSafetyGate: String,
     val statusMessage: String,
     val blocklistError: String
 ) {
@@ -42,13 +45,16 @@ data class FocusShieldProtectionStatus(
             "lastDryRunDecision" to lastDryRunDecision,
             "liveTrafficReadEnabled" to liveTrafficReadEnabled,
             "blockingEnabled" to blockingEnabled,
+            "liveObservationToggleAvailable" to liveObservationToggleAvailable,
+            "liveObservationRequested" to liveObservationRequested,
+            "liveObservationSafetyGate" to liveObservationSafetyGate,
             "statusMessage" to statusMessage,
             "blocklistError" to blocklistError
         )
     }
 
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
 
         fun build(blocklistStatus: FocusShieldBlocklistStatus): FocusShieldProtectionStatus {
             return FocusShieldProtectionStatus(
@@ -70,6 +76,10 @@ data class FocusShieldProtectionStatus(
                 lastDryRunDecision = FocusShieldVpnService.lastDryRunDecision,
                 liveTrafficReadEnabled = FocusShieldVpnService.liveTrafficReadEnabled,
                 blockingEnabled = FocusShieldVpnService.blockingEnabled,
+                liveObservationToggleAvailable =
+                    FocusShieldVpnService.liveObservationToggleAvailable,
+                liveObservationRequested = FocusShieldVpnService.liveObservationRequested,
+                liveObservationSafetyGate = FocusShieldVpnService.liveObservationSafetyGate,
                 statusMessage = FocusShieldVpnService.statusMessage,
                 blocklistError = blocklistStatus.error ?: ""
             )

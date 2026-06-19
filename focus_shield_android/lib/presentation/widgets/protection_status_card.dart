@@ -33,6 +33,9 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
     lastDryRunDecision: '',
     liveTrafficReadEnabled: false,
     blockingEnabled: false,
+    liveObservationToggleAvailable: false,
+    liveObservationRequested: false,
+    liveObservationSafetyGate: '',
     statusMessage: 'Native protection status is unavailable.',
     blocklistError: '',
   );
@@ -119,6 +122,10 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
         return 'Blocklist reload command sent.';
       case 'permission_required':
         return 'Android VPN permission is required before protection can start.';
+      case 'observation_prepared_locked':
+        return 'Observation toggle prepared, but safety gate remains locked.';
+      case 'observation_disabled':
+        return 'Live observation request disabled.';
       default:
         return 'Native response: $response';
     }
@@ -154,6 +161,18 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
             _StatusRow(
               label: 'Safe mode',
               value: _status.isSafeMode ? 'On' : 'Off',
+            ),
+            _StatusRow(
+              label: 'Observation toggle',
+              value: _status.liveObservationToggleAvailable
+                  ? (_status.liveObservationRequested
+                        ? 'Requested'
+                        : 'Available')
+                  : 'Unavailable',
+            ),
+            _StatusRow(
+              label: 'Observation safety gate',
+              value: _status.observationLocked ? 'Locked' : 'Unlocked',
             ),
             _StatusRow(
               label: 'Live traffic reading',
@@ -231,6 +250,18 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
                         _runAction(_protectionChannel.startProtection),
                     icon: const Icon(Icons.shield_rounded),
                     label: const Text('Start Protection'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        _runAction(_protectionChannel.prepareLiveObservation),
+                    icon: const Icon(Icons.visibility_rounded),
+                    label: const Text('Prepare Observation'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        _runAction(_protectionChannel.disableLiveObservation),
+                    icon: const Icon(Icons.visibility_off_rounded),
+                    label: const Text('Disable Observation'),
                   ),
                   OutlinedButton.icon(
                     onPressed: () =>
