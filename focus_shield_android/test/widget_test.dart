@@ -82,4 +82,41 @@ void main() {
 
     expect(find.text('OFF'), findsOneWidget);
   });
+
+  testWidgets('Debug center opens from settings', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open Database Debug Center'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Database Debug Center'), findsOneWidget);
+    expect(find.text('Attempt History'), findsOneWidget);
+  });
+
+  testWidgets('Reset app data clears progress', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Log Listening Win').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 / 3'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Reset App Data').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 / 3'), findsOneWidget);
+    expect(find.text('45'), findsOneWidget);
+  });
 }

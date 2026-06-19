@@ -8,6 +8,7 @@ import 'domain/models/settings_record.dart';
 import 'domain/repositories/app_state_repository.dart';
 import 'domain/services/protection_engine.dart';
 import 'presentation/screens/coach_screen.dart';
+import 'presentation/screens/debug_center_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/intervention_screen.dart';
 import 'presentation/screens/progress_screen.dart';
@@ -50,9 +51,12 @@ class FocusShieldShell extends StatefulWidget {
 class _FocusShieldShellState extends State<FocusShieldShell> {
   int _selectedIndex = 0;
   bool _showIntervention = false;
+  bool _showDebugCenter = false;
   bool _loading = true;
+
   ProtectionDecision? _lastBlockedDecision;
   FocusShieldState _state = FocusShieldState.initial();
+  List<AttemptRecord> _attempts = [];
 
   late final AppStateRepository _repository;
 
@@ -66,13 +70,25 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   Future<void> _loadInitialState() async {
     final snapshot = await _repository.loadSnapshot();
     final settings = await _repository.loadSettings();
+    final attempts = await _repository.loadAttempts();
 
     if (!mounted) return;
 
     setState(() {
       _state = snapshot.state;
       _state.protectionEnabled = settings.protectionEnabled;
+      _attempts = attempts;
       _loading = false;
+    });
+  }
+
+  Future<void> _refreshAttempts() async {
+    final attempts = await _repository.loadAttempts();
+
+    if (!mounted) return;
+
+    setState(() {
+      _attempts = attempts;
     });
   }
 
@@ -95,6 +111,43 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _selectedIndex = index;
       _showIntervention = false;
+      _showDebugCenter = false;
+    });
+  }
+
+  void _openDebugCenter() {
+    setState(() {
+      _showDebugCenter = true;
+      _showIntervention = false;
+    });
+
+    _refreshAttempts();
+  }
+
+  void _closeDebugCenter() {
+    setState(() {
+      _showDebugCenter = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  Future<void> _resetAppData() async {
+    await _repository.clearAll();
+
+    final snapshot = await _repository.loadSnapshot();
+    final settings = await _repository.loadSettings();
+    final attempts = await _repository.loadAttempts();
+
+    if (!mounted) return;
+
+    setState(() {
+      _state = snapshot.state;
+      _state.protectionEnabled = settings.protectionEnabled;
+      _attempts = attempts;
+      _selectedIndex = 0;
+      _showIntervention = false;
+      _showDebugCenter = false;
+      _lastBlockedDecision = null;
     });
   }
 
@@ -104,18 +157,21 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state.blockedAttempts += 1;
       _selectedIndex = 1;
       _showIntervention = true;
+      _showDebugCenter = false;
     });
 
-    _repository.saveAttempt(
-      AttemptRecord(
-        id: 0,
-        domain: decision.domain,
-        category: decision.category,
-        confidence: decision.confidence,
-        recovered: false,
-        createdAt: DateTime.now(),
-      ),
-    );
+    _repository
+        .saveAttempt(
+          AttemptRecord(
+            id: 0,
+            domain: decision.domain,
+            category: decision.category,
+            confidence: decision.confidence,
+            recovered: false,
+            createdAt: DateTime.now(),
+          ),
+        )
+        .then((_) => _refreshAttempts());
 
     _persistState();
   }
@@ -124,6 +180,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _selectedIndex = 1;
       _showIntervention = false;
+      _showDebugCenter = false;
     });
   }
 
@@ -170,10 +227,11 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
         _state.xp += 10;
       }
       _showIntervention = false;
+      _showDebugCenter = false;
       _selectedIndex = 2;
     });
 
-    _repository.markLatestAttemptRecovered();
+    _repository.markLatestAttemptRecovered().then((_) => _refreshAttempts());
     _persistState();
   }
 
@@ -219,6 +277,24 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       );
     }
 
+    if (_showDebugCenter) {
+      return Scaffold(
+        body: SafeArea(
+          child: DebugCenterScreen(
+            state: _state,
+            attempts: _attempts,
+            onBack: _closeDebugCenter,
+            onResetAppData: _resetAppData,
+            onRefresh: _refreshAttempts,
+          ),
+        ),
+        bottomNavigationBar: FocusShieldBottomNav(
+          currentIndex: _selectedIndex,
+          onTap: _goTo,
+        ),
+      );
+    }
+
     final screens = [
       HomeScreen(
         state: _state,
@@ -250,6 +326,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       SettingsScreen(
         state: _state,
         onToggleProtection: _toggleProtection,
+        onOpenDebugCenter: _openDebugCenter,
+        onResetAppData: _resetAppData,
       ),
     ];
 

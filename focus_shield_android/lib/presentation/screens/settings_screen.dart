@@ -11,10 +11,14 @@ class SettingsScreen extends StatelessWidget {
     super.key,
     required this.state,
     required this.onToggleProtection,
+    required this.onOpenDebugCenter,
+    required this.onResetAppData,
   });
 
   final FocusShieldState state;
   final VoidCallback onToggleProtection;
+  final VoidCallback onOpenDebugCenter;
+  final VoidCallback onResetAppData;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +56,27 @@ class SettingsScreen extends StatelessWidget {
               ActionButton(label: 'URL Analysis Engine', onPressed: () {}),
               const SizedBox(height: 10),
               ActionButton(label: 'Lock Layer', onPressed: () {}),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Database Tools'),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Open Database Debug Center',
+                subtitle: 'Attempts, state, reset tools',
+                onPressed: onOpenDebugCenter,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Reset App Data',
+                subtitle: 'Clear local saved state',
+                onPressed: onResetAppData,
+              ),
             ],
           ),
         ),
