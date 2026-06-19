@@ -20,6 +20,10 @@ Status: CODE CHECKS PASSED. APK BUILD BLOCKED BY CODESPACES ANDROID SDK.
 
 Status: COMPLETE
 
+## Phase 3.4 — Native Blocklist Loading
+
+Status: COMPLETE
+
 ## Next
 
-Phase 3.4 — Native Blocklist Loading
+Phase 3.5 — Native DNS Filtering Skeleton

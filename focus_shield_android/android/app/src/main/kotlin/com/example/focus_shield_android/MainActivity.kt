@@ -9,6 +9,10 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val protectionChannelName = "focus_shield/protection"
 
+    private val blocklistStore: FocusShieldBlocklistStore by lazy {
+        FocusShieldBlocklistStore(applicationContext)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
@@ -53,16 +57,20 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun protectionStatus(result: MethodChannel.Result) {
+        val blocklistStatus = blocklistStore.status()
+
         result.success(
             mapOf(
                 "vpnActive" to FocusShieldVpnService.isRunning,
-                "blocklistLoaded" to true,
-                "blockedDomainCount" to 0
+                "blocklistLoaded" to blocklistStatus.loaded,
+                "blockedDomainCount" to blocklistStatus.count,
+                "blocklistError" to (blocklistStatus.error ?: "")
             )
         )
     }
 
     private fun reloadBlocklist(result: MethodChannel.Result) {
+        blocklistStore.status()
         result.success("reloaded")
     }
 }
