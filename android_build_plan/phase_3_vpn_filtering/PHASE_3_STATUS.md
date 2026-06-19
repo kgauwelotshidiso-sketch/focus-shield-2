@@ -54,5 +54,8 @@ Status: COMPLETE
 ## Phase 3.16 — Run Android SDK Installer
 Status: COMPLETE
 
+## Phase 3.17 — Debug APK Build Attempt
+Status: BLOCKED BY GRADLE DAEMON ENVIRONMENT ISSUE
+
 ## Next
-Phase 3.17 — Debug APK Build Attempt
+Phase 3.18 — Build Environment Stabilization Notes
