@@ -8,16 +8,32 @@ class FocusShieldVpnService : VpnService() {
     companion object {
         const val ACTION_START = "focus_shield.action.START_PROTECTION"
         const val ACTION_STOP = "focus_shield.action.STOP_PROTECTION"
+        const val ACTION_RELOAD_BLOCKLIST = "focus_shield.action.RELOAD_BLOCKLIST"
 
         var isRunning: Boolean = false
+            private set
+
+        var dnsFilteringReady: Boolean = false
+            private set
+
+        var nativeBlockedDomainCount: Int = 0
             private set
     }
 
     private var vpnInterface: ParcelFileDescriptor? = null
+    private lateinit var blocklistStore: FocusShieldBlocklistStore
+    private val dnsFilter = FocusShieldDnsFilter()
+
+    override fun onCreate() {
+        super.onCreate()
+        blocklistStore = FocusShieldBlocklistStore(applicationContext)
+        reloadBlocklist()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> stopProtection()
+            ACTION_RELOAD_BLOCKLIST -> reloadBlocklist()
             else -> startProtection()
         }
 
@@ -25,6 +41,8 @@ class FocusShieldVpnService : VpnService() {
     }
 
     private fun startProtection() {
+        reloadBlocklist()
+
         if (vpnInterface != null) {
             isRunning = true
             return
@@ -44,6 +62,19 @@ class FocusShieldVpnService : VpnService() {
         vpnInterface = null
         isRunning = false
         stopSelf()
+    }
+
+    private fun reloadBlocklist() {
+        val domains = blocklistStore.loadDomains()
+
+        dnsFilter.reload(domains)
+
+        nativeBlockedDomainCount = dnsFilter.blockedDomainCount()
+        dnsFilteringReady = dnsFilter.hasBlocklist()
+    }
+
+    fun shouldBlockDomainForTestOnly(hostname: String): Boolean {
+        return dnsFilter.shouldBlock(hostname)
     }
 
     override fun onDestroy() {

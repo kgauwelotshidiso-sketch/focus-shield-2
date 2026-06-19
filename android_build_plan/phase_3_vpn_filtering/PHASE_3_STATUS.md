@@ -24,6 +24,10 @@ Status: COMPLETE
 
 Status: COMPLETE
 
+## Phase 3.5 — Native DNS Filtering Skeleton
+
+Status: COMPLETE
+
 ## Next
 
-Phase 3.5 — Native DNS Filtering Skeleton
+Phase 3.6 — Native VPN Packet Loop Preparation

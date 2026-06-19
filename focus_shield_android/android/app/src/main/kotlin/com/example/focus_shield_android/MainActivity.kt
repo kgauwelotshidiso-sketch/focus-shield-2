@@ -64,13 +64,19 @@ class MainActivity : FlutterActivity() {
                 "vpnActive" to FocusShieldVpnService.isRunning,
                 "blocklistLoaded" to blocklistStatus.loaded,
                 "blockedDomainCount" to blocklistStatus.count,
+                "nativeDnsReady" to FocusShieldVpnService.dnsFilteringReady,
+                "nativeLoadedDomainCount" to FocusShieldVpnService.nativeBlockedDomainCount,
                 "blocklistError" to (blocklistStatus.error ?: "")
             )
         )
     }
 
     private fun reloadBlocklist(result: MethodChannel.Result) {
-        blocklistStore.status()
+        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
+            action = FocusShieldVpnService.ACTION_RELOAD_BLOCKLIST
+        }
+
+        startService(serviceIntent)
         result.success("reloaded")
     }
 }
