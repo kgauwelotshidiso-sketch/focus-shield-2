@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv541cleanup1">
+    <link rel="stylesheet" href="style.css?v=liveappv55roadmap1">
 </head>
 <body>
 
@@ -32534,6 +32534,301 @@ window.fsLiveV541CleanHome = fsLiveV541CleanHome;
 
 fsLiveV541AutoOpen();
 setInterval(fsLiveV541CleanHome, 1200);
+
+
+/* Live App v5.5 Final MVP Lock + Android Build Roadmap */
+function fsLiveV55Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV55SafeJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function fsLiveV55GetAuditScore() {
+    if (typeof fsLiveV50RunAudit === "function") {
+        try {
+            const audit = fsLiveV50RunAudit();
+            return audit.score || 0;
+        } catch (error) {
+            return 0;
+        }
+    }
+
+    return 100;
+}
+
+function fsLiveV55GetBuildState() {
+    const progress = fsLiveV55SafeJson("fsLiveV46ProgressState", {});
+    const protection = fsLiveV55SafeJson("fsLiveV48ProtectionSettings", {});
+    const coach = fsLiveV55SafeJson("fsLiveV47CoachState", {});
+    const backups = fsLiveV55SafeJson("fsLiveV52Backups", []);
+
+    return {
+        auditScore: fsLiveV55GetAuditScore(),
+        level: Number(progress.level || 1),
+        xp: Number(progress.xp || 0),
+        protectionEnabled: Boolean(protection.protectionEnabled),
+        lockEnabled: Boolean(protection.lockEnabled),
+        coachReady: Boolean(coach.morningCommandSet),
+        backups: Array.isArray(backups) ? backups.length : 0
+    };
+}
+
+function fsLiveV55OpenHome() {
+    const fn =
+        window.openLiveAppV54HomePage ||
+        window.openLiveAppV51HomePage ||
+        window.openLiveAppV50HomePage ||
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage;
+
+    if (typeof fn === "function") fn();
+}
+
+function fsLiveV55OpenVault() {
+    if (typeof openLiveAppV43FeatureVaultPage === "function") {
+        openLiveAppV43FeatureVaultPage("All");
+    }
+}
+
+function fsLiveV55OpenAudit() {
+    if (typeof openLiveAppV50AuditPage === "function") {
+        openLiveAppV50AuditPage();
+    }
+}
+
+function fsLiveV55OpenDataCenter() {
+    if (typeof openLiveAppV52DataCenterPage === "function") {
+        openLiveAppV52DataCenterPage();
+    }
+}
+
+function fsLiveV55OpenPresentation() {
+    if (typeof openLiveAppV53PresentationPage === "function") {
+        openLiveAppV53PresentationPage();
+    }
+}
+
+function fsLiveV55OpenSettings() {
+    if (typeof fsLiveV48OpenSettingsHome === "function") {
+        fsLiveV48OpenSettingsHome();
+    }
+}
+
+function fsLiveV55OpenClassic() {
+    const url = new URL(window.location.href);
+    url.search = "?classic=1";
+    window.location.href = url.toString();
+}
+
+function fsLiveV55SaveLockReport() {
+    const report = {
+        version: "Live App v5.5",
+        title: "Final MVP Lock + Android Build Roadmap",
+        savedAt: new Date().toLocaleString(),
+        webMvpStatus: "Complete",
+        nextBuild: "Flutter/Android",
+        limitation: "The web demo cannot perform real system-wide filtering.",
+        requiredAndroidLayer: "Android VPN/DNS filtering service",
+        auditScore: fsLiveV55GetAuditScore(),
+        phases: {
+            phase1: "Discipline ecosystem complete in web MVP.",
+            phase2: "Local blocklist/protection database complete in web MVP.",
+            phase3: "Protection engine, scanner, intervention, recovery, PIN/lock simulation complete in web MVP.",
+            phase4: "Firebase/cloud sync preserved as later phase.",
+            phase5: "AI classification preserved as later phase."
+        }
+    };
+
+    localStorage.setItem("fsLiveV55MvpLockReport", JSON.stringify(report));
+    openLiveAppV55RoadmapPage();
+}
+
+function fsLiveV55PhaseCard(number, title, status, detail) {
+    return `
+        <div class="fs-v55-phase-row">
+            <span>${fsLiveV55Escape(number)}</span>
+            <div>
+                <strong>${fsLiveV55Escape(title)}</strong>
+                <p><b>${fsLiveV55Escape(status)}</b> — ${fsLiveV55Escape(detail)}</p>
+            </div>
+        </div>
+    `;
+}
+
+function fsLiveV55AndroidStep(number, title, detail, status) {
+    return `
+        <div class="fs-v55-roadmap-row">
+            <span>${fsLiveV55Escape(number)}</span>
+            <div>
+                <strong>${fsLiveV55Escape(title)}</strong>
+                <p>${fsLiveV55Escape(detail)}</p>
+            </div>
+            <em>${fsLiveV55Escape(status)}</em>
+        </div>
+    `;
+}
+
+function openLiveAppV55RoadmapPage() {
+    const state = fsLiveV55GetBuildState();
+    const report = fsLiveV55SafeJson("fsLiveV55MvpLockReport", null);
+
+    showPage(`
+        ${typeof fsLiveV4Header === "function" ? fsLiveV4Header("MVP Lock", "Final web MVP + Android roadmap") : "<h1>MVP Lock</h1>"}
+
+        <div class="card fs-v55-hero-card">
+            <h2>Live App v5.5</h2>
+            <h3>Web MVP: Complete</h3>
+            <p>Focus Shield is now locked as a polished web MVP showcase. The next serious build phase is Flutter/Android.</p>
+
+            <div class="fs-v55-score-bar">
+                <div style="width:${state.auditScore}%;"></div>
+            </div>
+
+            <div class="fs-live-v4-stat-grid">
+                <div><strong>${state.auditScore}%</strong><span>Audit</span></div>
+                <div><strong>${state.level}</strong><span>Level</span></div>
+                <div><strong>${state.protectionEnabled ? "ON" : "OFF"}</strong><span>Protection</span></div>
+                <div><strong>${state.backups}</strong><span>Backups</span></div>
+            </div>
+
+            <button id="v55SaveReportBtn">Save MVP Lock Report</button>
+        </div>
+
+        <div class="card fs-v55-limit-card">
+            <h2>Important Limitation</h2>
+            <h3>Web demo ≠ system-wide blocking</h3>
+            <p>The current web app can demonstrate scanning, local database checks, intervention, recovery, progress, coaching, settings, and demo flow.</p>
+            <p><strong>But real blocking across Chrome, Firefox, and other apps requires the future Android VPN/DNS filtering layer.</strong></p>
+        </div>
+
+        <div class="card fs-v55-phase-card">
+            <h2>Preserved Development Phases</h2>
+            ${fsLiveV55PhaseCard("1", "Discipline Ecosystem", "Complete in web MVP", "Dashboard, streaks, goals, affirmations, focus timer, concentration, progress, reflection, coach, and health systems are preserved.")}
+            ${fsLiveV55PhaseCard("2", "Offline Blocklist Database", "Complete as web prototype", "Local database, URL engine, safe test domains, category checks, privacy mode, and backup controls are integrated.")}
+            ${fsLiveV55PhaseCard("3", "Protection Engine", "Complete as web demo + Android plan", "Scanner, decision flow, intervention, recovery, lock layer, PIN simulation, and delayed disable are integrated.")}
+            ${fsLiveV55PhaseCard("4", "Firebase Sync", "Future phase", "Sync goals, affirmations, progress, streaks, settings, and backup data later after the local Android MVP works.")}
+            ${fsLiveV55PhaseCard("5", "AI Classification", "Future phase", "Do not depend on AI until the local blocklist, Android VPN/DNS layer, lock layer, and recovery system are stable.")}
+        </div>
+
+        <div class="card fs-v55-roadmap-card">
+            <h2>Android Build Roadmap</h2>
+            ${fsLiveV55AndroidStep("1", "Prepare Flutter Environment", "Install Flutter SDK or use a Flutter-ready Codespace/devcontainer.", "Next")}
+            ${fsLiveV55AndroidStep("2", "Create Real Flutter Project", "Generate the Android project and migrate the web MVP screens into Flutter pages.", "Planned")}
+            ${fsLiveV55AndroidStep("3", "Migrate SQLite Models", "Add goals, affirmations, streaks, blocked_domains, blocked_attempts, and security tables.", "Planned")}
+            ${fsLiveV55AndroidStep("4", "Build Local Protection Engine", "Implement domain lookup, keyword/category checks, decision logs, and privacy-safe attempt tracking.", "Planned")}
+            ${fsLiveV55AndroidStep("5", "Add Android VPN/DNS Service", "Use Android VPN Service to filter DNS traffic system-wide.", "Core Android MVP")}
+            ${fsLiveV55AndroidStep("6", "Add PIN + Delayed Disable", "Protect settings and make disabling protection delayed, not instant.", "Core Android MVP")}
+            ${fsLiveV55AndroidStep("7", "Add Firebase Sync Later", "Sync only after the local Android app works reliably.", "Later")}
+            ${fsLiveV55AndroidStep("8", "Add AI Classification Last", "Use classification only as an extra layer, not the foundation.", "Later")}
+        </div>
+
+        <div class="card fs-v55-check-card">
+            <h2>Final MVP Checklist</h2>
+            <p>✅ Web MVP opens cleanly</p>
+            <p>✅ Classic dashboard preserved</p>
+            <p>✅ Feature Vault preserved</p>
+            <p>✅ Demo Test Center available</p>
+            <p>✅ Demo Data Center available</p>
+            <p>✅ Presentation Mode available</p>
+            <p>✅ Home cleanup stabilized</p>
+            <p>✅ Android limitation clearly stated</p>
+        </div>
+
+        <div class="card fs-v55-tools-card">
+            <h2>MVP Lock Tools</h2>
+            <div class="fs-v55-tool-grid">
+                <button id="v55HomeBtn"><strong>Home</strong><span>Clean MVP dashboard</span></button>
+                <button id="v55VaultBtn"><strong>Feature Vault</strong><span>Preserved roadmap</span></button>
+                <button id="v55AuditBtn"><strong>Test Center</strong><span>Final audit</span></button>
+                <button id="v55DataBtn"><strong>Data Center</strong><span>Seed/reset/backup</span></button>
+                <button id="v55PresentationBtn"><strong>Presentation</strong><span>Guided demo</span></button>
+                <button id="v55SettingsBtn"><strong>Settings</strong><span>Protection center</span></button>
+                <button id="v55ClassicBtn"><strong>Classic</strong><span>Old dashboard</span></button>
+            </div>
+        </div>
+
+        ${
+            report
+                ? `
+                    <div class="card fs-v55-report-card">
+                        <h2>Saved MVP Lock Report</h2>
+                        <p><strong>Saved:</strong> ${fsLiveV55Escape(report.savedAt)}</p>
+                        <p><strong>Status:</strong> ${fsLiveV55Escape(report.webMvpStatus)}</p>
+                        <p><strong>Next Build:</strong> ${fsLiveV55Escape(report.nextBuild)}</p>
+                        <p><strong>Required Layer:</strong> ${fsLiveV55Escape(report.requiredAndroidLayer)}</p>
+                    </div>
+                `
+                : ""
+        }
+
+        ${typeof fsLiveV44BottomNav === "function" ? fsLiveV44BottomNav("settings") : ""}
+    `);
+
+    document.getElementById("v55SaveReportBtn").addEventListener("click", fsLiveV55SaveLockReport);
+    document.getElementById("v55HomeBtn").addEventListener("click", fsLiveV55OpenHome);
+    document.getElementById("v55VaultBtn").addEventListener("click", fsLiveV55OpenVault);
+    document.getElementById("v55AuditBtn").addEventListener("click", fsLiveV55OpenAudit);
+    document.getElementById("v55DataBtn").addEventListener("click", fsLiveV55OpenDataCenter);
+    document.getElementById("v55PresentationBtn").addEventListener("click", fsLiveV55OpenPresentation);
+    document.getElementById("v55SettingsBtn").addEventListener("click", fsLiveV55OpenSettings);
+    document.getElementById("v55ClassicBtn").addEventListener("click", fsLiveV55OpenClassic);
+
+    if (typeof fsLiveV44BindNav === "function") fsLiveV44BindNav();
+}
+
+function fsLiveV55AddHomeCard() {
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+    if (document.getElementById("fsLiveV55HomeCard")) return;
+
+    const card = document.createElement("div");
+    card.id = "fsLiveV55HomeCard";
+    card.className = "card fs-v55-hero-card";
+    card.innerHTML = `
+        <h2>Live App v5.5</h2>
+        <h3>MVP Lock + Android Roadmap</h3>
+        <p>Final web MVP status, preserved phases, current limitation, and Android build roadmap.</p>
+        <button id="fsLiveV55OpenBtn">Open MVP Lock</button>
+    `;
+
+    nav.parentNode.insertBefore(card, nav);
+
+    document.getElementById("fsLiveV55OpenBtn").addEventListener("click", openLiveAppV55RoadmapPage);
+}
+
+function fsLiveV55AutoOpen() {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has("liveappv55roadmap")) {
+        openLiveAppV55RoadmapPage();
+        return;
+    }
+
+    setTimeout(fsLiveV55AddHomeCard, 2600);
+    setTimeout(fsLiveV55AddHomeCard, 4400);
+}
+
+window.openLiveAppV55RoadmapPage = openLiveAppV55RoadmapPage;
+
+setTimeout(fsLiveV55AutoOpen, 850);
 
 </script>
 
