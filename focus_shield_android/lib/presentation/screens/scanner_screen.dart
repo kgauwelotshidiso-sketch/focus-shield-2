@@ -12,7 +12,7 @@ class ScannerScreen extends StatefulWidget {
     required this.onBlocked,
   });
 
-  final VoidCallback onBlocked;
+  final ValueChanged<ProtectionDecision> onBlocked;
 
   @override
   State<ScannerScreen> createState() => _ScannerScreenState();
@@ -31,7 +31,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     });
 
     if (decision.blocked) {
-      widget.onBlocked();
+      widget.onBlocked(decision);
     }
   }
 
@@ -95,6 +95,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(decision.blocked ? 'Domain blocked' : 'Domain allowed'),
+                const SizedBox(height: 8),
                 Text('Domain: ${decision.domain}'),
                 Text('Category: ${decision.category}'),
                 Text('Confidence: ${(decision.confidence * 100).round()}%'),

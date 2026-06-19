@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
+import 'domain/services/protection_engine.dart';
 import 'presentation/screens/coach_screen.dart';
 import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/intervention_screen.dart';
 import 'presentation/screens/progress_screen.dart';
 import 'presentation/screens/recovery_screen.dart';
 import 'presentation/screens/scanner_screen.dart';
@@ -32,10 +34,28 @@ class FocusShieldShell extends StatefulWidget {
 
 class _FocusShieldShellState extends State<FocusShieldShell> {
   int _selectedIndex = 0;
+  bool _showIntervention = false;
+  ProtectionDecision? _lastBlockedDecision;
 
   void _goTo(int index) {
     setState(() {
       _selectedIndex = index;
+      _showIntervention = false;
+    });
+  }
+
+  void _openIntervention(ProtectionDecision decision) {
+    setState(() {
+      _lastBlockedDecision = decision;
+      _selectedIndex = 1;
+      _showIntervention = true;
+    });
+  }
+
+  void _returnToScanner() {
+    setState(() {
+      _selectedIndex = 1;
+      _showIntervention = false;
     });
   }
 
@@ -43,7 +63,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   Widget build(BuildContext context) {
     final screens = [
       HomeScreen(onNavigate: _goTo),
-      ScannerScreen(onBlocked: () => _goTo(2)),
+      ScannerScreen(onBlocked: _openIntervention),
       const RecoveryScreen(),
       const ProgressScreen(),
       const CoachScreen(),
@@ -52,10 +72,16 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
 
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: screens,
-        ),
+        child: _showIntervention
+            ? InterventionScreen(
+                decision: _lastBlockedDecision,
+                onNavigate: _goTo,
+                onBackToScanner: _returnToScanner,
+              )
+            : IndexedStack(
+                index: _selectedIndex,
+                children: screens,
+              ),
       ),
       bottomNavigationBar: FocusShieldBottomNav(
         currentIndex: _selectedIndex,
