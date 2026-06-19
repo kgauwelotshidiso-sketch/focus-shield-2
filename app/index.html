@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#050816">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=liveappv54polish1">
+    <link rel="stylesheet" href="style.css?v=liveappv541cleanup1">
 </head>
 <body>
 
@@ -32227,6 +32227,313 @@ setInterval(function() {
         fsLiveV54PolishHome();
     }
 }, 2200);
+
+
+/* Live App v5.4.1 Home Cleanup Stabilizer */
+function fsLiveV541Escape(value) {
+    if (typeof fsLiveV4Escape === "function") return fsLiveV4Escape(value);
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function fsLiveV541IsHomePage() {
+    const text = String(document.body.textContent || "");
+    return (
+        text.includes("Today's Mission") ||
+        text.includes("Today’s Mission")
+    ) && text.includes("Shield Status") && text.includes("Quick Actions");
+}
+
+function fsLiveV541GetScore() {
+    if (typeof fsLiveV50RunAudit === "function") {
+        try {
+            return fsLiveV50RunAudit().score || 100;
+        } catch (error) {
+            return 100;
+        }
+    }
+    return 100;
+}
+
+function fsLiveV541OpenHome() {
+    const fn =
+        window.openLiveAppV54HomePage ||
+        window.openLiveAppV51HomePage ||
+        window.openLiveAppV50HomePage ||
+        window.openLiveAppV49HomePage ||
+        window.openLiveAppV4HomePage;
+
+    if (typeof fn === "function" && fn !== fsLiveV541OpenHome) {
+        fn();
+    }
+}
+
+function fsLiveV541OpenClassic() {
+    const url = new URL(window.location.href);
+    url.search = "?classic=1";
+    window.location.href = url.toString();
+}
+
+function fsLiveV541OpenFeatureVault() {
+    if (typeof openLiveAppV43FeatureVaultPage === "function") {
+        openLiveAppV43FeatureVaultPage("All");
+    }
+}
+
+function fsLiveV541OpenPresentation() {
+    if (typeof openLiveAppV53PresentationPage === "function") {
+        openLiveAppV53PresentationPage();
+    }
+}
+
+function fsLiveV541OpenDataCenter() {
+    if (typeof openLiveAppV52DataCenterPage === "function") {
+        openLiveAppV52DataCenterPage();
+    }
+}
+
+function fsLiveV541OpenAudit() {
+    if (typeof openLiveAppV50AuditPage === "function") {
+        openLiveAppV50AuditPage();
+    }
+}
+
+function fsLiveV541OpenScanner() {
+    if (typeof openLiveAppV4ScannerPage === "function") {
+        openLiveAppV4ScannerPage();
+    }
+}
+
+function fsLiveV541OpenProgress() {
+    if (typeof openLiveAppV46ProgressPage === "function") {
+        openLiveAppV46ProgressPage();
+    }
+}
+
+function fsLiveV541OpenCoach() {
+    if (typeof openLiveAppV47CoachPage === "function") {
+        openLiveAppV47CoachPage();
+    }
+}
+
+function fsLiveV541OpenSettings() {
+    if (typeof fsLiveV48OpenSettingsHome === "function") {
+        fsLiveV48OpenSettingsHome();
+    }
+}
+
+function fsLiveV541BlockOldHomeCards() {
+    const blockers = [
+        "fsLiveV43InsertHomeFeatureVaultCard",
+        "insertLiveAppV43DashboardCard",
+        "insertLiveAppV44DashboardCard",
+        "insertLiveAppV45Card",
+        "insertLiveAppV46Card",
+        "insertLiveAppV47Card",
+        "insertLiveAppV48Card",
+        "fsLiveV49AddClassicAccessCard",
+        "insertLiveAppV49ClassicDashboardCard",
+        "fsLiveV50AddHomeAuditCard",
+        "fsLiveV51AddRouteCard",
+        "fsLiveV52AddDataCenterCard",
+        "fsLiveV53AddHomeCard"
+    ];
+
+    blockers.forEach(function(name) {
+        try {
+            window[name] = function() {};
+        } catch (error) {}
+    });
+}
+
+function fsLiveV541RemoveOldHomeCards() {
+    if (!fsLiveV541IsHomePage()) return;
+
+    const oldIds = [
+        "fsLiveV43VaultCard",
+        "liveAppV43HomeCard",
+        "liveAppV44HomeCard",
+        "liveAppV45HomeCard",
+        "liveAppV46HomeCard",
+        "liveAppV47HomeCard",
+        "liveAppV48HomeCard",
+        "liveAppV49HomeCard",
+        "fsLiveV49ClassicCard",
+        "fsLiveV50HomeAuditCard",
+        "fsLiveV51RouteCard",
+        "fsLiveV52DataCard",
+        "fsLiveV53HomeCard",
+        "fsLiveV54StatusCard",
+        "fsLiveV54InstallCard",
+        "fsLiveV54ToolsCard"
+    ];
+
+    oldIds.forEach(function(id) {
+        const element = document.getElementById(id);
+        if (element) element.remove();
+    });
+
+    document.querySelectorAll(".card").forEach(function(card) {
+        const text = String(card.textContent || "");
+
+        const isOldVersionCard =
+            text.includes("Live App v4.3") ||
+            text.includes("Live App v4.4") ||
+            text.includes("Live App v4.5") ||
+            text.includes("Live App v4.6") ||
+            text.includes("Live App v4.7") ||
+            text.includes("Live App v4.8") ||
+            text.includes("Live App v4.9") ||
+            text.includes("Live App v5.0") ||
+            text.includes("Live App v5.1") ||
+            text.includes("Live App v5.2") ||
+            text.includes("Live App v5.3") ||
+            text.includes("Demo Presentation Mode") ||
+            text.includes("Demo Data Center") ||
+            text.includes("Navigation Routes Stabilized") ||
+            text.includes("Default Home Active");
+
+        const isOldFeatureVaultHomeCard =
+            text.includes("Feature Vault") &&
+            text.includes("Keep every original Focus Shield feature preserved");
+
+        if (isOldVersionCard || isOldFeatureVaultHomeCard) {
+            card.remove();
+        }
+    });
+}
+
+function fsLiveV541ToolButton(title, subtitle, action) {
+    return `
+        <button data-v541-action="${action}">
+            <strong>${fsLiveV541Escape(title)}</strong>
+            <span>${fsLiveV541Escape(subtitle)}</span>
+        </button>
+    `;
+}
+
+function fsLiveV541InsertCleanMvpCards() {
+    if (!fsLiveV541IsHomePage()) return;
+
+    const nav =
+        document.querySelector(".fs-live-v44-bottom-nav") ||
+        document.querySelector(".fs-live-v4-bottom-nav") ||
+        document.querySelector(".fs-live-v3-bottom-nav");
+
+    if (!nav) return;
+
+    if (!document.getElementById("fsLiveV541StatusCard")) {
+        const score = fsLiveV541GetScore();
+
+        const statusCard = document.createElement("div");
+        statusCard.id = "fsLiveV541StatusCard";
+        statusCard.className = "card fs-v541-status-card";
+        statusCard.innerHTML = `
+            <div class="fs-v541-top">
+                <div>
+                    <h2>Focus Shield MVP</h2>
+                    <h3>Clean Showcase Build</h3>
+                </div>
+                <span>${score}% Ready</span>
+            </div>
+            <p>Home, Scanner, Intervention, Recovery, Progress, Coach, Settings, Feature Vault, Data Center, Presentation Mode, and Test Center are integrated.</p>
+            <button id="fsLiveV541StartBtn">Start Focus Shield</button>
+        `;
+
+        nav.parentNode.insertBefore(statusCard, nav);
+
+        document.getElementById("fsLiveV541StartBtn").addEventListener("click", fsLiveV541OpenScanner);
+    }
+
+    if (!document.getElementById("fsLiveV541ToolsCard")) {
+        const toolsCard = document.createElement("div");
+        toolsCard.id = "fsLiveV541ToolsCard";
+        toolsCard.className = "card fs-v541-tools-card";
+        toolsCard.innerHTML = `
+            <h2>MVP Tools</h2>
+            <p>All older v4/v5 update cards are now cleaned into this single control area.</p>
+
+            <div class="fs-v541-grid">
+                ${fsLiveV541ToolButton("Presentation", "Guided product demo", "presentation")}
+                ${fsLiveV541ToolButton("Demo Data", "Seed / reset / backup", "data")}
+                ${fsLiveV541ToolButton("Test Center", "Audit + smoke test", "audit")}
+                ${fsLiveV541ToolButton("Feature Vault", "Roadmap preserved", "vault")}
+                ${fsLiveV541ToolButton("Scanner", "Protection demo", "scanner")}
+                ${fsLiveV541ToolButton("Progress", "XP + badges", "progress")}
+                ${fsLiveV541ToolButton("Coach", "Daily OS", "coach")}
+                ${fsLiveV541ToolButton("Settings", "Protection center", "settings")}
+                ${fsLiveV541ToolButton("Classic", "Old dashboard", "classic")}
+            </div>
+        `;
+
+        nav.parentNode.insertBefore(toolsCard, nav);
+    }
+
+    document.querySelectorAll("[data-v541-action]").forEach(function(button) {
+        if (button.dataset.v541Bound === "1") return;
+        button.dataset.v541Bound = "1";
+
+        button.addEventListener("click", function() {
+            const action = button.getAttribute("data-v541-action");
+
+            if (action === "presentation") fsLiveV541OpenPresentation();
+            if (action === "data") fsLiveV541OpenDataCenter();
+            if (action === "audit") fsLiveV541OpenAudit();
+            if (action === "vault") fsLiveV541OpenFeatureVault();
+            if (action === "scanner") fsLiveV541OpenScanner();
+            if (action === "progress") fsLiveV541OpenProgress();
+            if (action === "coach") fsLiveV541OpenCoach();
+            if (action === "settings") fsLiveV541OpenSettings();
+            if (action === "classic") fsLiveV541OpenClassic();
+        });
+    });
+}
+
+function fsLiveV541CleanHome() {
+    fsLiveV541BlockOldHomeCards();
+    fsLiveV541RemoveOldHomeCards();
+    fsLiveV541InsertCleanMvpCards();
+}
+
+function fsLiveV541WatchHome() {
+    if (window.fsLiveV541ObserverStarted) return;
+    window.fsLiveV541ObserverStarted = true;
+
+    const observer = new MutationObserver(function() {
+        clearTimeout(window.fsLiveV541CleanTimer);
+        window.fsLiveV541CleanTimer = setTimeout(fsLiveV541CleanHome, 80);
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+function fsLiveV541AutoOpen() {
+    fsLiveV541BlockOldHomeCards();
+    fsLiveV541WatchHome();
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has("liveappv541cleanup")) {
+        fsLiveV541OpenHome();
+    }
+
+    setTimeout(fsLiveV541CleanHome, 500);
+    setTimeout(fsLiveV541CleanHome, 1400);
+    setTimeout(fsLiveV541CleanHome, 2600);
+    setTimeout(fsLiveV541CleanHome, 4200);
+}
+
+window.fsLiveV541CleanHome = fsLiveV541CleanHome;
+
+fsLiveV541AutoOpen();
+setInterval(fsLiveV541CleanHome, 1200);
 
 </script>
 
