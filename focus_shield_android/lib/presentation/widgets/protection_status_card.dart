@@ -18,6 +18,12 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
     vpnActive: false,
     blocklistLoaded: false,
     blockedDomainCount: 0,
+    nativeDnsReady: false,
+    nativeLoadedDomainCount: 0,
+    packetLoopPrepared: false,
+    packetLoopRunning: false,
+    packetsObserved: 0,
+    blocklistError: '',
   );
 
   bool _loading = false;
@@ -110,6 +116,7 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final blocklistError = _status.blocklistError;
 
     return Card(
       child: Padding(
@@ -133,9 +140,31 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
               value: _status.blocklistLoaded ? 'Loaded' : 'Not loaded',
             ),
             _StatusRow(
-              label: 'Blocked domains',
+              label: 'Saved blocked domains',
               value: _status.blockedDomainCount.toString(),
             ),
+            _StatusRow(
+              label: 'Native DNS filter',
+              value: _status.nativeDnsReady ? 'Ready' : 'Waiting',
+            ),
+            _StatusRow(
+              label: 'Native loaded domains',
+              value: _status.nativeLoadedDomainCount.toString(),
+            ),
+            _StatusRow(
+              label: 'Packet loop',
+              value: _status.packetLoopPrepared
+                  ? (_status.packetLoopRunning ? 'Running' : 'Prepared')
+                  : 'Not prepared',
+            ),
+            _StatusRow(
+              label: 'Packets observed',
+              value: _status.packetsObserved.toString(),
+            ),
+            if (blocklistError.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Blocklist note: $blocklistError'),
+            ],
             const SizedBox(height: 12),
             Text(_message),
             const SizedBox(height: 16),

@@ -18,16 +18,28 @@ class FocusShieldVpnService : VpnService() {
 
         var nativeBlockedDomainCount: Int = 0
             private set
+
+        var packetLoopPrepared: Boolean = false
+            private set
+
+        var packetLoopRunning: Boolean = false
+            private set
+
+        var packetsObserved: Long = 0
+            private set
     }
 
     private var vpnInterface: ParcelFileDescriptor? = null
     private lateinit var blocklistStore: FocusShieldBlocklistStore
     private val dnsFilter = FocusShieldDnsFilter()
+    private val packetLoop = FocusShieldVpnPacketLoop()
 
     override fun onCreate() {
         super.onCreate()
         blocklistStore = FocusShieldBlocklistStore(applicationContext)
+        packetLoop.prepare()
         reloadBlocklist()
+        updatePacketLoopStatus()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -45,6 +57,8 @@ class FocusShieldVpnService : VpnService() {
 
         if (vpnInterface != null) {
             isRunning = true
+            packetLoop.start(vpnInterface, liveReadEnabled = false)
+            updatePacketLoopStatus()
             return
         }
 
@@ -55,9 +69,15 @@ class FocusShieldVpnService : VpnService() {
 
         vpnInterface = builder.establish()
         isRunning = vpnInterface != null
+
+        packetLoop.start(vpnInterface, liveReadEnabled = false)
+        updatePacketLoopStatus()
     }
 
     private fun stopProtection() {
+        packetLoop.stop()
+        updatePacketLoopStatus()
+
         vpnInterface?.close()
         vpnInterface = null
         isRunning = false
@@ -65,12 +85,23 @@ class FocusShieldVpnService : VpnService() {
     }
 
     private fun reloadBlocklist() {
-        val domains = blocklistStore.loadDomains()
+        val domains = try {
+            blocklistStore.loadDomains()
+        } catch (_: Exception) {
+            emptyList()
+        }
 
         dnsFilter.reload(domains)
 
         nativeBlockedDomainCount = dnsFilter.blockedDomainCount()
         dnsFilteringReady = dnsFilter.hasBlocklist()
+        updatePacketLoopStatus()
+    }
+
+    private fun updatePacketLoopStatus() {
+        packetLoopPrepared = packetLoop.prepared
+        packetLoopRunning = packetLoop.running
+        packetsObserved = packetLoop.packetsObserved
     }
 
     fun shouldBlockDomainForTestOnly(hostname: String): Boolean {

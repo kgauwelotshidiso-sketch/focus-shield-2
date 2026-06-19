@@ -5,11 +5,23 @@ class ProtectionStatus {
     required this.vpnActive,
     required this.blocklistLoaded,
     required this.blockedDomainCount,
+    required this.nativeDnsReady,
+    required this.nativeLoadedDomainCount,
+    required this.packetLoopPrepared,
+    required this.packetLoopRunning,
+    required this.packetsObserved,
+    required this.blocklistError,
   });
 
   final bool vpnActive;
   final bool blocklistLoaded;
   final int blockedDomainCount;
+  final bool nativeDnsReady;
+  final int nativeLoadedDomainCount;
+  final bool packetLoopPrepared;
+  final bool packetLoopRunning;
+  final int packetsObserved;
+  final String blocklistError;
 
   factory ProtectionStatus.fromMap(Map<Object?, Object?>? map) {
     if (map == null) {
@@ -17,6 +29,12 @@ class ProtectionStatus {
         vpnActive: false,
         blocklistLoaded: false,
         blockedDomainCount: 0,
+        nativeDnsReady: false,
+        nativeLoadedDomainCount: 0,
+        packetLoopPrepared: false,
+        packetLoopRunning: false,
+        packetsObserved: 0,
+        blocklistError: '',
       );
     }
 
@@ -24,6 +42,12 @@ class ProtectionStatus {
       vpnActive: map['vpnActive'] == true,
       blocklistLoaded: map['blocklistLoaded'] == true,
       blockedDomainCount: _readInt(map['blockedDomainCount']),
+      nativeDnsReady: map['nativeDnsReady'] == true,
+      nativeLoadedDomainCount: _readInt(map['nativeLoadedDomainCount']),
+      packetLoopPrepared: map['packetLoopPrepared'] == true,
+      packetLoopRunning: map['packetLoopRunning'] == true,
+      packetsObserved: _readInt(map['packetsObserved']),
+      blocklistError: _readString(map['blocklistError']),
     );
   }
 
@@ -37,6 +61,14 @@ class ProtectionStatus {
     }
 
     return 0;
+  }
+
+  static String _readString(Object? value) {
+    if (value is String) {
+      return value;
+    }
+
+    return '';
   }
 }
 

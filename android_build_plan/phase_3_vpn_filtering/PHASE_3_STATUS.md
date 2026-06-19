@@ -28,6 +28,10 @@ Status: COMPLETE
 
 Status: COMPLETE
 
+## Phase 3.6 — Native VPN Packet Loop Preparation
+
+Status: COMPLETE
+
 ## Next
 
-Phase 3.6 — Native VPN Packet Loop Preparation
+Phase 3.7 — DNS Packet Parser Preparation

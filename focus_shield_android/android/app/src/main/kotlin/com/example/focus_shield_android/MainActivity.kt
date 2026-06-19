@@ -66,6 +66,9 @@ class MainActivity : FlutterActivity() {
                 "blockedDomainCount" to blocklistStatus.count,
                 "nativeDnsReady" to FocusShieldVpnService.dnsFilteringReady,
                 "nativeLoadedDomainCount" to FocusShieldVpnService.nativeBlockedDomainCount,
+                "packetLoopPrepared" to FocusShieldVpnService.packetLoopPrepared,
+                "packetLoopRunning" to FocusShieldVpnService.packetLoopRunning,
+                "packetsObserved" to FocusShieldVpnService.packetsObserved,
                 "blocklistError" to (blocklistStatus.error ?: "")
             )
         )
