@@ -56,6 +56,10 @@ Status: COMPLETE
 
 Status: COMPLETE
 
+## Phase 3.13 — Android SDK Diagnostic Run
+
+Status: COMPLETE
+
 ## Next
 
-Phase 3.13 — Android SDK Diagnostic Run
+Phase 3.14 — Android SDK Environment Setup Plan
