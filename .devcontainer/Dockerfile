@@ -7,6 +7,7 @@ ENV PATH="${FLUTTER_HOME}/bin:${FLUTTER_HOME}/bin/cache/dart-sdk/bin:${PATH}"
 RUN apt-get update && apt-get install -y \
     curl \
     git \
+    git-lfs \
     unzip \
     xz-utils \
     zip \
