@@ -14,6 +14,7 @@ class SettingsScreen extends StatelessWidget {
     required this.onOpenProtectionDatabase,
     required this.onOpenGoalsAffirmations,
     required this.onOpenDebugCenter,
+    required this.onOpenProductionReadiness,
     required this.onResetAppData,
   });
 
@@ -22,6 +23,7 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback onOpenProtectionDatabase;
   final VoidCallback onOpenGoalsAffirmations;
   final VoidCallback onOpenDebugCenter;
+  final VoidCallback onOpenProductionReadiness;
   final VoidCallback onResetAppData;
 
   @override
@@ -71,6 +73,12 @@ class SettingsScreen extends StatelessWidget {
               ActionButton(label: 'URL Analysis Engine', onPressed: () {}),
               const SizedBox(height: 10),
               ActionButton(label: 'Lock Layer', onPressed: () {}),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Production Readiness',
+                subtitle: 'Android test and build checklist',
+                onPressed: onOpenProductionReadiness,
+              ),
             ],
           ),
         ),

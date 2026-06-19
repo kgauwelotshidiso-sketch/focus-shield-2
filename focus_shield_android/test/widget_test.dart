@@ -151,6 +151,22 @@ void main() {
     expect(find.text('Recovered'), findsWidgets);
   });
 
+  testWidgets('Production readiness opens from settings', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Production Readiness'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Production Readiness'), findsOneWidget);
+    expect(find.text('Android testing, build readiness, and release preparation'), findsOneWidget);
+  });
+
   testWidgets('Goals and affirmations manager adds custom items', (tester) async {
     await tester.pumpWidget(
       FocusShieldApp(repository: InMemoryAppStateRepository()),

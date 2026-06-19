@@ -21,6 +21,7 @@ import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/intervention_screen.dart';
 import 'presentation/screens/progress_screen.dart';
 import 'presentation/screens/protection_database_screen.dart';
+import 'presentation/screens/production_readiness_screen.dart';
 import 'presentation/screens/recovery_screen.dart';
 import 'presentation/screens/scanner_screen.dart';
 import 'presentation/screens/settings_screen.dart';
@@ -64,6 +65,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   bool _showProtectionDatabase = false;
   bool _showDailyHistory = false;
   bool _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
+  bool _showProductionReadiness = false;
   bool _loading = true;
 
   ProtectionDecision? _lastBlockedDecision;
@@ -197,6 +200,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
     });
   }
 
@@ -204,6 +208,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showDailyHistory = true;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
       _showProtectionDatabase = false;
       _showDebugCenter = false;
       _showIntervention = false;
@@ -223,6 +228,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showDebugCenter = true;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
       _showIntervention = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
@@ -242,6 +248,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showProtectionDatabase = true;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
       _showDebugCenter = false;
       _showIntervention = false;
       _showDailyHistory = false;
@@ -253,6 +260,24 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   void _closeProtectionDatabase() {
     setState(() {
       _showProtectionDatabase = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  void _openProductionReadiness() {
+    setState(() {
+      _showProductionReadiness = true;
+      _showGoalsAffirmations = false;
+      _showProtectionDatabase = false;
+      _showDebugCenter = false;
+      _showIntervention = false;
+      _showDailyHistory = false;
+    });
+  }
+
+  void _closeProductionReadiness() {
+    setState(() {
+      _showProductionReadiness = false;
       _selectedIndex = 5;
     });
   }
@@ -272,6 +297,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   void _closeGoalsAffirmations() {
     setState(() {
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
       _selectedIndex = 5;
     });
   }
@@ -382,6 +408,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
       _lastBlockedDecision = null;
     });
   }
@@ -396,6 +423,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
     });
 
     _repository
@@ -422,6 +450,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
     });
   }
 
@@ -472,6 +501,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
+      _showProductionReadiness = false;
       _selectedIndex = 2;
     });
 
@@ -530,6 +560,20 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
           child: Center(
             child: Text('Loading Focus Shield...'),
           ),
+        ),
+      );
+    }
+
+    if (_showProductionReadiness) {
+      return Scaffold(
+        body: SafeArea(
+          child: ProductionReadinessScreen(
+            onBack: _closeProductionReadiness,
+          ),
+        ),
+        bottomNavigationBar: FocusShieldBottomNav(
+          currentIndex: _selectedIndex,
+          onTap: _goTo,
         ),
       );
     }
@@ -648,6 +692,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
         onOpenProtectionDatabase: _openProtectionDatabase,
         onOpenGoalsAffirmations: _openGoalsAffirmations,
         onOpenDebugCenter: _openDebugCenter,
+        onOpenProductionReadiness: _openProductionReadiness,
         onResetAppData: _resetAppData,
       ),
     ];
