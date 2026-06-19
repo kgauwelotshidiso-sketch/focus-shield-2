@@ -16,7 +16,9 @@ class SettingsRecordMapper {
       protectionEnabled: ((map['protection_enabled'] as int?) ?? 1) == 1,
       lockEnabled: ((map['lock_enabled'] as int?) ?? 1) == 1,
       delayedDisableHours: (map['delayed_disable_hours'] as int?) ?? 24,
-      updatedAt: DateTime.tryParse((map['updated_at'] as String?) ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt:
+          DateTime.tryParse((map['updated_at'] as String?) ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 }

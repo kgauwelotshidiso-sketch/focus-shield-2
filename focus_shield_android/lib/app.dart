@@ -28,10 +28,7 @@ import 'presentation/screens/settings_screen.dart';
 import 'presentation/widgets/focus_shield_bottom_nav.dart';
 
 class FocusShieldApp extends StatelessWidget {
-  const FocusShieldApp({
-    super.key,
-    this.repository,
-  });
+  const FocusShieldApp({super.key, this.repository});
 
   final AppStateRepository? repository;
 
@@ -47,10 +44,7 @@ class FocusShieldApp extends StatelessWidget {
 }
 
 class FocusShieldShell extends StatefulWidget {
-  const FocusShieldShell({
-    super.key,
-    this.repository,
-  });
+  const FocusShieldShell({super.key, this.repository});
 
   final AppStateRepository? repository;
 
@@ -65,7 +59,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   bool _showProtectionDatabase = false;
   bool _showDailyHistory = false;
   bool _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
   bool _showProductionReadiness = false;
   bool _loading = true;
 
@@ -111,7 +104,9 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     if (needsDailyReset) {
       final summary = DailySummary.fromState(loadedState);
       await _repository.saveDailySummary(summary);
-      loadedState.recordCompletedDay(missionWasComplete: summary.missionComplete);
+      loadedState.recordCompletedDay(
+        missionWasComplete: summary.missionComplete,
+      );
       loadedState.applyDailyResetIfNeeded();
       await _repository.saveState(loadedState.copy());
     }
@@ -139,7 +134,9 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _attempts = attempts;
       _state.blockedAttempts = attempts.length;
-      _state.recoveredAttempts = attempts.where((attempt) => attempt.recovered).length;
+      _state.recoveredAttempts = attempts
+          .where((attempt) => attempt.recovered)
+          .length;
     });
 
     _persistState();
@@ -200,7 +197,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
     });
   }
 
@@ -208,7 +204,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showDailyHistory = true;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
       _showProtectionDatabase = false;
       _showDebugCenter = false;
       _showIntervention = false;
@@ -228,7 +223,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showDebugCenter = true;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
       _showIntervention = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
@@ -248,7 +242,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _showProtectionDatabase = true;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
       _showDebugCenter = false;
       _showIntervention = false;
       _showDailyHistory = false;
@@ -277,7 +270,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
 
   void _closeProductionReadiness() {
     setState(() {
-      _showProductionReadiness = false;
       _selectedIndex = 5;
     });
   }
@@ -297,7 +289,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   void _closeGoalsAffirmations() {
     setState(() {
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
       _selectedIndex = 5;
     });
   }
@@ -321,7 +312,9 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
           BlockedDomain(
             id: 0,
             domain: normalizedDomain,
-            category: category.trim().isEmpty ? 'custom-blocklist' : category.trim(),
+            category: category.trim().isEmpty
+                ? 'custom-blocklist'
+                : category.trim(),
             updatedAt: DateTime.now(),
           ),
         )
@@ -338,11 +331,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
 
     _repository
         .saveGoal(
-          Goal(
-            id: 0,
-            title: cleanTitle,
-            description: description.trim(),
-          ),
+          Goal(id: 0, title: cleanTitle, description: description.trim()),
         )
         .then((_) => _refreshGoalsAffirmations());
   }
@@ -357,11 +346,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
 
     _repository
         .saveAffirmation(
-          Affirmation(
-            id: 0,
-            text: cleanText,
-            favorite: favorite,
-          ),
+          Affirmation(id: 0, text: cleanText, favorite: favorite),
         )
         .then((_) => _refreshGoalsAffirmations());
   }
@@ -373,10 +358,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   void _setFavoriteAffirmation(Affirmation affirmation) {
     _repository
         .saveAffirmation(
-          affirmation.copyWith(
-            favorite: true,
-            updatedAt: DateTime.now(),
-          ),
+          affirmation.copyWith(favorite: true, updatedAt: DateTime.now()),
         )
         .then((_) => _refreshGoalsAffirmations());
   }
@@ -408,7 +390,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
       _lastBlockedDecision = null;
     });
   }
@@ -423,7 +404,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
     });
 
     _repository
@@ -450,7 +430,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
     });
   }
 
@@ -501,7 +480,6 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showProtectionDatabase = false;
       _showDailyHistory = false;
       _showGoalsAffirmations = false;
-      _showProductionReadiness = false;
       _selectedIndex = 2;
     });
 
@@ -556,20 +534,14 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Text('Loading Focus Shield...'),
-          ),
-        ),
+        body: SafeArea(child: Center(child: Text('Loading Focus Shield...'))),
       );
     }
 
     if (_showProductionReadiness) {
       return Scaffold(
         body: SafeArea(
-          child: ProductionReadinessScreen(
-            onBack: _closeProductionReadiness,
-          ),
+          child: ProductionReadinessScreen(onBack: _closeProductionReadiness),
         ),
         bottomNavigationBar: FocusShieldBottomNav(
           currentIndex: _selectedIndex,
@@ -709,10 +681,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
                 onRecovered: _markRecovered,
                 onBackToScanner: _returnToScanner,
               )
-            : IndexedStack(
-                index: _selectedIndex,
-                children: screens,
-              ),
+            : IndexedStack(index: _selectedIndex, children: screens),
       ),
       bottomNavigationBar: FocusShieldBottomNav(
         currentIndex: _selectedIndex,

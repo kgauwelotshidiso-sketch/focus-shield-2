@@ -16,9 +16,11 @@ class GoalMapper {
       id: (map['id'] as int?) ?? 0,
       title: (map['title'] as String?) ?? '',
       description: (map['description'] as String?) ?? '',
-      createdAt: DateTime.tryParse((map['created_at'] as String?) ?? '') ??
+      createdAt:
+          DateTime.tryParse((map['created_at'] as String?) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse((map['updated_at'] as String?) ?? '') ??
+      updatedAt:
+          DateTime.tryParse((map['updated_at'] as String?) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }

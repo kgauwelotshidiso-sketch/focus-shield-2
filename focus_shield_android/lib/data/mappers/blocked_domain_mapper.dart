@@ -15,7 +15,8 @@ class BlockedDomainMapper {
       id: (map['id'] as int?) ?? 0,
       domain: (map['domain'] as String?) ?? '',
       category: (map['category'] as String?) ?? 'custom',
-      updatedAt: DateTime.tryParse((map['updated_at'] as String?) ?? '') ??
+      updatedAt:
+          DateTime.tryParse((map['updated_at'] as String?) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }

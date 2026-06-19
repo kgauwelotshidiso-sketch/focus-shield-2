@@ -23,7 +23,8 @@ class ProtectionDatabaseScreen extends StatefulWidget {
   final VoidCallback onRefresh;
 
   @override
-  State<ProtectionDatabaseScreen> createState() => _ProtectionDatabaseScreenState();
+  State<ProtectionDatabaseScreen> createState() =>
+      _ProtectionDatabaseScreenState();
 }
 
 class _ProtectionDatabaseScreenState extends State<ProtectionDatabaseScreen> {
@@ -38,10 +39,7 @@ class _ProtectionDatabaseScreenState extends State<ProtectionDatabaseScreen> {
   }
 
   void _addDomain() {
-    widget.onAddDomain(
-      _domainController.text,
-      _categoryController.text,
-    );
+    widget.onAddDomain(_domainController.text, _categoryController.text);
 
     _domainController.clear();
     _categoryController.text = 'custom-blocklist';
@@ -133,10 +131,10 @@ class _ProtectionDatabaseScreenState extends State<ProtectionDatabaseScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppTheme.primary.withOpacity(0.30),
+                        color: AppTheme.primary.withValues(alpha: 0.30),
                       ),
                     ),
                     child: Column(
@@ -147,10 +145,13 @@ class _ProtectionDatabaseScreenState extends State<ProtectionDatabaseScreen> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         Text('Category: ${blockedDomain.category}'),
-                        Text('Updated: ${blockedDomain.updatedAt.toIso8601String()}'),
+                        Text(
+                          'Updated: ${blockedDomain.updatedAt.toIso8601String()}',
+                        ),
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
-                          onPressed: () => widget.onDeleteDomain(blockedDomain.id),
+                          onPressed: () =>
+                              widget.onDeleteDomain(blockedDomain.id),
                           icon: const Icon(Icons.delete_outline_rounded),
                           label: const Text('Remove'),
                         ),

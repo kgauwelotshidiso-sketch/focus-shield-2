@@ -32,7 +32,8 @@ class GoalsAffirmationsScreen extends StatefulWidget {
   final VoidCallback onRefresh;
 
   @override
-  State<GoalsAffirmationsScreen> createState() => _GoalsAffirmationsScreenState();
+  State<GoalsAffirmationsScreen> createState() =>
+      _GoalsAffirmationsScreenState();
 }
 
 class _GoalsAffirmationsScreenState extends State<GoalsAffirmationsScreen> {
@@ -73,7 +74,9 @@ class _GoalsAffirmationsScreenState extends State<GoalsAffirmationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final favoriteAffirmation = widget.affirmations.where((item) => item.favorite).firstOrNull;
+    final favoriteAffirmation = widget.affirmations
+        .where((item) => item.favorite)
+        .firstOrNull;
 
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -159,14 +162,19 @@ class _GoalsAffirmationsScreenState extends State<GoalsAffirmationsScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.primary.withOpacity(0.30)),
+                      border: Border.all(
+                        color: AppTheme.primary.withValues(alpha: 0.30),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(goal.title, style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          goal.title,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         if (goal.description.isNotEmpty) Text(goal.description),
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
@@ -202,7 +210,8 @@ class _GoalsAffirmationsScreenState extends State<GoalsAffirmationsScreen> {
               const SizedBox(height: 12),
               SwitchListTile(
                 value: _newAffirmationFavorite,
-                onChanged: (value) => setState(() => _newAffirmationFavorite = value),
+                onChanged: (value) =>
+                    setState(() => _newAffirmationFavorite = value),
                 title: const Text('Set as favorite affirmation'),
               ),
               const SizedBox(height: 12),
@@ -230,12 +239,12 @@ class _GoalsAffirmationsScreenState extends State<GoalsAffirmationsScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: affirmation.favorite
-                            ? AppTheme.primary.withOpacity(0.45)
-                            : AppTheme.secondary.withOpacity(0.25),
+                            ? AppTheme.primary.withValues(alpha: 0.45)
+                            : AppTheme.secondary.withValues(alpha: 0.25),
                       ),
                     ),
                     child: Column(
@@ -253,12 +262,14 @@ class _GoalsAffirmationsScreenState extends State<GoalsAffirmationsScreen> {
                           children: [
                             if (!affirmation.favorite)
                               OutlinedButton.icon(
-                                onPressed: () => widget.onSetFavoriteAffirmation(affirmation),
+                                onPressed: () => widget
+                                    .onSetFavoriteAffirmation(affirmation),
                                 icon: const Icon(Icons.star_border_rounded),
                                 label: const Text('Set Favorite'),
                               ),
                             OutlinedButton.icon(
-                              onPressed: () => widget.onDeleteAffirmation(affirmation.id),
+                              onPressed: () =>
+                                  widget.onDeleteAffirmation(affirmation.id),
                               icon: const Icon(Icons.delete_outline_rounded),
                               label: const Text('Remove'),
                             ),

@@ -12,14 +12,15 @@ class InMemoryAppStateRepository implements AppStateRepository {
   InMemoryAppStateRepository({
     FocusShieldState? initialState,
     SettingsRecord? initialSettings,
-  })  : _state = initialState?.copy() ?? FocusShieldState.initial(),
-        _settings = initialSettings ??
-            SettingsRecord(
-              protectionEnabled: true,
-              lockEnabled: true,
-              delayedDisableHours: 24,
-              updatedAt: DateTime.now(),
-            ) {
+  }) : _state = initialState?.copy() ?? FocusShieldState.initial(),
+       _settings =
+           initialSettings ??
+           SettingsRecord(
+             protectionEnabled: true,
+             lockEnabled: true,
+             delayedDisableHours: 24,
+             updatedAt: DateTime.now(),
+           ) {
     _blockedDomains.addAll(_defaultBlockedDomains());
     _goals.addAll(_defaultGoals());
     _affirmations.addAll(_defaultAffirmations());
@@ -37,9 +38,24 @@ class InMemoryAppStateRepository implements AppStateRepository {
     final now = DateTime.now();
 
     return [
-      BlockedDomain(id: 1, domain: 'blocked-example.com', category: 'local-blocklist', updatedAt: now),
-      BlockedDomain(id: 2, domain: 'temptation-test.net', category: 'local-blocklist', updatedAt: now),
-      BlockedDomain(id: 3, domain: 'focus-risk.org', category: 'local-blocklist', updatedAt: now),
+      BlockedDomain(
+        id: 1,
+        domain: 'blocked-example.com',
+        category: 'local-blocklist',
+        updatedAt: now,
+      ),
+      BlockedDomain(
+        id: 2,
+        domain: 'temptation-test.net',
+        category: 'local-blocklist',
+        updatedAt: now,
+      ),
+      BlockedDomain(
+        id: 3,
+        domain: 'focus-risk.org',
+        category: 'local-blocklist',
+        updatedAt: now,
+      ),
     ];
   }
 
@@ -50,7 +66,8 @@ class InMemoryAppStateRepository implements AppStateRepository {
       Goal(
         id: 1,
         title: 'Master fully listening',
-        description: 'Pause and wait for the person to finish speaking before responding.',
+        description:
+            'Pause and wait for the person to finish speaking before responding.',
         createdAt: now,
         updatedAt: now,
       ),
@@ -139,7 +156,9 @@ class InMemoryAppStateRepository implements AppStateRepository {
     final normalizedDomain = blockedDomain.domain.trim().toLowerCase();
     if (normalizedDomain.isEmpty) return;
 
-    final existingIndex = _blockedDomains.indexWhere((item) => item.domain == normalizedDomain);
+    final existingIndex = _blockedDomains.indexWhere(
+      (item) => item.domain == normalizedDomain,
+    );
 
     if (existingIndex >= 0) {
       _blockedDomains[existingIndex] = _blockedDomains[existingIndex].copyWith(
@@ -151,7 +170,10 @@ class InMemoryAppStateRepository implements AppStateRepository {
 
     final nextId = _blockedDomains.isEmpty
         ? 1
-        : _blockedDomains.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
+        : _blockedDomains
+                  .map((item) => item.id)
+                  .reduce((a, b) => a > b ? a : b) +
+              1;
 
     _blockedDomains.add(
       blockedDomain.copyWith(
@@ -169,7 +191,9 @@ class InMemoryAppStateRepository implements AppStateRepository {
 
   @override
   Future<void> saveDailySummary(DailySummary summary) async {
-    final existingIndex = _dailySummaries.indexWhere((item) => item.dateKey == summary.dateKey);
+    final existingIndex = _dailySummaries.indexWhere(
+      (item) => item.dateKey == summary.dateKey,
+    );
 
     if (existingIndex >= 0) {
       _dailySummaries[existingIndex] = summary.copyWith(
@@ -181,14 +205,18 @@ class InMemoryAppStateRepository implements AppStateRepository {
 
     final nextId = _dailySummaries.isEmpty
         ? 1
-        : _dailySummaries.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
+        : _dailySummaries
+                  .map((item) => item.id)
+                  .reduce((a, b) => a > b ? a : b) +
+              1;
 
     _dailySummaries.add(summary.copyWith(id: nextId));
   }
 
   @override
   Future<List<DailySummary>> loadDailySummaries() async {
-    final summaries = [..._dailySummaries]..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    final summaries = [..._dailySummaries]
+      ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
     return List<DailySummary>.unmodifiable(summaries);
   }
 
@@ -205,22 +233,17 @@ class InMemoryAppStateRepository implements AppStateRepository {
     if (goal.id != 0) {
       final index = _goals.indexWhere((item) => item.id == goal.id);
       if (index >= 0) {
-        _goals[index] = goal.copyWith(
-          title: title,
-          updatedAt: DateTime.now(),
-        );
+        _goals[index] = goal.copyWith(title: title, updatedAt: DateTime.now());
         return;
       }
     }
 
-    final nextId = _goals.isEmpty ? 1 : _goals.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
+    final nextId = _goals.isEmpty
+        ? 1
+        : _goals.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
 
     _goals.add(
-      goal.copyWith(
-        id: nextId,
-        title: title,
-        updatedAt: DateTime.now(),
-      ),
+      goal.copyWith(id: nextId, title: title, updatedAt: DateTime.now()),
     );
   }
 
@@ -246,7 +269,9 @@ class InMemoryAppStateRepository implements AppStateRepository {
     }
 
     if (affirmation.id != 0) {
-      final index = _affirmations.indexWhere((item) => item.id == affirmation.id);
+      final index = _affirmations.indexWhere(
+        (item) => item.id == affirmation.id,
+      );
       if (index >= 0) {
         _affirmations[index] = affirmation.copyWith(
           text: text,
@@ -258,14 +283,11 @@ class InMemoryAppStateRepository implements AppStateRepository {
 
     final nextId = _affirmations.isEmpty
         ? 1
-        : _affirmations.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
+        : _affirmations.map((item) => item.id).reduce((a, b) => a > b ? a : b) +
+              1;
 
     _affirmations.add(
-      affirmation.copyWith(
-        id: nextId,
-        text: text,
-        updatedAt: DateTime.now(),
-      ),
+      affirmation.copyWith(id: nextId, text: text, updatedAt: DateTime.now()),
     );
   }
 

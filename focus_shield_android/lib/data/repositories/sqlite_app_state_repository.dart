@@ -20,9 +20,8 @@ import '../mappers/goal_mapper.dart';
 import '../mappers/settings_record_mapper.dart';
 
 class SqliteAppStateRepository implements AppStateRepository {
-  SqliteAppStateRepository({
-    DatabaseProvider? databaseProvider,
-  }) : _databaseProvider = databaseProvider ?? DatabaseProvider();
+  SqliteAppStateRepository({DatabaseProvider? databaseProvider})
+    : _databaseProvider = databaseProvider ?? DatabaseProvider();
 
   final DatabaseProvider _databaseProvider;
 
@@ -32,9 +31,24 @@ class SqliteAppStateRepository implements AppStateRepository {
     final now = DateTime.now();
 
     return [
-      BlockedDomain(id: 0, domain: 'blocked-example.com', category: 'local-blocklist', updatedAt: now),
-      BlockedDomain(id: 0, domain: 'temptation-test.net', category: 'local-blocklist', updatedAt: now),
-      BlockedDomain(id: 0, domain: 'focus-risk.org', category: 'local-blocklist', updatedAt: now),
+      BlockedDomain(
+        id: 0,
+        domain: 'blocked-example.com',
+        category: 'local-blocklist',
+        updatedAt: now,
+      ),
+      BlockedDomain(
+        id: 0,
+        domain: 'temptation-test.net',
+        category: 'local-blocklist',
+        updatedAt: now,
+      ),
+      BlockedDomain(
+        id: 0,
+        domain: 'focus-risk.org',
+        category: 'local-blocklist',
+        updatedAt: now,
+      ),
     ];
   }
 
@@ -45,7 +59,8 @@ class SqliteAppStateRepository implements AppStateRepository {
       Goal(
         id: 0,
         title: 'Master fully listening',
-        description: 'Pause and wait for the person to finish speaking before responding.',
+        description:
+            'Pause and wait for the person to finish speaking before responding.',
         createdAt: now,
         updatedAt: now,
       ),
@@ -308,10 +323,7 @@ class SqliteAppStateRepository implements AppStateRepository {
   Future<List<Goal>> loadGoals() async {
     final db = await _db;
 
-    final rows = await db.query(
-      DatabaseContract.tableGoals,
-      orderBy: 'id ASC',
-    );
+    final rows = await db.query(DatabaseContract.tableGoals, orderBy: 'id ASC');
 
     if (rows.isEmpty) {
       for (final goal in _defaultGoals()) {
@@ -337,10 +349,7 @@ class SqliteAppStateRepository implements AppStateRepository {
     if (title.isEmpty) return;
 
     final map = GoalMapper.toDatabaseMap(
-      goal.copyWith(
-        title: title,
-        updatedAt: DateTime.now(),
-      ),
+      goal.copyWith(title: title, updatedAt: DateTime.now()),
     );
 
     if (goal.id == 0) {
@@ -398,17 +407,11 @@ class SqliteAppStateRepository implements AppStateRepository {
     if (text.isEmpty) return;
 
     if (affirmation.favorite) {
-      await db.update(
-        DatabaseContract.tableAffirmations,
-        {'favorite': 0},
-      );
+      await db.update(DatabaseContract.tableAffirmations, {'favorite': 0});
     }
 
     final map = AffirmationMapper.toDatabaseMap(
-      affirmation.copyWith(
-        text: text,
-        updatedAt: DateTime.now(),
-      ),
+      affirmation.copyWith(text: text, updatedAt: DateTime.now()),
     );
 
     if (affirmation.id == 0) {

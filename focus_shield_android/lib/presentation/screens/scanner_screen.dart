@@ -57,10 +57,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
       padding: const EdgeInsets.all(18),
       children: [
         Text('Scanner', style: Theme.of(context).textTheme.headlineLarge),
-        Text(widget.protectionEnabled ? 'Live protection scanner' : 'Protection is currently off'),
+        Text(
+          widget.protectionEnabled
+              ? 'Live protection scanner'
+              : 'Protection is currently off',
+        ),
         const SizedBox(height: 18),
         ShieldCard(
-          borderColor: widget.protectionEnabled ? AppTheme.secondary : AppTheme.warning,
+          borderColor: widget.protectionEnabled
+              ? AppTheme.secondary
+              : AppTheme.warning,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -77,7 +83,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              ActionButton(label: 'Scan', onPressed: () => _scan(_controller.text)),
+              ActionButton(
+                label: 'Scan',
+                onPressed: () => _scan(_controller.text),
+              ),
             ],
           ),
         ),

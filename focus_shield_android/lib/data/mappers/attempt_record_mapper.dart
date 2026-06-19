@@ -21,7 +21,8 @@ class AttemptRecordMapper {
       category: (map['category'] as String?) ?? 'unknown',
       confidence: confidenceValue is num ? confidenceValue.toDouble() : 0,
       recovered: ((map['recovered'] as int?) ?? 0) == 1,
-      createdAt: DateTime.tryParse((map['created_at'] as String?) ?? '') ??
+      createdAt:
+          DateTime.tryParse((map['created_at'] as String?) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }

@@ -59,7 +59,9 @@ class DailyHistoryScreen extends StatelessWidget {
               const Text('Today'),
               const SizedBox(height: 8),
               Text('Active day: ${state.lastActiveDate}'),
-              Text('Mission: ${state.listeningWinsToday}/${state.missionTarget}'),
+              Text(
+                'Mission: ${state.listeningWinsToday}/${state.missionTarget}',
+              ),
               Text('Mission complete: ${state.missionComplete ? "YES" : "NO"}'),
               Text('XP total: ${state.xp}'),
             ],
@@ -81,20 +83,27 @@ class DailyHistoryScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: summary.missionComplete
-                            ? AppTheme.primary.withOpacity(0.35)
-                            : AppTheme.warning.withOpacity(0.45),
+                            ? AppTheme.primary.withValues(alpha: 0.35)
+                            : AppTheme.warning.withValues(alpha: 0.45),
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(summary.dateKey, style: Theme.of(context).textTheme.titleLarge),
-                        Text('Mission: ${summary.listeningWins}/${summary.missionTarget}'),
-                        Text('Mission complete: ${summary.missionComplete ? "YES" : "NO"}'),
+                        Text(
+                          summary.dateKey,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        Text(
+                          'Mission: ${summary.listeningWins}/${summary.missionTarget}',
+                        ),
+                        Text(
+                          'Mission complete: ${summary.missionComplete ? "YES" : "NO"}',
+                        ),
                         Text('Focus sessions: ${summary.focusSessions}'),
                         Text('Reflections: ${summary.reflections}'),
                         Text('Recovery: ${summary.recoveryRate}%'),

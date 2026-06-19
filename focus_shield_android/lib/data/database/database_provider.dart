@@ -5,14 +5,10 @@ import '../contracts/database_contract.dart';
 import 'database_migrations.dart';
 
 class DatabaseProvider {
-  DatabaseProvider({
-    String? overridePath,
-    sqflite.DatabaseFactory? databaseFactory,
-  })  : _overridePath = overridePath,
-        _databaseFactory = databaseFactory;
+  DatabaseProvider({this.overridePath, this.databaseFactory});
 
-  final String? _overridePath;
-  final sqflite.DatabaseFactory? _databaseFactory;
+  final String? overridePath;
+  final sqflite.DatabaseFactory? databaseFactory;
 
   sqflite.Database? _database;
 
@@ -30,11 +26,11 @@ class DatabaseProvider {
   }
 
   Future<sqflite.Database> _openDatabase() async {
-    final factory = _databaseFactory ?? sqflite.databaseFactory;
-    final databasePath = _overridePath ?? await _defaultDatabasePath();
+    final factory = databaseFactory ?? sqflite.databaseFactory;
+    final selectedDatabasePath = overridePath ?? await _defaultDatabasePath();
 
     return factory.openDatabase(
-      databasePath,
+      selectedDatabasePath,
       options: sqflite.OpenDatabaseOptions(
         version: DatabaseContract.databaseVersion,
         onCreate: (db, version) async {

@@ -31,7 +31,10 @@ class HomeScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
-        Text(AppConstants.appName, style: Theme.of(context).textTheme.headlineLarge),
+        Text(
+          AppConstants.appName,
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
         const SizedBox(height: 4),
         const Text('Discipline + protection dashboard'),
         Text('Active day: ${state.lastActiveDate}'),
@@ -44,12 +47,20 @@ class HomeScreen extends StatelessWidget {
               Text(
                 '${state.listeningWinsToday} / ${state.missionTarget}',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: state.missionComplete ? AppTheme.primary : AppTheme.warning,
-                    ),
+                  color: state.missionComplete
+                      ? AppTheme.primary
+                      : AppTheme.warning,
+                ),
               ),
-              const Text('Pause and fully listen before speaking at least 3 times today.'),
+              const Text(
+                'Pause and fully listen before speaking at least 3 times today.',
+              ),
               const SizedBox(height: 12),
-              ActionButton(label: 'Log Listening Win', subtitle: '+10 XP', onPressed: onListeningWin),
+              ActionButton(
+                label: 'Log Listening Win',
+                subtitle: '+10 XP',
+                onPressed: onListeningWin,
+              ),
             ],
           ),
         ),
@@ -108,9 +119,9 @@ class HomeScreen extends StatelessWidget {
           borderColor: AppTheme.primary,
           child: Text(
             '“$primaryAffirmation”',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.lightBlueAccent,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(color: Colors.lightBlueAccent),
           ),
         ),
       ],

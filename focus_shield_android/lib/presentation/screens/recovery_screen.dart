@@ -33,12 +33,23 @@ class RecoveryScreen extends StatelessWidget {
             children: [
               const Icon(Icons.spa_rounded, size: 82, color: AppTheme.primary),
               const SizedBox(height: 10),
-              Text('Breathe', style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                'Breathe',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
               const Text('Pause, breathe, and return to your goals.'),
               const SizedBox(height: 12),
-              ActionButton(label: 'Mark Latest As Recovered', subtitle: '+10 XP', onPressed: onRecovered),
+              ActionButton(
+                label: 'Mark Latest As Recovered',
+                subtitle: '+10 XP',
+                onPressed: onRecovered,
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Complete Focus Session', subtitle: '+20 XP', onPressed: onFocusSession),
+              ActionButton(
+                label: 'Complete Focus Session',
+                subtitle: '+20 XP',
+                onPressed: onFocusSession,
+              ),
             ],
           ),
         ),
@@ -57,9 +68,9 @@ class RecoveryScreen extends StatelessWidget {
           borderColor: AppTheme.secondary,
           child: Text(
             '“${AppConstants.affirmation}”',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.lightBlueAccent,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(color: Colors.lightBlueAccent),
           ),
         ),
       ],

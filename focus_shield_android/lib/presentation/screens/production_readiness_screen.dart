@@ -6,10 +6,7 @@ import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
 class ProductionReadinessScreen extends StatelessWidget {
-  const ProductionReadinessScreen({
-    super.key,
-    required this.onBack,
-  });
+  const ProductionReadinessScreen({super.key, required this.onBack});
 
   final VoidCallback onBack;
 
@@ -72,8 +69,12 @@ class ProductionReadinessScreen extends StatelessWidget {
               Text('Android Reality Check'),
               SizedBox(height: 8),
               Text('The Flutter app is ready for Android testing.'),
-              Text('Real system-wide blocking still needs the native Android VPN/DNS layer.'),
-              Text('The current scanner is the app-level prototype protection engine.'),
+              Text(
+                'Real system-wide blocking still needs the native Android VPN/DNS layer.',
+              ),
+              Text(
+                'The current scanner is the app-level prototype protection engine.',
+              ),
             ],
           ),
         ),
@@ -84,7 +85,9 @@ class ProductionReadinessScreen extends StatelessWidget {
             children: [
               Text('Terminal Commands'),
               SizedBox(height: 8),
-              SelectableText('cd /workspaces/focus-shield-2/focus_shield_android'),
+              SelectableText(
+                'cd /workspaces/focus-shield-2/focus_shield_android',
+              ),
               SelectableText('flutter doctor -v'),
               SelectableText('flutter analyze'),
               SelectableText('flutter test'),

@@ -47,14 +47,18 @@ class SettingsScreen extends StatelessWidget {
         ),
         ShieldCard(
           borderColor: AppTheme.warning,
-          child: const Text('Real system-wide filtering will require Android VPN/DNS service.'),
+          child: const Text(
+            'Real system-wide filtering will require Android VPN/DNS service.',
+          ),
         ),
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: Column(
             children: [
               ActionButton(
-                label: state.protectionEnabled ? 'Turn Protection Off' : 'Turn Protection On',
+                label: state.protectionEnabled
+                    ? 'Turn Protection Off'
+                    : 'Turn Protection On',
                 onPressed: onToggleProtection,
               ),
               const SizedBox(height: 10),

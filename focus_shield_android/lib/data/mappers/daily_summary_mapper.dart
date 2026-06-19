@@ -35,7 +35,8 @@ class DailySummaryMapper {
       recoveredAttempts: (map['recovered_attempts'] as int?) ?? 0,
       recoveryRate: (map['recovery_rate'] as int?) ?? 100,
       coachScore: (map['coach_score'] as int?) ?? 0,
-      createdAt: DateTime.tryParse((map['created_at'] as String?) ?? '') ??
+      createdAt:
+          DateTime.tryParse((map['created_at'] as String?) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }

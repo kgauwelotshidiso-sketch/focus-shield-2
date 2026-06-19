@@ -97,8 +97,12 @@ class FocusShieldState {
     final missionPart = (missionScore * 0.35).round();
     final recoveryPart = (recoveryRate * 0.25).round();
     final activityPart =
-        ((focusSessionsToday + reflectionsToday + concentrationWinsToday) * 10).clamp(0, 15);
-    return (morningScore + missionPart + recoveryPart + activityPart).clamp(0, 100);
+        ((focusSessionsToday + reflectionsToday + concentrationWinsToday) * 10)
+            .clamp(0, 15);
+    return (morningScore + missionPart + recoveryPart + activityPart).clamp(
+      0,
+      100,
+    );
   }
 
   bool get missionComplete => listeningWinsToday >= missionTarget;

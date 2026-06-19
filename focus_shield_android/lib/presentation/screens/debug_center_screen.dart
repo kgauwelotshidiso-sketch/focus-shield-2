@@ -7,11 +7,7 @@ import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
-enum AttemptFilter {
-  all,
-  pending,
-  recovered,
-}
+enum AttemptFilter { all, pending, recovered }
 
 class DebugCenterScreen extends StatefulWidget {
   const DebugCenterScreen({
@@ -57,7 +53,9 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
   }
 
   String get _coachFeedback {
-    final pending = widget.attempts.where((attempt) => !attempt.recovered).length;
+    final pending = widget.attempts
+        .where((attempt) => !attempt.recovered)
+        .length;
 
     if (widget.attempts.isEmpty) {
       return 'No saved attempts yet. Keep protection active and continue building discipline.';
@@ -76,8 +74,12 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final recovered = widget.attempts.where((attempt) => attempt.recovered).length;
-    final pending = widget.attempts.where((attempt) => !attempt.recovered).length;
+    final recovered = widget.attempts
+        .where((attempt) => attempt.recovered)
+        .length;
+    final pending = widget.attempts
+        .where((attempt) => !attempt.recovered)
+        .length;
     final filteredAttempts = _filteredAttempts;
 
     return ListView(
@@ -107,7 +109,8 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
             items: {
               'XP': '${widget.state.xp}',
               'Level': '${widget.state.level}',
-              'Mission': '${widget.state.listeningWinsToday}/${widget.state.missionTarget}',
+              'Mission':
+                  '${widget.state.listeningWinsToday}/${widget.state.missionTarget}',
               'Coach': '${widget.state.coachScore}%',
               'Streak': '${widget.state.currentStreak}',
               'Best': '${widget.state.longestStreak}',
@@ -150,17 +153,20 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
                   ChoiceChip(
                     label: const Text('All'),
                     selected: _filter == AttemptFilter.all,
-                    onSelected: (_) => setState(() => _filter = AttemptFilter.all),
+                    onSelected: (_) =>
+                        setState(() => _filter = AttemptFilter.all),
                   ),
                   ChoiceChip(
                     label: const Text('Pending'),
                     selected: _filter == AttemptFilter.pending,
-                    onSelected: (_) => setState(() => _filter = AttemptFilter.pending),
+                    onSelected: (_) =>
+                        setState(() => _filter = AttemptFilter.pending),
                   ),
                   ChoiceChip(
                     label: const Text('Recovered'),
                     selected: _filter == AttemptFilter.recovered,
-                    onSelected: (_) => setState(() => _filter = AttemptFilter.recovered),
+                    onSelected: (_) =>
+                        setState(() => _filter = AttemptFilter.recovered),
                   ),
                 ],
               ),
@@ -169,16 +175,25 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
         ),
         if (_selectedAttempt != null)
           ShieldCard(
-            borderColor: _selectedAttempt!.recovered ? AppTheme.primary : AppTheme.warning,
+            borderColor: _selectedAttempt!.recovered
+                ? AppTheme.primary
+                : AppTheme.warning,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Attempt Details', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Attempt Details',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 8),
                 Text('Domain: ${_selectedAttempt!.domain}'),
                 Text('Category: ${_selectedAttempt!.category}'),
-                Text('Confidence: ${(_selectedAttempt!.confidence * 100).round()}%'),
-                Text('Recovered: ${_selectedAttempt!.recovered ? "YES" : "NO"}'),
+                Text(
+                  'Confidence: ${(_selectedAttempt!.confidence * 100).round()}%',
+                ),
+                Text(
+                  'Recovered: ${_selectedAttempt!.recovered ? "YES" : "NO"}',
+                ),
                 Text('Saved: ${_selectedAttempt!.createdAt.toIso8601String()}'),
                 const SizedBox(height: 12),
                 if (!_selectedAttempt!.recovered)
@@ -188,7 +203,9 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
                     onPressed: () {
                       widget.onMarkAttemptRecovered(_selectedAttempt!.id);
                       setState(() {
-                        _selectedAttempt = _selectedAttempt!.copyWith(recovered: true);
+                        _selectedAttempt = _selectedAttempt!.copyWith(
+                          recovered: true,
+                        );
                       });
                     },
                   ),
@@ -211,20 +228,25 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: attempt.recovered
-                            ? AppTheme.primary.withOpacity(0.35)
-                            : AppTheme.warning.withOpacity(0.45),
+                            ? AppTheme.primary.withValues(alpha: 0.35)
+                            : AppTheme.warning.withValues(alpha: 0.45),
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(attempt.domain, style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          attempt.domain,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         Text('Category: ${attempt.category}'),
-                        Text('Confidence: ${(attempt.confidence * 100).round()}%'),
+                        Text(
+                          'Confidence: ${(attempt.confidence * 100).round()}%',
+                        ),
                         Text('Recovered: ${attempt.recovered ? "YES" : "NO"}'),
                         Text('Saved: ${attempt.createdAt.toIso8601String()}'),
                         const SizedBox(height: 8),
@@ -233,14 +255,18 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
                           runSpacing: 8,
                           children: [
                             OutlinedButton.icon(
-                              onPressed: () => setState(() => _selectedAttempt = attempt),
+                              onPressed: () =>
+                                  setState(() => _selectedAttempt = attempt),
                               icon: const Icon(Icons.info_outline_rounded),
                               label: const Text('Details'),
                             ),
                             if (!attempt.recovered)
                               OutlinedButton.icon(
-                                onPressed: () => widget.onMarkAttemptRecovered(attempt.id),
-                                icon: const Icon(Icons.check_circle_outline_rounded),
+                                onPressed: () =>
+                                    widget.onMarkAttemptRecovered(attempt.id),
+                                icon: const Icon(
+                                  Icons.check_circle_outline_rounded,
+                                ),
                                 label: const Text('Mark Recovered'),
                               ),
                           ],

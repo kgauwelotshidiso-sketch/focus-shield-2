@@ -25,10 +25,7 @@ class EmptyStateCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 6),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-          ),
+          Text(message, textAlign: TextAlign.center),
         ],
       ),
     );

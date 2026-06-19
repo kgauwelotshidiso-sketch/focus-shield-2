@@ -15,14 +15,14 @@ class ProtectionDecision {
 }
 
 class ProtectionEngine {
-  ProtectionEngine({
-    List<String>? blockedDomains,
-  }) : _blockedDomains = blockedDomains ??
-            const [
-              'blocked-example.com',
-              'temptation-test.net',
-              'focus-risk.org',
-            ];
+  ProtectionEngine({List<String>? blockedDomains})
+    : _blockedDomains =
+          blockedDomains ??
+          const [
+            'blocked-example.com',
+            'temptation-test.net',
+            'focus-risk.org',
+          ];
 
   final List<String> _blockedDomains;
 

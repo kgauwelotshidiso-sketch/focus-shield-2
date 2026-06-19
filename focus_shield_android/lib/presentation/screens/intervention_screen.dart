@@ -48,10 +48,14 @@ class InterventionScreen extends StatelessWidget {
             children: [
               Text(
                 '⚠ Temptation Detected',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.danger),
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineMedium?.copyWith(color: AppTheme.danger),
               ),
               const SizedBox(height: 8),
-              const Text('Focus Shield blocked a risk signal before it pulled you away from your goals.'),
+              const Text(
+                'Focus Shield blocked a risk signal before it pulled you away from your goals.',
+              ),
               const SizedBox(height: 12),
               Text('Domain: $blockedDomain'),
               Text('Category: $category'),
@@ -74,9 +78,9 @@ class InterventionScreen extends StatelessWidget {
           borderColor: AppTheme.secondary,
           child: Text(
             '“$primaryAffirmation”',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.lightBlueAccent,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(color: Colors.lightBlueAccent),
           ),
         ),
         ShieldCard(
@@ -89,7 +93,9 @@ class InterventionScreen extends StatelessWidget {
               if (goals.isEmpty)
                 const Text('No goals saved yet.')
               else
-                ...goals.take(3).map(
+                ...goals
+                    .take(3)
+                    .map(
                       (goal) => Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text('• ${goal.title}'),
@@ -113,17 +119,33 @@ class InterventionScreen extends StatelessWidget {
         ShieldCard(
           child: Column(
             children: [
-              ActionButton(label: 'I am back in control', subtitle: '+10 XP', onPressed: onRecovered),
+              ActionButton(
+                label: 'I am back in control',
+                subtitle: '+10 XP',
+                onPressed: onRecovered,
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Breathing Exercise', onPressed: () => onNavigate(2)),
+              ActionButton(
+                label: 'Breathing Exercise',
+                onPressed: () => onNavigate(2),
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Start Focus Session', onPressed: () => onNavigate(3)),
+              ActionButton(
+                label: 'Start Focus Session',
+                onPressed: () => onNavigate(3),
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Journal Thoughts', onPressed: () => onNavigate(4)),
+              ActionButton(
+                label: 'Journal Thoughts',
+                onPressed: () => onNavigate(4),
+              ),
               const SizedBox(height: 10),
               ActionButton(label: 'Read Goals', onPressed: () => onNavigate(0)),
               const SizedBox(height: 10),
-              ActionButton(label: 'Back to Scanner', onPressed: onBackToScanner),
+              ActionButton(
+                label: 'Back to Scanner',
+                onPressed: onBackToScanner,
+              ),
             ],
           ),
         ),

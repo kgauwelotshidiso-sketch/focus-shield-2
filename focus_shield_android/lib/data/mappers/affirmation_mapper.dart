@@ -16,9 +16,11 @@ class AffirmationMapper {
       id: (map['id'] as int?) ?? 0,
       text: (map['text'] as String?) ?? '',
       favorite: ((map['favorite'] as int?) ?? 0) == 1,
-      createdAt: DateTime.tryParse((map['created_at'] as String?) ?? '') ??
+      createdAt:
+          DateTime.tryParse((map['created_at'] as String?) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse((map['updated_at'] as String?) ?? '') ??
+      updatedAt:
+          DateTime.tryParse((map['updated_at'] as String?) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }

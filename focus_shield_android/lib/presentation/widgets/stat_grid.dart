@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class StatGrid extends StatelessWidget {
-  const StatGrid({
-    super.key,
-    required this.items,
-  });
+  const StatGrid({super.key, required this.items});
 
   final Map<String, String> items;
 
@@ -21,17 +18,14 @@ class StatGrid extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.18),
+            color: Colors.black.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                entry.value,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text(entry.value, style: Theme.of(context).textTheme.titleLarge),
               Text(entry.key),
             ],
           ),

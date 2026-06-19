@@ -15,9 +15,7 @@ void main() {
       ..recoveredAttempts = 3
       ..lastActiveDate = '2026-01-01';
 
-    final applied = state.applyDailyResetIfNeeded(
-      now: DateTime(2026, 1, 2),
-    );
+    final applied = state.applyDailyResetIfNeeded(now: DateTime(2026, 1, 2));
 
     expect(applied, true);
     expect(state.listeningWinsToday, 0);
@@ -39,9 +37,7 @@ void main() {
       ..xp = 100
       ..lastActiveDate = '2026-01-02';
 
-    final applied = state.applyDailyResetIfNeeded(
-      now: DateTime(2026, 1, 2),
-    );
+    final applied = state.applyDailyResetIfNeeded(now: DateTime(2026, 1, 2));
 
     expect(applied, false);
     expect(state.listeningWinsToday, 2);

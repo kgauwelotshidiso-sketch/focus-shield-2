@@ -28,18 +28,9 @@ class AppTheme {
           fontWeight: FontWeight.w900,
           letterSpacing: -1.2,
         ),
-        headlineMedium: TextStyle(
-          color: text,
-          fontWeight: FontWeight.w900,
-        ),
-        titleLarge: TextStyle(
-          color: text,
-          fontWeight: FontWeight.w800,
-        ),
-        bodyMedium: TextStyle(
-          color: text,
-          height: 1.45,
-        ),
+        headlineMedium: TextStyle(color: text, fontWeight: FontWeight.w900),
+        titleLarge: TextStyle(color: text, fontWeight: FontWeight.w800),
+        bodyMedium: TextStyle(color: text, height: 1.45),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: background,

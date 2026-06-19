@@ -17,11 +17,23 @@ class FocusShieldBottomNav extends StatelessWidget {
       onDestinationSelected: onTap,
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.shield_rounded), label: 'Scanner'),
+        NavigationDestination(
+          icon: Icon(Icons.shield_rounded),
+          label: 'Scanner',
+        ),
         NavigationDestination(icon: Icon(Icons.spa_rounded), label: 'Recovery'),
-        NavigationDestination(icon: Icon(Icons.trending_up_rounded), label: 'Progress'),
-        NavigationDestination(icon: Icon(Icons.psychology_rounded), label: 'Coach'),
-        NavigationDestination(icon: Icon(Icons.settings_rounded), label: 'Settings'),
+        NavigationDestination(
+          icon: Icon(Icons.trending_up_rounded),
+          label: 'Progress',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.psychology_rounded),
+          label: 'Coach',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.settings_rounded),
+          label: 'Settings',
+        ),
       ],
     );
   }

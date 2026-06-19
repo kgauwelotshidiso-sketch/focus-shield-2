@@ -18,19 +18,14 @@ class ActionButton extends StatelessWidget {
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(label),
           if (subtitle != null)
-            Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );

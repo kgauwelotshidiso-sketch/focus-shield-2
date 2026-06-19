@@ -38,7 +38,10 @@ class ProgressScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Level ${state.level}', style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                'Level ${state.level}',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
               Text('${state.xp} XP total'),
               const SizedBox(height: 12),
               LinearProgressIndicator(value: xpProgress),
@@ -59,15 +62,34 @@ class ProgressScreen extends StatelessWidget {
         ShieldCard(
           child: Column(
             children: [
-              ActionButton(label: 'Log Listening Win', subtitle: '+10 XP', onPressed: onListeningWin),
+              ActionButton(
+                label: 'Log Listening Win',
+                subtitle: '+10 XP',
+                onPressed: onListeningWin,
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Complete Focus Session', subtitle: '+20 XP', onPressed: onFocusSession),
+              ActionButton(
+                label: 'Complete Focus Session',
+                subtitle: '+20 XP',
+                onPressed: onFocusSession,
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Complete Reflection', subtitle: '+15 XP', onPressed: onReflection),
+              ActionButton(
+                label: 'Complete Reflection',
+                subtitle: '+15 XP',
+                onPressed: onReflection,
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Complete Concentration', subtitle: '+15 XP', onPressed: onConcentration),
+              ActionButton(
+                label: 'Complete Concentration',
+                subtitle: '+15 XP',
+                onPressed: onConcentration,
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Open Daily History', onPressed: onOpenDailyHistory),
+              ActionButton(
+                label: 'Open Daily History',
+                onPressed: onOpenDailyHistory,
+              ),
             ],
           ),
         ),

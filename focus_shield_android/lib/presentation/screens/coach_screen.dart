@@ -36,7 +36,9 @@ class CoachScreen extends StatelessWidget {
     );
 
     final recoveryInsight = coachEngine.analyzeRecoveryHistory(attempts);
-    final borderColor = recoveryInsight.pendingAttempts == 0 ? AppTheme.primary : AppTheme.warning;
+    final borderColor = recoveryInsight.pendingAttempts == 0
+        ? AppTheme.primary
+        : AppTheme.warning;
 
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -53,11 +55,15 @@ class CoachScreen extends StatelessWidget {
               const Text('Main Coach Command'),
               const SizedBox(height: 8),
               Text(
-                recoveryInsight.pendingAttempts > 0 ? recoveryInsight.command : summary.command,
+                recoveryInsight.pendingAttempts > 0
+                    ? recoveryInsight.command
+                    : summary.command,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
-              Text('Weakness: ${recoveryInsight.pendingAttempts > 0 ? "Recovery Discipline" : summary.weakness}'),
+              Text(
+                'Weakness: ${recoveryInsight.pendingAttempts > 0 ? "Recovery Discipline" : summary.weakness}',
+              ),
             ],
           ),
         ),
@@ -110,7 +116,9 @@ class CoachScreen extends StatelessWidget {
           child: Column(
             children: [
               ActionButton(
-                label: state.morningCommandSet ? 'Morning Command Set' : 'Set Morning Command',
+                label: state.morningCommandSet
+                    ? 'Morning Command Set'
+                    : 'Set Morning Command',
                 subtitle: state.morningCommandSet ? 'Ready' : '+10 XP',
                 onPressed: onMorningCommand,
               ),

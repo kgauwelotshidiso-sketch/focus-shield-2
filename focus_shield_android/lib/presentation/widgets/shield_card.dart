@@ -21,12 +21,9 @@ class ShieldCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor.withOpacity(0.38)),
+        border: Border.all(color: borderColor.withValues(alpha: 0.38)),
         gradient: LinearGradient(
-          colors: [
-            AppTheme.card,
-            AppTheme.cardSoft.withOpacity(0.96),
-          ],
+          colors: [AppTheme.card, AppTheme.cardSoft.withValues(alpha: 0.96)],
         ),
       ),
       child: child,
