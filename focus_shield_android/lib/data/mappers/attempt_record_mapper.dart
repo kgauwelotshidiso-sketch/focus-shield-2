@@ -13,13 +13,16 @@ class AttemptRecordMapper {
   }
 
   static AttemptRecord fromDatabaseMap(Map<String, Object?> map) {
+    final confidenceValue = map['confidence'];
+
     return AttemptRecord(
       id: (map['id'] as int?) ?? 0,
       domain: (map['domain'] as String?) ?? '',
       category: (map['category'] as String?) ?? 'unknown',
-      confidence: (map['confidence'] as double?) ?? 0,
+      confidence: confidenceValue is num ? confidenceValue.toDouble() : 0,
       recovered: ((map['recovered'] as int?) ?? 0) == 1,
-      createdAt: DateTime.tryParse((map['created_at'] as String?) ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
+      createdAt: DateTime.tryParse((map['created_at'] as String?) ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 }

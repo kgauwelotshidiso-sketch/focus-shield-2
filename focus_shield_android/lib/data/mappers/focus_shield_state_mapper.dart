@@ -15,6 +15,7 @@ class FocusShieldStateMapper {
       'protection_enabled': state.protectionEnabled ? 1 : 0,
       'morning_command_set': state.morningCommandSet ? 1 : 0,
       'end_reviews_today': state.endReviewsToday,
+      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 

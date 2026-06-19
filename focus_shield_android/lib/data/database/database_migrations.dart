@@ -5,7 +5,7 @@ class DatabaseMigrations {
 
   static List<String> migrationScriptsForVersion(int version) {
     if (version <= 1) {
-      return [SqliteSchema.schema];
+      return SqliteSchema.statements;
     }
 
     return const [];

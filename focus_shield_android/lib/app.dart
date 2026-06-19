@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
+import 'data/repositories/sqlite_app_state_repository.dart';
+import 'domain/models/attempt_record.dart';
 import 'domain/models/focus_shield_state.dart';
+import 'domain/models/settings_record.dart';
+import 'domain/repositories/app_state_repository.dart';
 import 'domain/services/protection_engine.dart';
 import 'presentation/screens/coach_screen.dart';
 import 'presentation/screens/home_screen.dart';
@@ -13,7 +17,12 @@ import 'presentation/screens/settings_screen.dart';
 import 'presentation/widgets/focus_shield_bottom_nav.dart';
 
 class FocusShieldApp extends StatelessWidget {
-  const FocusShieldApp({super.key});
+  const FocusShieldApp({
+    super.key,
+    this.repository,
+  });
+
+  final AppStateRepository? repository;
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +30,18 @@ class FocusShieldApp extends StatelessWidget {
       title: 'Focus Shield',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const FocusShieldShell(),
+      home: FocusShieldShell(repository: repository),
     );
   }
 }
 
 class FocusShieldShell extends StatefulWidget {
-  const FocusShieldShell({super.key});
+  const FocusShieldShell({
+    super.key,
+    this.repository,
+  });
+
+  final AppStateRepository? repository;
 
   @override
   State<FocusShieldShell> createState() => _FocusShieldShellState();
@@ -36,8 +50,46 @@ class FocusShieldShell extends StatefulWidget {
 class _FocusShieldShellState extends State<FocusShieldShell> {
   int _selectedIndex = 0;
   bool _showIntervention = false;
+  bool _loading = true;
   ProtectionDecision? _lastBlockedDecision;
-  final FocusShieldState _state = FocusShieldState.initial();
+  FocusShieldState _state = FocusShieldState.initial();
+
+  late final AppStateRepository _repository;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? SqliteAppStateRepository();
+    _loadInitialState();
+  }
+
+  Future<void> _loadInitialState() async {
+    final snapshot = await _repository.loadSnapshot();
+    final settings = await _repository.loadSettings();
+
+    if (!mounted) return;
+
+    setState(() {
+      _state = snapshot.state;
+      _state.protectionEnabled = settings.protectionEnabled;
+      _loading = false;
+    });
+  }
+
+  void _persistState() {
+    _repository.saveState(_state.copy());
+  }
+
+  void _persistSettings() {
+    _repository.saveSettings(
+      SettingsRecord(
+        protectionEnabled: _state.protectionEnabled,
+        lockEnabled: true,
+        delayedDisableHours: 24,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
 
   void _goTo(int index) {
     setState(() {
@@ -53,6 +105,19 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _selectedIndex = 1;
       _showIntervention = true;
     });
+
+    _repository.saveAttempt(
+      AttemptRecord(
+        id: 0,
+        domain: decision.domain,
+        category: decision.category,
+        confidence: decision.confidence,
+        recovered: false,
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    _persistState();
   }
 
   void _returnToScanner() {
@@ -67,6 +132,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state.listeningWinsToday += 1;
       _state.xp += 10;
     });
+
+    _persistState();
   }
 
   void _completeFocusSession() {
@@ -74,6 +141,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state.focusSessionsToday += 1;
       _state.xp += 20;
     });
+
+    _persistState();
   }
 
   void _completeReflection() {
@@ -81,6 +150,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state.reflectionsToday += 1;
       _state.xp += 15;
     });
+
+    _persistState();
   }
 
   void _completeConcentration() {
@@ -88,6 +159,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state.concentrationWinsToday += 1;
       _state.xp += 15;
     });
+
+    _persistState();
   }
 
   void _markRecovered() {
@@ -99,6 +172,9 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showIntervention = false;
       _selectedIndex = 2;
     });
+
+    _repository.markLatestAttemptRecovered();
+    _persistState();
   }
 
   void _setMorningCommand() {
@@ -108,6 +184,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       }
       _state.morningCommandSet = true;
     });
+
+    _persistState();
   }
 
   void _saveEndReview() {
@@ -116,16 +194,31 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state.reflectionsToday += 1;
       _state.xp += 15;
     });
+
+    _persistState();
   }
 
   void _toggleProtection() {
     setState(() {
       _state.protectionEnabled = !_state.protectionEnabled;
     });
+
+    _persistState();
+    _persistSettings();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Text('Loading Focus Shield...'),
+          ),
+        ),
+      );
+    }
+
     final screens = [
       HomeScreen(
         state: _state,
