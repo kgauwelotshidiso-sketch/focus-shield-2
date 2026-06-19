@@ -2,11 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
+import '../widgets/stat_grid.dart';
 
 class RecoveryScreen extends StatelessWidget {
-  const RecoveryScreen({super.key});
+  const RecoveryScreen({
+    super.key,
+    required this.state,
+    required this.onRecovered,
+    required this.onFocusSession,
+  });
+
+  final FocusShieldState state;
+  final VoidCallback onRecovered;
+  final VoidCallback onFocusSession;
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +36,21 @@ class RecoveryScreen extends StatelessWidget {
               Text('Breathe', style: Theme.of(context).textTheme.headlineMedium),
               const Text('Pause, breathe, and return to your goals.'),
               const SizedBox(height: 12),
-              ActionButton(
-                label: 'Mark Latest As Recovered',
-                onPressed: () {},
-              ),
+              ActionButton(label: 'Mark Latest As Recovered', subtitle: '+10 XP', onPressed: onRecovered),
+              const SizedBox(height: 10),
+              ActionButton(label: 'Complete Focus Session', subtitle: '+20 XP', onPressed: onFocusSession),
             ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: StatGrid(
+            items: {
+              'Attempts': '${state.blockedAttempts}',
+              'Recovered': '${state.recoveredAttempts}',
+              'Pending': '${state.pendingRecoveries}',
+              'Recovery': '${state.recoveryRate}%',
+            },
           ),
         ),
         ShieldCard(

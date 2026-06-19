@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
 import '../../domain/services/protection_engine.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
@@ -10,13 +11,17 @@ import '../widgets/stat_grid.dart';
 class InterventionScreen extends StatelessWidget {
   const InterventionScreen({
     super.key,
+    required this.state,
     required this.decision,
     required this.onNavigate,
+    required this.onRecovered,
     required this.onBackToScanner,
   });
 
+  final FocusShieldState state;
   final ProtectionDecision? decision;
   final ValueChanged<int> onNavigate;
+  final VoidCallback onRecovered;
   final VoidCallback onBackToScanner;
 
   @override
@@ -43,9 +48,7 @@ class InterventionScreen extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Focus Shield blocked a risk signal before it pulled you away from your goals.',
-              ),
+              const Text('Focus Shield blocked a risk signal before it pulled you away from your goals.'),
               const SizedBox(height: 12),
               Text('Domain: $blockedDomain'),
               Text('Category: $category'),
@@ -55,12 +58,12 @@ class InterventionScreen extends StatelessWidget {
         ),
         ShieldCard(
           borderColor: AppTheme.primary,
-          child: const StatGrid(
+          child: StatGrid(
             items: {
-              'Current Streak': '0',
-              'Longest Streak': '0',
-              'Mission': '0/3',
-              'Recovery': 'Ready',
+              'Attempts': '${state.blockedAttempts}',
+              'Recovered': '${state.recoveredAttempts}',
+              'Pending': '${state.pendingRecoveries}',
+              'Recovery': '${state.recoveryRate}%',
             },
           ),
         ),
@@ -81,42 +84,24 @@ class InterventionScreen extends StatelessWidget {
               Text('Remember'),
               SizedBox(height: 8),
               Text('Your future is worth more than this moment.'),
-              Text('You do not need to follow the urge. Return to your goals now.'),
+              Text('Return to your goals now.'),
             ],
           ),
         ),
         ShieldCard(
           child: Column(
             children: [
-              ActionButton(
-                label: 'Breathing Exercise',
-                subtitle: 'Open recovery reset',
-                onPressed: () => onNavigate(2),
-              ),
+              ActionButton(label: 'I am back in control', subtitle: '+10 XP', onPressed: onRecovered),
               const SizedBox(height: 10),
-              ActionButton(
-                label: 'Start Focus Session',
-                subtitle: 'Redirect energy',
-                onPressed: () => onNavigate(3),
-              ),
+              ActionButton(label: 'Breathing Exercise', onPressed: () => onNavigate(2)),
               const SizedBox(height: 10),
-              ActionButton(
-                label: 'Journal Thoughts',
-                subtitle: 'Reflect and recover',
-                onPressed: () => onNavigate(4),
-              ),
+              ActionButton(label: 'Start Focus Session', onPressed: () => onNavigate(3)),
               const SizedBox(height: 10),
-              ActionButton(
-                label: 'Read Goals',
-                subtitle: 'Return to purpose',
-                onPressed: () => onNavigate(0),
-              ),
+              ActionButton(label: 'Journal Thoughts', onPressed: () => onNavigate(4)),
               const SizedBox(height: 10),
-              ActionButton(
-                label: 'Back to Scanner',
-                subtitle: 'Continue testing',
-                onPressed: onBackToScanner,
-              ),
+              ActionButton(label: 'Read Goals', onPressed: () => onNavigate(0)),
+              const SizedBox(height: 10),
+              ActionButton(label: 'Back to Scanner', onPressed: onBackToScanner),
             ],
           ),
         ),

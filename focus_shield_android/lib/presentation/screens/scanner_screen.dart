@@ -9,9 +9,11 @@ import '../widgets/shield_card.dart';
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({
     super.key,
+    required this.protectionEnabled,
     required this.onBlocked,
   });
 
+  final bool protectionEnabled;
   final ValueChanged<ProtectionDecision> onBlocked;
 
   @override
@@ -30,7 +32,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       _decision = decision;
     });
 
-    if (decision.blocked) {
+    if (decision.blocked && widget.protectionEnabled) {
       widget.onBlocked(decision);
     }
   }
@@ -49,10 +51,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
       padding: const EdgeInsets.all(18),
       children: [
         Text('Scanner', style: Theme.of(context).textTheme.headlineLarge),
-        const Text('Live protection scanner'),
+        Text(widget.protectionEnabled ? 'Live protection scanner' : 'Protection is currently off'),
         const SizedBox(height: 18),
         ShieldCard(
-          borderColor: AppTheme.secondary,
+          borderColor: widget.protectionEnabled ? AppTheme.secondary : AppTheme.warning,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -66,10 +68,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              ActionButton(
-                label: 'Scan',
-                onPressed: () => _scan(_controller.text),
-              ),
+              ActionButton(label: 'Scan', onPressed: () => _scan(_controller.text)),
             ],
           ),
         ),

@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
 class ProgressScreen extends StatelessWidget {
-  const ProgressScreen({super.key});
+  const ProgressScreen({
+    super.key,
+    required this.state,
+    required this.onListeningWin,
+    required this.onFocusSession,
+    required this.onReflection,
+    required this.onConcentration,
+  });
+
+  final FocusShieldState state;
+  final VoidCallback onListeningWin;
+  final VoidCallback onFocusSession;
+  final VoidCallback onReflection;
+  final VoidCallback onConcentration;
 
   @override
   Widget build(BuildContext context) {
+    final xpProgress = (state.xp % 100) / 100;
+
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
@@ -20,32 +36,34 @@ class ProgressScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Level 2', style: Theme.of(context).textTheme.headlineMedium),
-              const Text('45 XP total'),
+              Text('Level ${state.level}', style: Theme.of(context).textTheme.headlineMedium),
+              Text('${state.xp} XP total'),
               const SizedBox(height: 12),
-              const LinearProgressIndicator(value: 0.45),
+              LinearProgressIndicator(value: xpProgress),
             ],
           ),
         ),
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: StatGrid(
-            items: const {
-              'Current Streak': '0',
-              'Longest Streak': '0',
-              'Listening Wins': '0',
-              'Badges': '3',
+            items: {
+              'Listening Wins': '${state.listeningWinsToday}',
+              'Focus Sessions': '${state.focusSessionsToday}',
+              'Reflections': '${state.reflectionsToday}',
+              'Concentration': '${state.concentrationWinsToday}',
             },
           ),
         ),
         ShieldCard(
           child: Column(
             children: [
-              ActionButton(label: 'Log Listening Win', onPressed: () {}),
+              ActionButton(label: 'Log Listening Win', subtitle: '+10 XP', onPressed: onListeningWin),
               const SizedBox(height: 10),
-              ActionButton(label: 'Complete Focus Session', onPressed: () {}),
+              ActionButton(label: 'Complete Focus Session', subtitle: '+20 XP', onPressed: onFocusSession),
               const SizedBox(height: 10),
-              ActionButton(label: 'Complete Reflection', onPressed: () {}),
+              ActionButton(label: 'Complete Reflection', subtitle: '+15 XP', onPressed: onReflection),
+              const SizedBox(height: 10),
+              ActionButton(label: 'Complete Concentration', subtitle: '+15 XP', onPressed: onConcentration),
             ],
           ),
         ),

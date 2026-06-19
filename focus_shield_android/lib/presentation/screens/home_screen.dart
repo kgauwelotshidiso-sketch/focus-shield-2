@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
@@ -9,20 +10,21 @@ import '../widgets/stat_grid.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
+    required this.state,
     required this.onNavigate,
+    required this.onListeningWin,
   });
 
+  final FocusShieldState state;
   final ValueChanged<int> onNavigate;
+  final VoidCallback onListeningWin;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
-        Text(
-          AppConstants.appName,
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
+        Text(AppConstants.appName, style: Theme.of(context).textTheme.headlineLarge),
         const SizedBox(height: 4),
         const Text('Discipline + protection dashboard'),
         const SizedBox(height: 18),
@@ -32,16 +34,17 @@ class HomeScreen extends StatelessWidget {
             children: [
               const Text('Today’s Mission'),
               Text(
-                '0 / 3',
+                '${state.listeningWinsToday} / ${state.missionTarget}',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.primary,
+                      color: state.missionComplete ? AppTheme.primary : AppTheme.warning,
                     ),
               ),
               const Text('Pause and fully listen before speaking at least 3 times today.'),
               const SizedBox(height: 12),
               ActionButton(
                 label: 'Log Listening Win',
-                onPressed: () => onNavigate(3),
+                subtitle: '+10 XP',
+                onPressed: onListeningWin,
               ),
             ],
           ),
@@ -49,11 +52,11 @@ class HomeScreen extends StatelessWidget {
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: StatGrid(
-            items: const {
-              'Shield': 'Active',
-              'Protection': 'ON',
-              'Level': '2',
-              'XP': '45',
+            items: {
+              'Shield': state.protectionEnabled ? 'Active' : 'Off',
+              'Recovery': '${state.recoveryRate}%',
+              'Level': '${state.level}',
+              'XP': '${state.xp}',
             },
           ),
         ),
@@ -67,6 +70,8 @@ class HomeScreen extends StatelessWidget {
               ActionButton(label: 'Scanner', onPressed: () => onNavigate(1)),
               const SizedBox(height: 10),
               ActionButton(label: 'Recovery', onPressed: () => onNavigate(2)),
+              const SizedBox(height: 10),
+              ActionButton(label: 'Progress', onPressed: () => onNavigate(3)),
               const SizedBox(height: 10),
               ActionButton(label: 'Coach', onPressed: () => onNavigate(4)),
               const SizedBox(height: 10),

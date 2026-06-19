@@ -1,20 +1,32 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/models/focus_shield_state.dart';
 import '../../domain/services/coach_engine.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
 class CoachScreen extends StatelessWidget {
-  const CoachScreen({super.key});
+  const CoachScreen({
+    super.key,
+    required this.state,
+    required this.onMorningCommand,
+    required this.onEndReview,
+    required this.onNavigate,
+  });
+
+  final FocusShieldState state;
+  final VoidCallback onMorningCommand;
+  final VoidCallback onEndReview;
+  final ValueChanged<int> onNavigate;
 
   @override
   Widget build(BuildContext context) {
     final summary = CoachEngine().analyze(
-      listeningWins: 0,
-      targetWins: 3,
-      recoveryRate: 100,
-      morningCommandSet: false,
+      listeningWins: state.listeningWinsToday,
+      targetWins: state.missionTarget,
+      recoveryRate: state.recoveryRate,
+      morningCommandSet: state.morningCommandSet,
     );
 
     return ListView(
@@ -28,10 +40,7 @@ class CoachScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('Main Coach Command'),
-              Text(
-                summary.command,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              Text(summary.command, style: Theme.of(context).textTheme.headlineMedium),
               Text('Weakness: ${summary.weakness}'),
             ],
           ),
@@ -39,19 +48,27 @@ class CoachScreen extends StatelessWidget {
         ShieldCard(
           child: StatGrid(
             items: {
-              'Daily Score': '${summary.score}%',
-              'Mission': '0/3',
-              'Recovery': '100%',
-              'Level': '2',
+              'Coach Score': '${state.coachScore}%',
+              'Mission': '${state.listeningWinsToday}/${state.missionTarget}',
+              'Recovery': '${state.recoveryRate}%',
+              'Level': '${state.level}',
             },
           ),
         ),
         ShieldCard(
           child: Column(
             children: [
-              ActionButton(label: 'Set Morning Command', onPressed: () {}),
+              ActionButton(
+                label: state.morningCommandSet ? 'Morning Command Set' : 'Set Morning Command',
+                subtitle: state.morningCommandSet ? 'Ready' : '+10 XP',
+                onPressed: onMorningCommand,
+              ),
               const SizedBox(height: 10),
-              ActionButton(label: 'Save End Review', onPressed: () {}),
+              ActionButton(label: 'Save End Review', subtitle: '+15 XP', onPressed: onEndReview),
+              const SizedBox(height: 10),
+              ActionButton(label: 'Open Progress', onPressed: () => onNavigate(3)),
+              const SizedBox(height: 10),
+              ActionButton(label: 'Open Recovery', onPressed: () => onNavigate(2)),
             ],
           ),
         ),
