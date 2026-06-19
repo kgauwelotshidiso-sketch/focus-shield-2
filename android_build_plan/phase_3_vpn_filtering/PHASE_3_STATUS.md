@@ -36,6 +36,10 @@ Status: COMPLETE
 
 Status: COMPLETE
 
+## Phase 3.8 — Parser to Packet Loop Dry-Run Mode
+
+Status: COMPLETE
+
 ## Next
 
-Phase 3.8 — Connect Parser to Packet Loop in Safe Dry-Run Mode
+Phase 3.9 — Safe Native Parser Unit Test Scaffolding

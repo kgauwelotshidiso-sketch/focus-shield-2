@@ -25,6 +25,9 @@ void main() {
                 'dnsParserPrepared': true,
                 'dnsQueriesParsed': 0,
                 'lastParsedHostname': '',
+                'dryRunModeReady': true,
+                'dryRunBlocksDetected': 0,
+                'lastDryRunDecision': '',
                 'blocklistError': '',
               };
             case 'startProtection':

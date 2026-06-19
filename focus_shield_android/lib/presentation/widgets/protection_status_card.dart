@@ -26,6 +26,9 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
     dnsParserPrepared: false,
     dnsQueriesParsed: 0,
     lastParsedHostname: '',
+    dryRunModeReady: false,
+    dryRunBlocksDetected: 0,
+    lastDryRunDecision: '',
     blocklistError: '',
   );
 
@@ -121,6 +124,7 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
     final theme = Theme.of(context);
     final blocklistError = _status.blocklistError;
     final lastParsedHostname = _status.lastParsedHostname;
+    final lastDryRunDecision = _status.lastDryRunDecision;
 
     return Card(
       child: Padding(
@@ -152,29 +156,38 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
               value: _status.nativeDnsReady ? 'Ready' : 'Waiting',
             ),
             _StatusRow(
-              label: 'Native loaded domains',
-              value: _status.nativeLoadedDomainCount.toString(),
-            ),
-            _StatusRow(
               label: 'Packet loop',
               value: _status.packetLoopPrepared
                   ? (_status.packetLoopRunning ? 'Running' : 'Prepared')
                   : 'Not prepared',
             ),
             _StatusRow(
-              label: 'Packets observed',
-              value: _status.packetsObserved.toString(),
-            ),
-            _StatusRow(
               label: 'DNS parser',
               value: _status.dnsParserPrepared ? 'Prepared' : 'Not prepared',
+            ),
+            _StatusRow(
+              label: 'Dry-run mode',
+              value: _status.dryRunModeReady ? 'Ready' : 'Not ready',
+            ),
+            _StatusRow(
+              label: 'Packets observed',
+              value: _status.packetsObserved.toString(),
             ),
             _StatusRow(
               label: 'DNS queries parsed',
               value: _status.dnsQueriesParsed.toString(),
             ),
+            _StatusRow(
+              label: 'Dry-run would-block count',
+              value: _status.dryRunBlocksDetected.toString(),
+            ),
             if (lastParsedHostname.isNotEmpty)
               _StatusRow(label: 'Last parsed host', value: lastParsedHostname),
+            if (lastDryRunDecision.isNotEmpty)
+              _StatusRow(
+                label: 'Last dry-run decision',
+                value: lastDryRunDecision,
+              ),
             if (blocklistError.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text('Blocklist note: $blocklistError'),

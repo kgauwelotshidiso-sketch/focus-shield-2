@@ -36,13 +36,25 @@ class FocusShieldVpnService : VpnService() {
 
         var lastParsedHostname: String = ""
             private set
+
+        var dryRunModeReady: Boolean = false
+            private set
+
+        var dryRunBlocksDetected: Long = 0
+            private set
+
+        var lastDryRunDecision: String = ""
+            private set
     }
 
     private var vpnInterface: ParcelFileDescriptor? = null
     private lateinit var blocklistStore: FocusShieldBlocklistStore
     private val dnsFilter = FocusShieldDnsFilter()
     private val dnsPacketParser = FocusShieldDnsPacketParser()
-    private val packetLoop = FocusShieldVpnPacketLoop()
+    private val packetLoop = FocusShieldVpnPacketLoop(
+        dnsPacketParser = dnsPacketParser,
+        dnsFilter = dnsFilter
+    )
 
     override fun onCreate() {
         super.onCreate()
@@ -67,7 +79,11 @@ class FocusShieldVpnService : VpnService() {
 
         if (vpnInterface != null) {
             isRunning = true
-            packetLoop.start(vpnInterface, liveReadEnabled = false)
+            packetLoop.start(
+                vpnInterface = vpnInterface,
+                liveReadEnabled = false,
+                dryRunModeEnabled = true
+            )
             updateNativeStatus()
             return
         }
@@ -80,7 +96,11 @@ class FocusShieldVpnService : VpnService() {
         vpnInterface = builder.establish()
         isRunning = vpnInterface != null
 
-        packetLoop.start(vpnInterface, liveReadEnabled = false)
+        packetLoop.start(
+            vpnInterface = vpnInterface,
+            liveReadEnabled = false,
+            dryRunModeEnabled = true
+        )
         updateNativeStatus()
     }
 
@@ -116,6 +136,10 @@ class FocusShieldVpnService : VpnService() {
         dnsParserPrepared = dnsPacketParser.prepared
         dnsQueriesParsed = dnsPacketParser.parsedQueries
         lastParsedHostname = dnsPacketParser.lastHostname
+
+        dryRunModeReady = packetLoop.dryRunModeReady
+        dryRunBlocksDetected = packetLoop.dryRunBlocksDetected
+        lastDryRunDecision = packetLoop.lastDryRunDecision
     }
 
     fun shouldBlockDomainForTestOnly(hostname: String): Boolean {

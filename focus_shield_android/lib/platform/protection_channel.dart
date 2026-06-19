@@ -13,6 +13,9 @@ class ProtectionStatus {
     required this.dnsParserPrepared,
     required this.dnsQueriesParsed,
     required this.lastParsedHostname,
+    required this.dryRunModeReady,
+    required this.dryRunBlocksDetected,
+    required this.lastDryRunDecision,
     required this.blocklistError,
   });
 
@@ -27,6 +30,9 @@ class ProtectionStatus {
   final bool dnsParserPrepared;
   final int dnsQueriesParsed;
   final String lastParsedHostname;
+  final bool dryRunModeReady;
+  final int dryRunBlocksDetected;
+  final String lastDryRunDecision;
   final String blocklistError;
 
   factory ProtectionStatus.fromMap(Map<Object?, Object?>? map) {
@@ -43,6 +49,9 @@ class ProtectionStatus {
         dnsParserPrepared: false,
         dnsQueriesParsed: 0,
         lastParsedHostname: '',
+        dryRunModeReady: false,
+        dryRunBlocksDetected: 0,
+        lastDryRunDecision: '',
         blocklistError: '',
       );
     }
@@ -59,6 +68,9 @@ class ProtectionStatus {
       dnsParserPrepared: map['dnsParserPrepared'] == true,
       dnsQueriesParsed: _readInt(map['dnsQueriesParsed']),
       lastParsedHostname: _readString(map['lastParsedHostname']),
+      dryRunModeReady: map['dryRunModeReady'] == true,
+      dryRunBlocksDetected: _readInt(map['dryRunBlocksDetected']),
+      lastDryRunDecision: _readString(map['lastDryRunDecision']),
       blocklistError: _readString(map['blocklistError']),
     );
   }
