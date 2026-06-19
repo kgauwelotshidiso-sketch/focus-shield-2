@@ -4,13 +4,22 @@
 
 Status: COMPLETE
 
-Added:
+## Phase 3.1 — Native Android VPN Service Skeleton
 
-- VPN filtering plan
-- MethodChannel contract
-- Android manifest requirements
-- Safe test domain policy
+Status: COMPLETE
+
+## Phase 3.2 — Flutter to Android MethodChannel
+
+Status: COMPLETE
+
+## Phase 3.2B — Android Build Environment Check
+
+Status: CODE CHECKS PASSED. APK BUILD BLOCKED BY CODESPACES ANDROID SDK.
+
+## Phase 3.3 — Protection Status UI
+
+Status: COMPLETE
 
 ## Next
 
-Phase 3.1 — Native Android VPN Service Skeleton
+Phase 3.4 — Native Blocklist Loading

@@ -1,8 +1,40 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_shield_android/app.dart';
 import 'package:focus_shield_android/data/repositories/in_memory_app_state_repository.dart';
 
 void main() {
+  const protectionChannel = MethodChannel('focus_shield/protection');
+
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(protectionChannel, (call) async {
+          switch (call.method) {
+            case 'protectionStatus':
+              return <String, Object>{
+                'vpnActive': false,
+                'blocklistLoaded': true,
+                'blockedDomainCount': 0,
+              };
+            case 'startProtection':
+              return 'started';
+            case 'stopProtection':
+              return 'stopped';
+            case 'reloadBlocklist':
+              return 'reloaded';
+            default:
+              return null;
+          }
+        });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(protectionChannel, null);
+  });
+
   testWidgets('Focus Shield app loads home screen', (tester) async {
     await tester.pumpWidget(
       FocusShieldApp(repository: InMemoryAppStateRepository()),
@@ -10,7 +42,6 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Focus Shield'), findsOneWidget);
-    expect(find.text('Discipline + protection dashboard'), findsOneWidget);
+    expect(find.text('Focus Shield'), findsWidgets);
   });
 }

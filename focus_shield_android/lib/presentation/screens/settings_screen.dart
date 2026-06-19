@@ -5,6 +5,7 @@ import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
+import '../widgets/protection_status_card.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
@@ -31,6 +32,8 @@ class SettingsScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
+        const ProtectionStatusCard(),
+        const SizedBox(height: 16),
         Text('Settings', style: Theme.of(context).textTheme.headlineLarge),
         const Text('Protection control center'),
         Text('Active day: ${state.lastActiveDate}'),
