@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
+import '../../domain/models/goal.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
@@ -11,16 +12,22 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.state,
+    required this.goals,
+    required this.primaryAffirmation,
     required this.onNavigate,
     required this.onListeningWin,
   });
 
   final FocusShieldState state;
+  final List<Goal> goals;
+  final String primaryAffirmation;
   final ValueChanged<int> onNavigate;
   final VoidCallback onListeningWin;
 
   @override
   Widget build(BuildContext context) {
+    final visibleGoals = goals.take(3).toList();
+
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
@@ -42,11 +49,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const Text('Pause and fully listen before speaking at least 3 times today.'),
               const SizedBox(height: 12),
-              ActionButton(
-                label: 'Log Listening Win',
-                subtitle: '+10 XP',
-                onPressed: onListeningWin,
-              ),
+              ActionButton(label: 'Log Listening Win', subtitle: '+10 XP', onPressed: onListeningWin),
             ],
           ),
         ),
@@ -61,6 +64,25 @@ class HomeScreen extends StatelessWidget {
               'Streak': '${state.currentStreak}',
               'Best': '${state.longestStreak}',
             },
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('My Goals'),
+              const SizedBox(height: 8),
+              if (visibleGoals.isEmpty)
+                const Text('No goals saved yet.')
+              else
+                ...visibleGoals.map(
+                  (goal) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text('• ${goal.title}'),
+                  ),
+                ),
+            ],
           ),
         ),
         ShieldCard(
@@ -85,7 +107,7 @@ class HomeScreen extends StatelessWidget {
         ShieldCard(
           borderColor: AppTheme.primary,
           child: Text(
-            '“${AppConstants.affirmation}”',
+            '“$primaryAffirmation”',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.lightBlueAccent,
                 ),

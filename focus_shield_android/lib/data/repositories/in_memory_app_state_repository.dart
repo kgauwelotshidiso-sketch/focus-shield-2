@@ -1,8 +1,10 @@
+import '../../domain/models/affirmation.dart';
 import '../../domain/models/app_snapshot.dart';
 import '../../domain/models/attempt_record.dart';
 import '../../domain/models/blocked_domain.dart';
 import '../../domain/models/daily_summary.dart';
 import '../../domain/models/focus_shield_state.dart';
+import '../../domain/models/goal.dart';
 import '../../domain/models/settings_record.dart';
 import '../../domain/repositories/app_state_repository.dart';
 
@@ -19,6 +21,8 @@ class InMemoryAppStateRepository implements AppStateRepository {
               updatedAt: DateTime.now(),
             ) {
     _blockedDomains.addAll(_defaultBlockedDomains());
+    _goals.addAll(_defaultGoals());
+    _affirmations.addAll(_defaultAffirmations());
   }
 
   FocusShieldState _state;
@@ -26,6 +30,8 @@ class InMemoryAppStateRepository implements AppStateRepository {
   final List<AttemptRecord> _attempts = [];
   final List<BlockedDomain> _blockedDomains = [];
   final List<DailySummary> _dailySummaries = [];
+  final List<Goal> _goals = [];
+  final List<Affirmation> _affirmations = [];
 
   List<BlockedDomain> _defaultBlockedDomains() {
     final now = DateTime.now();
@@ -34,6 +40,41 @@ class InMemoryAppStateRepository implements AppStateRepository {
       BlockedDomain(id: 1, domain: 'blocked-example.com', category: 'local-blocklist', updatedAt: now),
       BlockedDomain(id: 2, domain: 'temptation-test.net', category: 'local-blocklist', updatedAt: now),
       BlockedDomain(id: 3, domain: 'focus-risk.org', category: 'local-blocklist', updatedAt: now),
+    ];
+  }
+
+  List<Goal> _defaultGoals() {
+    final now = DateTime.now();
+
+    return [
+      Goal(
+        id: 1,
+        title: 'Master fully listening',
+        description: 'Pause and wait for the person to finish speaking before responding.',
+        createdAt: now,
+        updatedAt: now,
+      ),
+      Goal(
+        id: 2,
+        title: 'Build fitness discipline',
+        description: 'Train consistently and protect your energy.',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ];
+  }
+
+  List<Affirmation> _defaultAffirmations() {
+    final now = DateTime.now();
+
+    return [
+      Affirmation(
+        id: 1,
+        text: 'I pause, I listen, and I follow my dreams.',
+        favorite: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
     ];
   }
 
@@ -152,13 +193,104 @@ class InMemoryAppStateRepository implements AppStateRepository {
   }
 
   @override
+  Future<List<Goal>> loadGoals() async {
+    return List<Goal>.unmodifiable(_goals);
+  }
+
+  @override
+  Future<void> saveGoal(Goal goal) async {
+    final title = goal.title.trim();
+    if (title.isEmpty) return;
+
+    if (goal.id != 0) {
+      final index = _goals.indexWhere((item) => item.id == goal.id);
+      if (index >= 0) {
+        _goals[index] = goal.copyWith(
+          title: title,
+          updatedAt: DateTime.now(),
+        );
+        return;
+      }
+    }
+
+    final nextId = _goals.isEmpty ? 1 : _goals.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
+
+    _goals.add(
+      goal.copyWith(
+        id: nextId,
+        title: title,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> deleteGoal(int id) async {
+    _goals.removeWhere((item) => item.id == id);
+  }
+
+  @override
+  Future<List<Affirmation>> loadAffirmations() async {
+    return List<Affirmation>.unmodifiable(_affirmations);
+  }
+
+  @override
+  Future<void> saveAffirmation(Affirmation affirmation) async {
+    final text = affirmation.text.trim();
+    if (text.isEmpty) return;
+
+    if (affirmation.favorite) {
+      for (var i = 0; i < _affirmations.length; i++) {
+        _affirmations[i] = _affirmations[i].copyWith(favorite: false);
+      }
+    }
+
+    if (affirmation.id != 0) {
+      final index = _affirmations.indexWhere((item) => item.id == affirmation.id);
+      if (index >= 0) {
+        _affirmations[index] = affirmation.copyWith(
+          text: text,
+          updatedAt: DateTime.now(),
+        );
+        return;
+      }
+    }
+
+    final nextId = _affirmations.isEmpty
+        ? 1
+        : _affirmations.map((item) => item.id).reduce((a, b) => a > b ? a : b) + 1;
+
+    _affirmations.add(
+      affirmation.copyWith(
+        id: nextId,
+        text: text,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> deleteAffirmation(int id) async {
+    _affirmations.removeWhere((item) => item.id == id);
+  }
+
+  @override
   Future<void> clearAll() async {
     _state = FocusShieldState.initial();
     _attempts.clear();
     _dailySummaries.clear();
+
     _blockedDomains
       ..clear()
       ..addAll(_defaultBlockedDomains());
+
+    _goals
+      ..clear()
+      ..addAll(_defaultGoals());
+
+    _affirmations
+      ..clear()
+      ..addAll(_defaultAffirmations());
 
     _settings = SettingsRecord(
       protectionEnabled: true,

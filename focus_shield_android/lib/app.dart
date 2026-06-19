@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
+import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/date_key.dart';
 import 'data/repositories/sqlite_app_state_repository.dart';
+import 'domain/models/affirmation.dart';
 import 'domain/models/attempt_record.dart';
 import 'domain/models/blocked_domain.dart';
 import 'domain/models/daily_summary.dart';
 import 'domain/models/focus_shield_state.dart';
+import 'domain/models/goal.dart';
 import 'domain/models/settings_record.dart';
 import 'domain/repositories/app_state_repository.dart';
 import 'domain/services/protection_engine.dart';
 import 'presentation/screens/coach_screen.dart';
-import 'presentation/screens/debug_center_screen.dart';
 import 'presentation/screens/daily_history_screen.dart';
+import 'presentation/screens/debug_center_screen.dart';
+import 'presentation/screens/goals_affirmations_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/intervention_screen.dart';
 import 'presentation/screens/progress_screen.dart';
@@ -58,17 +62,29 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   bool _showIntervention = false;
   bool _showDebugCenter = false;
   bool _showProtectionDatabase = false;
-      _showDailyHistory = false;
   bool _showDailyHistory = false;
+  bool _showGoalsAffirmations = false;
   bool _loading = true;
 
   ProtectionDecision? _lastBlockedDecision;
   FocusShieldState _state = FocusShieldState.initial();
+
   List<AttemptRecord> _attempts = [];
   List<BlockedDomain> _blockedDomains = [];
   List<DailySummary> _dailySummaries = [];
+  List<Goal> _goals = [];
+  List<Affirmation> _affirmations = [];
 
   late final AppStateRepository _repository;
+
+  String get _primaryAffirmation {
+    final favorite = _affirmations.where((item) => item.favorite).firstOrNull;
+    if (favorite != null) return favorite.text;
+
+    if (_affirmations.isNotEmpty) return _affirmations.first.text;
+
+    return AppConstants.affirmation;
+  }
 
   @override
   void initState() {
@@ -82,6 +98,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     final settings = await _repository.loadSettings();
     final attempts = await _repository.loadAttempts();
     final blockedDomains = await _repository.loadBlockedDomains();
+    final goals = await _repository.loadGoals();
+    final affirmations = await _repository.loadAffirmations();
 
     final loadedState = snapshot.state;
     loadedState.protectionEnabled = settings.protectionEnabled;
@@ -104,6 +122,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _attempts = attempts;
       _blockedDomains = blockedDomains;
       _dailySummaries = dailySummaries;
+      _goals = goals;
+      _affirmations = affirmations;
       _loading = false;
     });
   }
@@ -142,6 +162,18 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     });
   }
 
+  Future<void> _refreshGoalsAffirmations() async {
+    final goals = await _repository.loadGoals();
+    final affirmations = await _repository.loadAffirmations();
+
+    if (!mounted) return;
+
+    setState(() {
+      _goals = goals;
+      _affirmations = affirmations;
+    });
+  }
+
   void _persistState() {
     _repository.saveState(_state.copy());
   }
@@ -164,12 +196,33 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showDebugCenter = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
+      _showGoalsAffirmations = false;
+    });
+  }
+
+  void _openDailyHistory() {
+    setState(() {
+      _showDailyHistory = true;
+      _showGoalsAffirmations = false;
+      _showProtectionDatabase = false;
+      _showDebugCenter = false;
+      _showIntervention = false;
+    });
+
+    _refreshDailySummaries();
+  }
+
+  void _closeDailyHistory() {
+    setState(() {
+      _showDailyHistory = false;
+      _selectedIndex = 3;
     });
   }
 
   void _openDebugCenter() {
     setState(() {
       _showDebugCenter = true;
+      _showGoalsAffirmations = false;
       _showIntervention = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
@@ -185,30 +238,13 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     });
   }
 
-  void _openDailyHistory() {
-    setState(() {
-      _showDailyHistory = true;
-      _showProtectionDatabase = false;
-      _showDailyHistory = false;
-      _showDebugCenter = false;
-      _showIntervention = false;
-    });
-
-    _refreshDailySummaries();
-  }
-
-  void _closeDailyHistory() {
-    setState(() {
-      _showDailyHistory = false;
-      _selectedIndex = 3;
-    });
-  }
-
   void _openProtectionDatabase() {
     setState(() {
       _showProtectionDatabase = true;
+      _showGoalsAffirmations = false;
       _showDebugCenter = false;
       _showIntervention = false;
+      _showDailyHistory = false;
     });
 
     _refreshBlockedDomains();
@@ -217,7 +253,25 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   void _closeProtectionDatabase() {
     setState(() {
       _showProtectionDatabase = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  void _openGoalsAffirmations() {
+    setState(() {
+      _showGoalsAffirmations = true;
+      _showProtectionDatabase = false;
+      _showDebugCenter = false;
+      _showIntervention = false;
       _showDailyHistory = false;
+    });
+
+    _refreshGoalsAffirmations();
+  }
+
+  void _closeGoalsAffirmations() {
+    setState(() {
+      _showGoalsAffirmations = false;
       _selectedIndex = 5;
     });
   }
@@ -252,6 +306,55 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     _repository.deleteBlockedDomain(id).then((_) => _refreshBlockedDomains());
   }
 
+  void _addGoal(String title, String description) {
+    final cleanTitle = title.trim();
+    if (cleanTitle.isEmpty) return;
+
+    _repository
+        .saveGoal(
+          Goal(
+            id: 0,
+            title: cleanTitle,
+            description: description.trim(),
+          ),
+        )
+        .then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _deleteGoal(int id) {
+    _repository.deleteGoal(id).then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _addAffirmation(String text, bool favorite) {
+    final cleanText = text.trim();
+    if (cleanText.isEmpty) return;
+
+    _repository
+        .saveAffirmation(
+          Affirmation(
+            id: 0,
+            text: cleanText,
+            favorite: favorite,
+          ),
+        )
+        .then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _deleteAffirmation(int id) {
+    _repository.deleteAffirmation(id).then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _setFavoriteAffirmation(Affirmation affirmation) {
+    _repository
+        .saveAffirmation(
+          affirmation.copyWith(
+            favorite: true,
+            updatedAt: DateTime.now(),
+          ),
+        )
+        .then((_) => _refreshGoalsAffirmations());
+  }
+
   Future<void> _resetAppData() async {
     await _repository.clearAll();
 
@@ -259,6 +362,9 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     final settings = await _repository.loadSettings();
     final attempts = await _repository.loadAttempts();
     final blockedDomains = await _repository.loadBlockedDomains();
+    final dailySummaries = await _repository.loadDailySummaries();
+    final goals = await _repository.loadGoals();
+    final affirmations = await _repository.loadAffirmations();
 
     if (!mounted) return;
 
@@ -267,11 +373,15 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _state.protectionEnabled = settings.protectionEnabled;
       _attempts = attempts;
       _blockedDomains = blockedDomains;
+      _dailySummaries = dailySummaries;
+      _goals = goals;
+      _affirmations = affirmations;
       _selectedIndex = 0;
       _showIntervention = false;
       _showDebugCenter = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
+      _showGoalsAffirmations = false;
       _lastBlockedDecision = null;
     });
   }
@@ -285,6 +395,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showDebugCenter = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
+      _showGoalsAffirmations = false;
     });
 
     _repository
@@ -310,6 +421,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showDebugCenter = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
+      _showGoalsAffirmations = false;
     });
   }
 
@@ -359,6 +471,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       _showDebugCenter = false;
       _showProtectionDatabase = false;
       _showDailyHistory = false;
+      _showGoalsAffirmations = false;
       _selectedIndex = 2;
     });
 
@@ -421,6 +534,28 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
       );
     }
 
+    if (_showGoalsAffirmations) {
+      return Scaffold(
+        body: SafeArea(
+          child: GoalsAffirmationsScreen(
+            goals: _goals,
+            affirmations: _affirmations,
+            onBack: _closeGoalsAffirmations,
+            onAddGoal: _addGoal,
+            onDeleteGoal: _deleteGoal,
+            onAddAffirmation: _addAffirmation,
+            onDeleteAffirmation: _deleteAffirmation,
+            onSetFavoriteAffirmation: _setFavoriteAffirmation,
+            onRefresh: _refreshGoalsAffirmations,
+          ),
+        ),
+        bottomNavigationBar: FocusShieldBottomNav(
+          currentIndex: _selectedIndex,
+          onTap: _goTo,
+        ),
+      );
+    }
+
     if (_showDailyHistory) {
       return Scaffold(
         body: SafeArea(
@@ -477,6 +612,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     final screens = [
       HomeScreen(
         state: _state,
+        goals: _goals,
+        primaryAffirmation: _primaryAffirmation,
         onNavigate: _goTo,
         onListeningWin: _logListeningWin,
       ),
@@ -509,6 +646,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
         state: _state,
         onToggleProtection: _toggleProtection,
         onOpenProtectionDatabase: _openProtectionDatabase,
+        onOpenGoalsAffirmations: _openGoalsAffirmations,
         onOpenDebugCenter: _openDebugCenter,
         onResetAppData: _resetAppData,
       ),
@@ -519,6 +657,8 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
         child: _showIntervention
             ? InterventionScreen(
                 state: _state,
+                goals: _goals,
+                primaryAffirmation: _primaryAffirmation,
                 decision: _lastBlockedDecision,
                 onNavigate: _goTo,
                 onRecovered: _markRecovered,

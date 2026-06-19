@@ -12,6 +12,7 @@ class SettingsScreen extends StatelessWidget {
     required this.state,
     required this.onToggleProtection,
     required this.onOpenProtectionDatabase,
+    required this.onOpenGoalsAffirmations,
     required this.onOpenDebugCenter,
     required this.onResetAppData,
   });
@@ -19,6 +20,7 @@ class SettingsScreen extends StatelessWidget {
   final FocusShieldState state;
   final VoidCallback onToggleProtection;
   final VoidCallback onOpenProtectionDatabase;
+  final VoidCallback onOpenGoalsAffirmations;
   final VoidCallback onOpenDebugCenter;
   final VoidCallback onResetAppData;
 
@@ -58,6 +60,12 @@ class SettingsScreen extends StatelessWidget {
                 label: 'Protection Database',
                 subtitle: 'Manage saved blocklist',
                 onPressed: onOpenProtectionDatabase,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Goals & Affirmations',
+                subtitle: 'Manage personal discipline system',
+                onPressed: onOpenGoalsAffirmations,
               ),
               const SizedBox(height: 10),
               ActionButton(label: 'URL Analysis Engine', onPressed: () {}),

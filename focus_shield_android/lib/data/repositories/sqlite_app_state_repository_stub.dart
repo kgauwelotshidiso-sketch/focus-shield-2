@@ -1,8 +1,10 @@
+import '../../domain/models/affirmation.dart';
 import '../../domain/models/app_snapshot.dart';
 import '../../domain/models/attempt_record.dart';
 import '../../domain/models/blocked_domain.dart';
 import '../../domain/models/daily_summary.dart';
 import '../../domain/models/focus_shield_state.dart';
+import '../../domain/models/goal.dart';
 import '../../domain/models/settings_record.dart';
 import '../../domain/repositories/app_state_repository.dart';
 
@@ -71,6 +73,36 @@ class SqliteAppStateRepositoryStub implements AppStateRepository {
 
   @override
   Future<List<DailySummary>> loadDailySummaries() {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<List<Goal>> loadGoals() {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<void> saveGoal(Goal goal) {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<void> deleteGoal(int id) {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<List<Affirmation>> loadAffirmations() {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<void> saveAffirmation(Affirmation affirmation) {
+    throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
+  }
+
+  @override
+  Future<void> deleteAffirmation(int id) {
     throw UnimplementedError('SQLite repository is connected in sqlite_app_state_repository.dart.');
   }
 

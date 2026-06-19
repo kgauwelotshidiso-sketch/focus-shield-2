@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
+import '../../domain/models/goal.dart';
 import '../../domain/services/protection_engine.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
@@ -12,6 +13,8 @@ class InterventionScreen extends StatelessWidget {
   const InterventionScreen({
     super.key,
     required this.state,
+    required this.goals,
+    required this.primaryAffirmation,
     required this.decision,
     required this.onNavigate,
     required this.onRecovered,
@@ -19,6 +22,8 @@ class InterventionScreen extends StatelessWidget {
   });
 
   final FocusShieldState state;
+  final List<Goal> goals;
+  final String primaryAffirmation;
   final ProtectionDecision? decision;
   final ValueChanged<int> onNavigate;
   final VoidCallback onRecovered;
@@ -43,9 +48,7 @@ class InterventionScreen extends StatelessWidget {
             children: [
               Text(
                 '⚠ Temptation Detected',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.danger,
-                    ),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.danger),
               ),
               const SizedBox(height: 8),
               const Text('Focus Shield blocked a risk signal before it pulled you away from your goals.'),
@@ -70,10 +73,29 @@ class InterventionScreen extends StatelessWidget {
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: Text(
-            '“${AppConstants.affirmation}”',
+            '“$primaryAffirmation”',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.lightBlueAccent,
                 ),
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Remember Your Goals'),
+              const SizedBox(height: 8),
+              if (goals.isEmpty)
+                const Text('No goals saved yet.')
+              else
+                ...goals.take(3).map(
+                      (goal) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text('• ${goal.title}'),
+                      ),
+                    ),
+            ],
           ),
         ),
         ShieldCard(

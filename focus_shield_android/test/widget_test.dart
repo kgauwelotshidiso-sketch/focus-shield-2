@@ -151,6 +151,34 @@ void main() {
     expect(find.text('Recovered'), findsWidgets);
   });
 
+  testWidgets('Goals and affirmations manager adds custom items', (tester) async {
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Goals & Affirmations'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Goals & Affirmations'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('goalTitleInput')), 'Custom discipline goal');
+    await tester.enterText(find.byKey(const Key('goalDescriptionInput')), 'Stay consistent.');
+    await tester.tap(find.text('Add Goal'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Custom discipline goal'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('affirmationInput')), 'I return to my goals immediately.');
+    await tester.tap(find.text('Add Affirmation'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('I return to my goals immediately.'), findsOneWidget);
+  });
+
   testWidgets('Protection database manager adds custom blocked domain', (tester) async {
     await tester.pumpWidget(
       FocusShieldApp(repository: InMemoryAppStateRepository()),
