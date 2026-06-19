@@ -10,6 +10,9 @@ class ProtectionStatus {
     required this.packetLoopPrepared,
     required this.packetLoopRunning,
     required this.packetsObserved,
+    required this.dnsParserPrepared,
+    required this.dnsQueriesParsed,
+    required this.lastParsedHostname,
     required this.blocklistError,
   });
 
@@ -21,6 +24,9 @@ class ProtectionStatus {
   final bool packetLoopPrepared;
   final bool packetLoopRunning;
   final int packetsObserved;
+  final bool dnsParserPrepared;
+  final int dnsQueriesParsed;
+  final String lastParsedHostname;
   final String blocklistError;
 
   factory ProtectionStatus.fromMap(Map<Object?, Object?>? map) {
@@ -34,6 +40,9 @@ class ProtectionStatus {
         packetLoopPrepared: false,
         packetLoopRunning: false,
         packetsObserved: 0,
+        dnsParserPrepared: false,
+        dnsQueriesParsed: 0,
+        lastParsedHostname: '',
         blocklistError: '',
       );
     }
@@ -47,6 +56,9 @@ class ProtectionStatus {
       packetLoopPrepared: map['packetLoopPrepared'] == true,
       packetLoopRunning: map['packetLoopRunning'] == true,
       packetsObserved: _readInt(map['packetsObserved']),
+      dnsParserPrepared: map['dnsParserPrepared'] == true,
+      dnsQueriesParsed: _readInt(map['dnsQueriesParsed']),
+      lastParsedHostname: _readString(map['lastParsedHostname']),
       blocklistError: _readString(map['blocklistError']),
     );
   }

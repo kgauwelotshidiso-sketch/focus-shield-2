@@ -32,6 +32,10 @@ Status: COMPLETE
 
 Status: COMPLETE
 
+## Phase 3.7 — DNS Packet Parser Preparation
+
+Status: COMPLETE
+
 ## Next
 
-Phase 3.7 — DNS Packet Parser Preparation
+Phase 3.8 — Connect Parser to Packet Loop in Safe Dry-Run Mode

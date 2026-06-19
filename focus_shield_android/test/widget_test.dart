@@ -17,6 +17,15 @@ void main() {
                 'vpnActive': false,
                 'blocklistLoaded': true,
                 'blockedDomainCount': 0,
+                'nativeDnsReady': false,
+                'nativeLoadedDomainCount': 0,
+                'packetLoopPrepared': true,
+                'packetLoopRunning': false,
+                'packetsObserved': 0,
+                'dnsParserPrepared': true,
+                'dnsQueriesParsed': 0,
+                'lastParsedHostname': '',
+                'blocklistError': '',
               };
             case 'startProtection':
               return 'started';

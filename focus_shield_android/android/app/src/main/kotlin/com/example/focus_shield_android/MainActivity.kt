@@ -69,6 +69,9 @@ class MainActivity : FlutterActivity() {
                 "packetLoopPrepared" to FocusShieldVpnService.packetLoopPrepared,
                 "packetLoopRunning" to FocusShieldVpnService.packetLoopRunning,
                 "packetsObserved" to FocusShieldVpnService.packetsObserved,
+                "dnsParserPrepared" to FocusShieldVpnService.dnsParserPrepared,
+                "dnsQueriesParsed" to FocusShieldVpnService.dnsQueriesParsed,
+                "lastParsedHostname" to FocusShieldVpnService.lastParsedHostname,
                 "blocklistError" to (blocklistStatus.error ?: "")
             )
         )

@@ -27,11 +27,21 @@ class FocusShieldVpnService : VpnService() {
 
         var packetsObserved: Long = 0
             private set
+
+        var dnsParserPrepared: Boolean = false
+            private set
+
+        var dnsQueriesParsed: Long = 0
+            private set
+
+        var lastParsedHostname: String = ""
+            private set
     }
 
     private var vpnInterface: ParcelFileDescriptor? = null
     private lateinit var blocklistStore: FocusShieldBlocklistStore
     private val dnsFilter = FocusShieldDnsFilter()
+    private val dnsPacketParser = FocusShieldDnsPacketParser()
     private val packetLoop = FocusShieldVpnPacketLoop()
 
     override fun onCreate() {
@@ -39,7 +49,7 @@ class FocusShieldVpnService : VpnService() {
         blocklistStore = FocusShieldBlocklistStore(applicationContext)
         packetLoop.prepare()
         reloadBlocklist()
-        updatePacketLoopStatus()
+        updateNativeStatus()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,7 +68,7 @@ class FocusShieldVpnService : VpnService() {
         if (vpnInterface != null) {
             isRunning = true
             packetLoop.start(vpnInterface, liveReadEnabled = false)
-            updatePacketLoopStatus()
+            updateNativeStatus()
             return
         }
 
@@ -71,12 +81,12 @@ class FocusShieldVpnService : VpnService() {
         isRunning = vpnInterface != null
 
         packetLoop.start(vpnInterface, liveReadEnabled = false)
-        updatePacketLoopStatus()
+        updateNativeStatus()
     }
 
     private fun stopProtection() {
         packetLoop.stop()
-        updatePacketLoopStatus()
+        updateNativeStatus()
 
         vpnInterface?.close()
         vpnInterface = null
@@ -95,17 +105,27 @@ class FocusShieldVpnService : VpnService() {
 
         nativeBlockedDomainCount = dnsFilter.blockedDomainCount()
         dnsFilteringReady = dnsFilter.hasBlocklist()
-        updatePacketLoopStatus()
+        updateNativeStatus()
     }
 
-    private fun updatePacketLoopStatus() {
+    private fun updateNativeStatus() {
         packetLoopPrepared = packetLoop.prepared
         packetLoopRunning = packetLoop.running
         packetsObserved = packetLoop.packetsObserved
+
+        dnsParserPrepared = dnsPacketParser.prepared
+        dnsQueriesParsed = dnsPacketParser.parsedQueries
+        lastParsedHostname = dnsPacketParser.lastHostname
     }
 
     fun shouldBlockDomainForTestOnly(hostname: String): Boolean {
         return dnsFilter.shouldBlock(hostname)
+    }
+
+    fun parseDnsPacketForTestOnly(packet: ByteArray, length: Int): FocusShieldDnsParseResult {
+        val result = dnsPacketParser.parseQueryHostname(packet, length)
+        updateNativeStatus()
+        return result
     }
 
     override fun onDestroy() {

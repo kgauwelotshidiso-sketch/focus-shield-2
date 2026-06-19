@@ -23,6 +23,9 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
     packetLoopPrepared: false,
     packetLoopRunning: false,
     packetsObserved: 0,
+    dnsParserPrepared: false,
+    dnsQueriesParsed: 0,
+    lastParsedHostname: '',
     blocklistError: '',
   );
 
@@ -117,6 +120,7 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final blocklistError = _status.blocklistError;
+    final lastParsedHostname = _status.lastParsedHostname;
 
     return Card(
       child: Padding(
@@ -161,6 +165,16 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
               label: 'Packets observed',
               value: _status.packetsObserved.toString(),
             ),
+            _StatusRow(
+              label: 'DNS parser',
+              value: _status.dnsParserPrepared ? 'Prepared' : 'Not prepared',
+            ),
+            _StatusRow(
+              label: 'DNS queries parsed',
+              value: _status.dnsQueriesParsed.toString(),
+            ),
+            if (lastParsedHostname.isNotEmpty)
+              _StatusRow(label: 'Last parsed host', value: lastParsedHostname),
             if (blocklistError.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text('Blocklist note: $blocklistError'),
@@ -220,7 +234,13 @@ class _StatusRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(child: Text(label)),
-          Text(value, style: Theme.of(context).textTheme.titleSmall),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
         ],
       ),
     );
