@@ -1,6 +1,6 @@
 class DatabaseContract {
   static const databaseName = 'focus_shield.db';
-  static const databaseVersion = 1;
+  static const databaseVersion = 2;
 
   static const tableAppState = 'app_state';
   static const tableBlockedAttempts = 'blocked_attempts';

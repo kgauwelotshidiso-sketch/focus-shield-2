@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS app_state (
   protection_enabled INTEGER NOT NULL DEFAULT 1,
   morning_command_set INTEGER NOT NULL DEFAULT 0,
   end_reviews_today INTEGER NOT NULL DEFAULT 0,
+  last_active_date TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 ''',
@@ -65,7 +66,7 @@ CREATE TABLE IF NOT EXISTS blocked_domains (
   ];
 
   static const schema = '''
-Focus Shield SQLite schema version 1.
+Focus Shield SQLite schema version 2.
 
 Tables:
 - app_state
@@ -74,5 +75,8 @@ Tables:
 - goals
 - affirmations
 - blocked_domains
+
+Version 2 adds:
+- app_state.last_active_date
 ''';
 }

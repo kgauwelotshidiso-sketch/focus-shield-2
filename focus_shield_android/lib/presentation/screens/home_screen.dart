@@ -27,6 +27,7 @@ class HomeScreen extends StatelessWidget {
         Text(AppConstants.appName, style: Theme.of(context).textTheme.headlineLarge),
         const SizedBox(height: 4),
         const Text('Discipline + protection dashboard'),
+        Text('Active day: ${state.lastActiveDate}'),
         const SizedBox(height: 18),
         ShieldCard(
           child: Column(

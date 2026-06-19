@@ -18,6 +18,7 @@ void main() {
     expect(map['protection_enabled'], 0);
     expect(restored.xp, 90);
     expect(restored.protectionEnabled, false);
+    expect(map['last_active_date'], state.lastActiveDate);
   });
 
   test('AttemptRecordMapper maps attempt to database format', () {

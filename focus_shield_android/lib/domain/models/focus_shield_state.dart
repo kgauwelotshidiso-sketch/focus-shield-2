@@ -1,3 +1,5 @@
+import '../../core/utils/date_key.dart';
+
 class FocusShieldState {
   FocusShieldState({
     required this.listeningWinsToday,
@@ -11,6 +13,7 @@ class FocusShieldState {
     required this.protectionEnabled,
     required this.morningCommandSet,
     required this.endReviewsToday,
+    required this.lastActiveDate,
   });
 
   factory FocusShieldState.initial() {
@@ -26,6 +29,7 @@ class FocusShieldState {
       protectionEnabled: true,
       morningCommandSet: false,
       endReviewsToday: 0,
+      lastActiveDate: DateKey.today(),
     );
   }
 
@@ -42,6 +46,7 @@ class FocusShieldState {
       protectionEnabled: (map['protectionEnabled'] as bool?) ?? true,
       morningCommandSet: (map['morningCommandSet'] as bool?) ?? false,
       endReviewsToday: (map['endReviewsToday'] as int?) ?? 0,
+      lastActiveDate: (map['lastActiveDate'] as String?) ?? DateKey.today(),
     );
   }
 
@@ -56,6 +61,7 @@ class FocusShieldState {
   bool protectionEnabled;
   bool morningCommandSet;
   int endReviewsToday;
+  String lastActiveDate;
 
   int get level => (xp ~/ 100) + 1;
 
@@ -78,11 +84,30 @@ class FocusShieldState {
     final morningScore = morningCommandSet ? 25 : 0;
     final missionPart = (missionScore * 0.35).round();
     final recoveryPart = (recoveryRate * 0.25).round();
-    final activityPart = ((focusSessionsToday + reflectionsToday + concentrationWinsToday) * 10).clamp(0, 15);
+    final activityPart =
+        ((focusSessionsToday + reflectionsToday + concentrationWinsToday) * 10).clamp(0, 15);
     return (morningScore + missionPart + recoveryPart + activityPart).clamp(0, 100);
   }
 
   bool get missionComplete => listeningWinsToday >= missionTarget;
+
+  bool applyDailyResetIfNeeded({DateTime? now}) {
+    final todayKey = DateKey.today(now);
+
+    if (lastActiveDate == todayKey) {
+      return false;
+    }
+
+    listeningWinsToday = 0;
+    focusSessionsToday = 0;
+    reflectionsToday = 0;
+    concentrationWinsToday = 0;
+    morningCommandSet = false;
+    endReviewsToday = 0;
+    lastActiveDate = todayKey;
+
+    return true;
+  }
 
   FocusShieldState copy() {
     return FocusShieldState(
@@ -97,6 +122,7 @@ class FocusShieldState {
       protectionEnabled: protectionEnabled,
       morningCommandSet: morningCommandSet,
       endReviewsToday: endReviewsToday,
+      lastActiveDate: lastActiveDate,
     );
   }
 
@@ -113,6 +139,7 @@ class FocusShieldState {
       'protectionEnabled': protectionEnabled,
       'morningCommandSet': morningCommandSet,
       'endReviewsToday': endReviewsToday,
+      'lastActiveDate': lastActiveDate,
       'level': level,
       'recoveryRate': recoveryRate,
       'coachScore': coachScore,

@@ -99,6 +99,7 @@ class _DebugCenterScreenState extends State<DebugCenterScreen> {
           ],
         ),
         const Text('Attempt history, recovery intelligence, and SQLite tools'),
+        Text('Active day: ${widget.state.lastActiveDate}'),
         const SizedBox(height: 18),
         ShieldCard(
           borderColor: AppTheme.secondary,

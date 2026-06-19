@@ -79,13 +79,20 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
 
     if (!mounted) return;
 
+    final loadedState = snapshot.state;
+    loadedState.protectionEnabled = settings.protectionEnabled;
+    final dailyResetApplied = loadedState.applyDailyResetIfNeeded();
+
     setState(() {
-      _state = snapshot.state;
-      _state.protectionEnabled = settings.protectionEnabled;
+      _state = loadedState;
       _attempts = attempts;
       _blockedDomains = blockedDomains;
       _loading = false;
     });
+
+    if (dailyResetApplied) {
+      _persistState();
+    }
   }
 
   Future<void> _refreshAttempts() async {

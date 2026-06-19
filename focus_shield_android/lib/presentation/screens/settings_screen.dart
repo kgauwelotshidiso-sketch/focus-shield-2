@@ -29,6 +29,7 @@ class SettingsScreen extends StatelessWidget {
       children: [
         Text('Settings', style: Theme.of(context).textTheme.headlineLarge),
         const Text('Protection control center'),
+        Text('Active day: ${state.lastActiveDate}'),
         const SizedBox(height: 18),
         ShieldCard(
           child: StatGrid(

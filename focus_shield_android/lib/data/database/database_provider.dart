@@ -38,12 +38,15 @@ class DatabaseProvider {
       options: sqflite.OpenDatabaseOptions(
         version: DatabaseContract.databaseVersion,
         onCreate: (db, version) async {
-          for (final statement in DatabaseMigrations.migrationScriptsForVersion(version)) {
+          for (final statement in DatabaseMigrations.creationScripts()) {
             await db.execute(statement);
           }
         },
         onUpgrade: (db, oldVersion, newVersion) async {
-          for (final statement in DatabaseMigrations.migrationScriptsForVersion(newVersion)) {
+          for (final statement in DatabaseMigrations.upgradeScripts(
+            oldVersion: oldVersion,
+            newVersion: newVersion,
+          )) {
             await db.execute(statement);
           }
         },

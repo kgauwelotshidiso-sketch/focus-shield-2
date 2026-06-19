@@ -1,3 +1,4 @@
+import '../../core/utils/date_key.dart';
 import '../../domain/models/focus_shield_state.dart';
 
 class FocusShieldStateMapper {
@@ -15,6 +16,7 @@ class FocusShieldStateMapper {
       'protection_enabled': state.protectionEnabled ? 1 : 0,
       'morning_command_set': state.morningCommandSet ? 1 : 0,
       'end_reviews_today': state.endReviewsToday,
+      'last_active_date': state.lastActiveDate,
       'updated_at': DateTime.now().toIso8601String(),
     };
   }
@@ -32,6 +34,7 @@ class FocusShieldStateMapper {
       protectionEnabled: ((map['protection_enabled'] as int?) ?? 1) == 1,
       morningCommandSet: ((map['morning_command_set'] as int?) ?? 0) == 1,
       endReviewsToday: (map['end_reviews_today'] as int?) ?? 0,
+      lastActiveDate: (map['last_active_date'] as String?) ?? DateKey.today(),
     );
   }
 }
