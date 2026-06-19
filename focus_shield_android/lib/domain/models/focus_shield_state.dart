@@ -29,6 +29,22 @@ class FocusShieldState {
     );
   }
 
+  factory FocusShieldState.fromMap(Map<String, Object?> map) {
+    return FocusShieldState(
+      listeningWinsToday: (map['listeningWinsToday'] as int?) ?? 0,
+      missionTarget: (map['missionTarget'] as int?) ?? 3,
+      xp: (map['xp'] as int?) ?? 45,
+      blockedAttempts: (map['blockedAttempts'] as int?) ?? 0,
+      recoveredAttempts: (map['recoveredAttempts'] as int?) ?? 0,
+      focusSessionsToday: (map['focusSessionsToday'] as int?) ?? 0,
+      reflectionsToday: (map['reflectionsToday'] as int?) ?? 0,
+      concentrationWinsToday: (map['concentrationWinsToday'] as int?) ?? 0,
+      protectionEnabled: (map['protectionEnabled'] as bool?) ?? true,
+      morningCommandSet: (map['morningCommandSet'] as bool?) ?? false,
+      endReviewsToday: (map['endReviewsToday'] as int?) ?? 0,
+    );
+  }
+
   int listeningWinsToday;
   int missionTarget;
   int xp;
@@ -67,4 +83,40 @@ class FocusShieldState {
   }
 
   bool get missionComplete => listeningWinsToday >= missionTarget;
+
+  FocusShieldState copy() {
+    return FocusShieldState(
+      listeningWinsToday: listeningWinsToday,
+      missionTarget: missionTarget,
+      xp: xp,
+      blockedAttempts: blockedAttempts,
+      recoveredAttempts: recoveredAttempts,
+      focusSessionsToday: focusSessionsToday,
+      reflectionsToday: reflectionsToday,
+      concentrationWinsToday: concentrationWinsToday,
+      protectionEnabled: protectionEnabled,
+      morningCommandSet: morningCommandSet,
+      endReviewsToday: endReviewsToday,
+    );
+  }
+
+  Map<String, Object?> toMap() {
+    return {
+      'listeningWinsToday': listeningWinsToday,
+      'missionTarget': missionTarget,
+      'xp': xp,
+      'blockedAttempts': blockedAttempts,
+      'recoveredAttempts': recoveredAttempts,
+      'focusSessionsToday': focusSessionsToday,
+      'reflectionsToday': reflectionsToday,
+      'concentrationWinsToday': concentrationWinsToday,
+      'protectionEnabled': protectionEnabled,
+      'morningCommandSet': morningCommandSet,
+      'endReviewsToday': endReviewsToday,
+      'level': level,
+      'recoveryRate': recoveryRate,
+      'coachScore': coachScore,
+      'missionComplete': missionComplete,
+    };
+  }
 }
