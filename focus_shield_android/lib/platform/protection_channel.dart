@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 
 class ProtectionStatus {
   const ProtectionStatus({
+    required this.nativeStatusVersion,
+    required this.protectionMode,
     required this.vpnActive,
     required this.blocklistLoaded,
     required this.blockedDomainCount,
@@ -16,9 +18,14 @@ class ProtectionStatus {
     required this.dryRunModeReady,
     required this.dryRunBlocksDetected,
     required this.lastDryRunDecision,
+    required this.liveTrafficReadEnabled,
+    required this.blockingEnabled,
+    required this.statusMessage,
     required this.blocklistError,
   });
 
+  final int nativeStatusVersion;
+  final String protectionMode;
   final bool vpnActive;
   final bool blocklistLoaded;
   final int blockedDomainCount;
@@ -33,11 +40,16 @@ class ProtectionStatus {
   final bool dryRunModeReady;
   final int dryRunBlocksDetected;
   final String lastDryRunDecision;
+  final bool liveTrafficReadEnabled;
+  final bool blockingEnabled;
+  final String statusMessage;
   final String blocklistError;
 
   factory ProtectionStatus.fromMap(Map<Object?, Object?>? map) {
     if (map == null) {
       return const ProtectionStatus(
+        nativeStatusVersion: 0,
+        protectionMode: 'unavailable',
         vpnActive: false,
         blocklistLoaded: false,
         blockedDomainCount: 0,
@@ -52,27 +64,43 @@ class ProtectionStatus {
         dryRunModeReady: false,
         dryRunBlocksDetected: 0,
         lastDryRunDecision: '',
+        liveTrafficReadEnabled: false,
+        blockingEnabled: false,
+        statusMessage: 'Native protection status is unavailable.',
         blocklistError: '',
       );
     }
 
     return ProtectionStatus(
-      vpnActive: map['vpnActive'] == true,
-      blocklistLoaded: map['blocklistLoaded'] == true,
+      nativeStatusVersion: _readInt(map['nativeStatusVersion']),
+      protectionMode: _readString(map['protectionMode']),
+      vpnActive: _readBool(map['vpnActive']),
+      blocklistLoaded: _readBool(map['blocklistLoaded']),
       blockedDomainCount: _readInt(map['blockedDomainCount']),
-      nativeDnsReady: map['nativeDnsReady'] == true,
+      nativeDnsReady: _readBool(map['nativeDnsReady']),
       nativeLoadedDomainCount: _readInt(map['nativeLoadedDomainCount']),
-      packetLoopPrepared: map['packetLoopPrepared'] == true,
-      packetLoopRunning: map['packetLoopRunning'] == true,
+      packetLoopPrepared: _readBool(map['packetLoopPrepared']),
+      packetLoopRunning: _readBool(map['packetLoopRunning']),
       packetsObserved: _readInt(map['packetsObserved']),
-      dnsParserPrepared: map['dnsParserPrepared'] == true,
+      dnsParserPrepared: _readBool(map['dnsParserPrepared']),
       dnsQueriesParsed: _readInt(map['dnsQueriesParsed']),
       lastParsedHostname: _readString(map['lastParsedHostname']),
-      dryRunModeReady: map['dryRunModeReady'] == true,
+      dryRunModeReady: _readBool(map['dryRunModeReady']),
       dryRunBlocksDetected: _readInt(map['dryRunBlocksDetected']),
       lastDryRunDecision: _readString(map['lastDryRunDecision']),
+      liveTrafficReadEnabled: _readBool(map['liveTrafficReadEnabled']),
+      blockingEnabled: _readBool(map['blockingEnabled']),
+      statusMessage: _readString(map['statusMessage']),
       blocklistError: _readString(map['blocklistError']),
     );
+  }
+
+  bool get isSafeMode {
+    return !liveTrafficReadEnabled && !blockingEnabled;
+  }
+
+  static bool _readBool(Object? value) {
+    return value == true;
   }
 
   static int _readInt(Object? value) {

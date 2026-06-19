@@ -13,6 +13,19 @@ class FocusShieldVpnService : VpnService() {
         var isRunning: Boolean = false
             private set
 
+        var protectionMode: String = "dry_run_prepared"
+            private set
+
+        var liveTrafficReadEnabled: Boolean = false
+            private set
+
+        var blockingEnabled: Boolean = false
+            private set
+
+        var statusMessage: String =
+            "Dry-run protection is prepared. Live traffic reading is disabled."
+            private set
+
         var dnsFilteringReady: Boolean = false
             private set
 
@@ -59,8 +72,13 @@ class FocusShieldVpnService : VpnService() {
     override fun onCreate() {
         super.onCreate()
         blocklistStore = FocusShieldBlocklistStore(applicationContext)
+        protectionMode = "dry_run_prepared"
+        liveTrafficReadEnabled = false
+        blockingEnabled = false
         packetLoop.prepare()
         reloadBlocklist()
+        statusMessage =
+            "Native protection is prepared in dry-run mode. Live traffic reading is disabled."
         updateNativeStatus()
     }
 
@@ -75,6 +93,10 @@ class FocusShieldVpnService : VpnService() {
     }
 
     private fun startProtection() {
+        protectionMode = "dry_run_prepared"
+        liveTrafficReadEnabled = false
+        blockingEnabled = false
+
         reloadBlocklist()
 
         if (vpnInterface != null) {
@@ -84,6 +106,8 @@ class FocusShieldVpnService : VpnService() {
                 liveReadEnabled = false,
                 dryRunModeEnabled = true
             )
+            statusMessage =
+                "VPN shell is active. Dry-run mode is prepared. Live traffic reading is disabled."
             updateNativeStatus()
             return
         }
@@ -101,6 +125,13 @@ class FocusShieldVpnService : VpnService() {
             liveReadEnabled = false,
             dryRunModeEnabled = true
         )
+
+        statusMessage = if (isRunning) {
+            "VPN shell started. Dry-run mode is prepared. Live traffic reading is disabled."
+        } else {
+            "VPN shell could not start. Android permission may still be required."
+        }
+
         updateNativeStatus()
     }
 
@@ -111,6 +142,10 @@ class FocusShieldVpnService : VpnService() {
         vpnInterface?.close()
         vpnInterface = null
         isRunning = false
+        liveTrafficReadEnabled = false
+        blockingEnabled = false
+        protectionMode = "stopped"
+        statusMessage = "Native protection is stopped."
         stopSelf()
     }
 
@@ -125,6 +160,15 @@ class FocusShieldVpnService : VpnService() {
 
         nativeBlockedDomainCount = dnsFilter.blockedDomainCount()
         dnsFilteringReady = dnsFilter.hasBlocklist()
+
+        if (dnsFilteringReady) {
+            statusMessage =
+                "Blocklist loaded. Dry-run protection is prepared, but live traffic reading is disabled."
+        } else {
+            statusMessage =
+                "No native blocked domains are loaded yet. Dry-run protection is waiting for blocklist data."
+        }
+
         updateNativeStatus()
     }
 

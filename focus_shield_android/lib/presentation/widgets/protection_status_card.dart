@@ -15,6 +15,8 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
   late final ProtectionChannel _protectionChannel;
 
   ProtectionStatus _status = const ProtectionStatus(
+    nativeStatusVersion: 0,
+    protectionMode: 'unavailable',
     vpnActive: false,
     blocklistLoaded: false,
     blockedDomainCount: 0,
@@ -29,6 +31,9 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
     dryRunModeReady: false,
     dryRunBlocksDetected: 0,
     lastDryRunDecision: '',
+    liveTrafficReadEnabled: false,
+    blockingEnabled: false,
+    statusMessage: 'Native protection status is unavailable.',
     blocklistError: '',
   );
 
@@ -135,10 +140,29 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
             Text('Native Protection', style: theme.textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
-              'Android VPN filtering bridge status and controls.',
+              _status.statusMessage.isEmpty
+                  ? 'Android VPN filtering bridge status and controls.'
+                  : _status.statusMessage,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
+            _StatusRow(
+              label: 'Native status version',
+              value: _status.nativeStatusVersion.toString(),
+            ),
+            _StatusRow(label: 'Protection mode', value: _status.protectionMode),
+            _StatusRow(
+              label: 'Safe mode',
+              value: _status.isSafeMode ? 'On' : 'Off',
+            ),
+            _StatusRow(
+              label: 'Live traffic reading',
+              value: _status.liveTrafficReadEnabled ? 'Enabled' : 'Disabled',
+            ),
+            _StatusRow(
+              label: 'Blocking',
+              value: _status.blockingEnabled ? 'Enabled' : 'Disabled',
+            ),
             _StatusRow(
               label: 'VPN service',
               value: _status.vpnActive ? 'Active' : 'Inactive',

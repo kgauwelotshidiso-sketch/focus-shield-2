@@ -58,26 +58,9 @@ class MainActivity : FlutterActivity() {
 
     private fun protectionStatus(result: MethodChannel.Result) {
         val blocklistStatus = blocklistStore.status()
+        val nativeStatus = FocusShieldProtectionStatus.build(blocklistStatus)
 
-        result.success(
-            mapOf(
-                "vpnActive" to FocusShieldVpnService.isRunning,
-                "blocklistLoaded" to blocklistStatus.loaded,
-                "blockedDomainCount" to blocklistStatus.count,
-                "nativeDnsReady" to FocusShieldVpnService.dnsFilteringReady,
-                "nativeLoadedDomainCount" to FocusShieldVpnService.nativeBlockedDomainCount,
-                "packetLoopPrepared" to FocusShieldVpnService.packetLoopPrepared,
-                "packetLoopRunning" to FocusShieldVpnService.packetLoopRunning,
-                "packetsObserved" to FocusShieldVpnService.packetsObserved,
-                "dnsParserPrepared" to FocusShieldVpnService.dnsParserPrepared,
-                "dnsQueriesParsed" to FocusShieldVpnService.dnsQueriesParsed,
-                "lastParsedHostname" to FocusShieldVpnService.lastParsedHostname,
-                "dryRunModeReady" to FocusShieldVpnService.dryRunModeReady,
-                "dryRunBlocksDetected" to FocusShieldVpnService.dryRunBlocksDetected,
-                "lastDryRunDecision" to FocusShieldVpnService.lastDryRunDecision,
-                "blocklistError" to (blocklistStatus.error ?: "")
-            )
-        )
+        result.success(nativeStatus.toMap())
     }
 
     private fun reloadBlocklist(result: MethodChannel.Result) {

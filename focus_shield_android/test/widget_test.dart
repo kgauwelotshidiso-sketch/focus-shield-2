@@ -14,6 +14,8 @@ void main() {
           switch (call.method) {
             case 'protectionStatus':
               return <String, Object>{
+                'nativeStatusVersion': 1,
+                'protectionMode': 'dry_run_prepared',
                 'vpnActive': false,
                 'blocklistLoaded': true,
                 'blockedDomainCount': 0,
@@ -28,6 +30,9 @@ void main() {
                 'dryRunModeReady': true,
                 'dryRunBlocksDetected': 0,
                 'lastDryRunDecision': '',
+                'liveTrafficReadEnabled': false,
+                'blockingEnabled': false,
+                'statusMessage': 'Test native status ready.',
                 'blocklistError': '',
               };
             case 'startProtection':
