@@ -127,9 +127,9 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
       case 'permission_required':
         return 'Android VPN permission is required before protection can start.';
       case 'observation_prepared_locked':
-        return 'Observation toggle prepared, but safety gate remains locked.';
+        return 'Observation request prepared. Check the live status above; blocking remains disabled.';
       case 'observation_disabled':
-        return 'Live observation request disabled.';
+        return 'Live observation request cleared. Blocking remains disabled.';
       case 'vpn_settings_opened':
         return 'Android VPN settings opened.';
       case 'vpn_settings_unavailable':
