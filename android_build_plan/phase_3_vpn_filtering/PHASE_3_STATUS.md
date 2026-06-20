@@ -81,5 +81,8 @@ Status: COMPLETE
 ## Phase 3.24 — Real Device Native Status Verification
 Status: COMPLETE
 
+## Phase 3.25 — Real Device Stop and Restart Safety Test
+Status: COMPLETE
+
 ## Next
-Phase 3.25 — Real Device Stop and Restart Safety Test
+Phase 3.26 — Real Device Observation Button Safety Test
