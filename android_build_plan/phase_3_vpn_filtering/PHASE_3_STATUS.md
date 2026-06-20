@@ -117,5 +117,8 @@ Status: COMPLETE
 ## Phase 3.36 — Build APK and Real Device Message Verification
 Status: COMPLETE
 
+## Phase 3.37 — Live Observation Packet Counter Stability Test
+Status: COMPLETE
+
 ## Next
-Phase 3.37 — Live Observation Packet Counter Stability Test
+Phase 3.38 — Live Observation DNS Parser Stability Review
