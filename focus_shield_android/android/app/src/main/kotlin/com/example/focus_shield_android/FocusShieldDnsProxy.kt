@@ -37,6 +37,7 @@ object FocusShieldDnsProxy {
         prepared = true
         running = false
         mode = FocusShieldDnsProxyMode.DNS_PROXY_DIAGNOSTIC_ONLY
+        forwarder.prepareSkeletonOnly()
         lastDecision = "dns_proxy_diagnostic_skeleton_prepared_no_routing"
         lastError = ""
     }
@@ -45,6 +46,7 @@ object FocusShieldDnsProxy {
         prepared = true
         running = false
         mode = FocusShieldDnsProxyMode.DNS_PROXY_DIAGNOSTIC_ONLY
+        forwarder.prepareSkeletonOnly()
         lastDecision = forwarder.describe()
         lastError = ""
     }
