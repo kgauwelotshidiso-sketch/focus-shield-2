@@ -69,5 +69,14 @@ Status: COMPLETE
 ## Phase 3.21 — GitHub Actions APK Build Success
 Status: COMPLETE
 
+## Phase 3.22 — Real Device APK Install Checkpoint
+Status: COMPLETE
+
+## Phase 3.22C — VPN Permission Result and Settings Fallback
+Status: COMPLETE
+
+## Phase 3.23 — Real Device VPN Shell Activation Success
+Status: COMPLETE
+
 ## Next
-Phase 3.22 — Real Device APK Install Checklist
+Phase 3.24 — Real Device Native Status Verification
