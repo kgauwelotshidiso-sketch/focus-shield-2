@@ -96,5 +96,8 @@ Status: COMPLETE
 ## Phase 3.29 — Live Observation Risk Review and Unlock Criteria
 Status: COMPLETE
 
+## Phase 3.30 — Live Observation Code Gate Preparation
+Status: COMPLETE
+
 ## Next
-Phase 3.30 — Live Observation Code Gate Preparation
+Phase 3.31 — GitHub Actions Build and Real Device Gate Verification

@@ -2,56 +2,52 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_shield_android/platform/protection_channel.dart';
 
 void main() {
-  test(
-    'ProtectionStatus reads live observation toggle preparation status map',
-    () {
-      final status = ProtectionStatus.fromMap(<Object?, Object?>{
-        'nativeStatusVersion': 2,
+  test('ProtectionStatus reads locked live observation code gate map', () {
+    final status = ProtectionStatus.fromMap(
+      <Object?, Object?>{
+        'nativeStatusVersion': 3,
         'protectionMode': 'observation_prepared_locked',
         'vpnActive': true,
         'blocklistLoaded': true,
-        'blockedDomainCount': 4,
+        'blockedDomainCount': 3,
         'nativeDnsReady': true,
-        'nativeLoadedDomainCount': 4,
+        'nativeLoadedDomainCount': 3,
         'packetLoopPrepared': true,
         'packetLoopRunning': false,
-        'packetsObserved': 12,
+        'packetsObserved': 0,
         'dnsParserPrepared': true,
-        'dnsQueriesParsed': 3,
-        'lastParsedHostname': 'blocked-example.com',
+        'dnsQueriesParsed': 0,
+        'lastParsedHostname': '',
         'dryRunModeReady': true,
-        'dryRunBlocksDetected': 2,
-        'lastDryRunDecision': 'would_block:blocked-example.com',
+        'dryRunBlocksDetected': 0,
+        'lastDryRunDecision': '',
         'liveTrafficReadEnabled': false,
         'blockingEnabled': false,
         'liveObservationToggleAvailable': true,
         'liveObservationRequested': true,
-        'liveObservationSafetyGate': 'locked_until_android_sdk_testing',
-        'statusMessage': 'Observation requested but safety gate is locked.',
+        'liveObservationGateVersion': 1,
+        'liveObservationCodeGateReady': true,
+        'liveObservationCodeGateUnlocked': false,
+        'liveObservationSafetyGate':
+            'locked_until_live_observation_regression_tests_are_documented',
+        'liveObservationUnlockAttempts': 0,
+        'statusMessage': 'Live observation code gate remains locked.',
         'blocklistError': '',
-      });
+      },
+    );
 
-      expect(status.nativeStatusVersion, 2);
-      expect(status.protectionMode, 'observation_prepared_locked');
-      expect(status.vpnActive, true);
-      expect(status.blocklistLoaded, true);
-      expect(status.blockedDomainCount, 4);
-      expect(status.liveObservationToggleAvailable, true);
-      expect(status.liveObservationRequested, true);
-      expect(
-        status.liveObservationSafetyGate,
-        'locked_until_android_sdk_testing',
-      );
-      expect(status.observationLocked, true);
-      expect(status.liveTrafficReadEnabled, false);
-      expect(status.blockingEnabled, false);
-      expect(status.isSafeMode, true);
-      expect(
-        status.statusMessage,
-        'Observation requested but safety gate is locked.',
-      );
-    },
-  );
+    expect(status.nativeStatusVersion, 3);
+    expect(status.protectionMode, 'observation_prepared_locked');
+    expect(status.vpnActive, true);
+    expect(status.liveObservationGateVersion, 1);
+    expect(status.liveObservationCodeGateReady, true);
+    expect(status.liveObservationCodeGateUnlocked, false);
+    expect(status.liveObservationRequested, true);
+    expect(status.observationLocked, true);
+    expect(status.liveTrafficReadEnabled, false);
+    expect(status.blockingEnabled, false);
+    expect(status.isSafeMode, true);
+  });
 
   test('ProtectionStatus handles missing native map safely', () {
     final status = ProtectionStatus.fromMap(null);
@@ -61,6 +57,10 @@ void main() {
     expect(status.vpnActive, false);
     expect(status.liveObservationToggleAvailable, false);
     expect(status.liveObservationRequested, false);
+    expect(status.liveObservationGateVersion, 0);
+    expect(status.liveObservationCodeGateReady, false);
+    expect(status.liveObservationCodeGateUnlocked, false);
+    expect(status.liveObservationUnlockAttempts, 0);
     expect(status.liveTrafficReadEnabled, false);
     expect(status.blockingEnabled, false);
     expect(status.isSafeMode, true);

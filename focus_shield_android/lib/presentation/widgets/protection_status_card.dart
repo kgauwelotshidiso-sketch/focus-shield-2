@@ -35,7 +35,11 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
     blockingEnabled: false,
     liveObservationToggleAvailable: false,
     liveObservationRequested: false,
+    liveObservationGateVersion: 0,
+    liveObservationCodeGateReady: false,
+    liveObservationCodeGateUnlocked: false,
     liveObservationSafetyGate: '',
+    liveObservationUnlockAttempts: 0,
     statusMessage: 'Native protection status is unavailable.',
     blocklistError: '',
   );
@@ -179,6 +183,22 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
             _StatusRow(
               label: 'Observation safety gate',
               value: _status.observationLocked ? 'Locked' : 'Unlocked',
+            ),
+            _StatusRow(
+              label: 'Code gate ready',
+              value: _status.liveObservationCodeGateReady ? 'Yes' : 'No',
+            ),
+            _StatusRow(
+              label: 'Code gate unlocked',
+              value: _status.liveObservationCodeGateUnlocked ? 'Yes' : 'No',
+            ),
+            _StatusRow(
+              label: 'Gate version',
+              value: _status.liveObservationGateVersion.toString(),
+            ),
+            _StatusRow(
+              label: 'Unlock attempts',
+              value: _status.liveObservationUnlockAttempts.toString(),
             ),
             _StatusRow(
               label: 'Live traffic reading',

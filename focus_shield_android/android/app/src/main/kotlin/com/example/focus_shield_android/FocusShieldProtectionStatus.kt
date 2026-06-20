@@ -21,7 +21,11 @@ data class FocusShieldProtectionStatus(
     val blockingEnabled: Boolean,
     val liveObservationToggleAvailable: Boolean,
     val liveObservationRequested: Boolean,
+    val liveObservationGateVersion: Int,
+    val liveObservationCodeGateReady: Boolean,
+    val liveObservationCodeGateUnlocked: Boolean,
     val liveObservationSafetyGate: String,
+    val liveObservationUnlockAttempts: Int,
     val statusMessage: String,
     val blocklistError: String
 ) {
@@ -47,14 +51,18 @@ data class FocusShieldProtectionStatus(
             "blockingEnabled" to blockingEnabled,
             "liveObservationToggleAvailable" to liveObservationToggleAvailable,
             "liveObservationRequested" to liveObservationRequested,
+            "liveObservationGateVersion" to liveObservationGateVersion,
+            "liveObservationCodeGateReady" to liveObservationCodeGateReady,
+            "liveObservationCodeGateUnlocked" to liveObservationCodeGateUnlocked,
             "liveObservationSafetyGate" to liveObservationSafetyGate,
+            "liveObservationUnlockAttempts" to liveObservationUnlockAttempts,
             "statusMessage" to statusMessage,
             "blocklistError" to blocklistError
         )
     }
 
     companion object {
-        const val CURRENT_VERSION = 2
+        const val CURRENT_VERSION = 3
 
         fun build(blocklistStatus: FocusShieldBlocklistStatus): FocusShieldProtectionStatus {
             return FocusShieldProtectionStatus(
@@ -79,7 +87,14 @@ data class FocusShieldProtectionStatus(
                 liveObservationToggleAvailable =
                     FocusShieldVpnService.liveObservationToggleAvailable,
                 liveObservationRequested = FocusShieldVpnService.liveObservationRequested,
+                liveObservationGateVersion = FocusShieldVpnService.liveObservationGateVersion,
+                liveObservationCodeGateReady =
+                    FocusShieldVpnService.liveObservationCodeGateReady,
+                liveObservationCodeGateUnlocked =
+                    FocusShieldVpnService.liveObservationCodeGateUnlocked,
                 liveObservationSafetyGate = FocusShieldVpnService.liveObservationSafetyGate,
+                liveObservationUnlockAttempts =
+                    FocusShieldVpnService.liveObservationUnlockAttempts,
                 statusMessage = FocusShieldVpnService.statusMessage,
                 blocklistError = blocklistStatus.error ?: ""
             )

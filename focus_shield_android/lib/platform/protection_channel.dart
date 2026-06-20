@@ -22,7 +22,11 @@ class ProtectionStatus {
     required this.blockingEnabled,
     required this.liveObservationToggleAvailable,
     required this.liveObservationRequested,
+    required this.liveObservationGateVersion,
+    required this.liveObservationCodeGateReady,
+    required this.liveObservationCodeGateUnlocked,
     required this.liveObservationSafetyGate,
+    required this.liveObservationUnlockAttempts,
     required this.statusMessage,
     required this.blocklistError,
   });
@@ -47,7 +51,11 @@ class ProtectionStatus {
   final bool blockingEnabled;
   final bool liveObservationToggleAvailable;
   final bool liveObservationRequested;
+  final int liveObservationGateVersion;
+  final bool liveObservationCodeGateReady;
+  final bool liveObservationCodeGateUnlocked;
   final String liveObservationSafetyGate;
+  final int liveObservationUnlockAttempts;
   final String statusMessage;
   final String blocklistError;
 
@@ -74,7 +82,11 @@ class ProtectionStatus {
         blockingEnabled: false,
         liveObservationToggleAvailable: false,
         liveObservationRequested: false,
+        liveObservationGateVersion: 0,
+        liveObservationCodeGateReady: false,
+        liveObservationCodeGateUnlocked: false,
         liveObservationSafetyGate: '',
+        liveObservationUnlockAttempts: 0,
         statusMessage: 'Native protection status is unavailable.',
         blocklistError: '',
       );
@@ -103,7 +115,12 @@ class ProtectionStatus {
         map['liveObservationToggleAvailable'],
       ),
       liveObservationRequested: _readBool(map['liveObservationRequested']),
+      liveObservationGateVersion: _readInt(map['liveObservationGateVersion']),
+      liveObservationCodeGateReady: _readBool(map['liveObservationCodeGateReady']),
+      liveObservationCodeGateUnlocked:
+          _readBool(map['liveObservationCodeGateUnlocked']),
       liveObservationSafetyGate: _readString(map['liveObservationSafetyGate']),
+      liveObservationUnlockAttempts: _readInt(map['liveObservationUnlockAttempts']),
       statusMessage: _readString(map['statusMessage']),
       blocklistError: _readString(map['blocklistError']),
     );

@@ -14,7 +14,7 @@ void main() {
           switch (call.method) {
             case 'protectionStatus':
               return <String, Object>{
-                'nativeStatusVersion': 2,
+                'nativeStatusVersion': 3,
                 'protectionMode': 'dry_run_prepared',
                 'vpnActive': false,
                 'blocklistLoaded': true,
@@ -34,7 +34,12 @@ void main() {
                 'blockingEnabled': false,
                 'liveObservationToggleAvailable': true,
                 'liveObservationRequested': false,
-                'liveObservationSafetyGate': 'locked_until_android_sdk_testing',
+                'liveObservationGateVersion': 1,
+            'liveObservationCodeGateReady': true,
+            'liveObservationCodeGateUnlocked': false,
+            'liveObservationSafetyGate':
+                'locked_until_live_observation_regression_tests_are_documented',
+            'liveObservationUnlockAttempts': 0,
                 'statusMessage': 'Test native status ready.',
                 'blocklistError': '',
               };

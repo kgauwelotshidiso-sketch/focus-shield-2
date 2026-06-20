@@ -13,6 +13,8 @@ class FocusShieldVpnService : VpnService() {
             "focus_shield.action.PREPARE_LIVE_OBSERVATION"
         const val ACTION_DISABLE_LIVE_OBSERVATION =
             "focus_shield.action.DISABLE_LIVE_OBSERVATION"
+        const val ACTION_REQUEST_LIVE_OBSERVATION_UNLOCK =
+            "focus_shield.action.REQUEST_LIVE_OBSERVATION_UNLOCK"
 
         var isRunning: Boolean = false
             private set
@@ -32,8 +34,21 @@ class FocusShieldVpnService : VpnService() {
         var liveObservationRequested: Boolean = false
             private set
 
+        var liveObservationGateVersion: Int = FocusShieldLiveObservationGate.gateVersion
+            private set
+
+        var liveObservationCodeGateReady: Boolean = true
+            private set
+
+        var liveObservationCodeGateUnlocked: Boolean =
+            FocusShieldLiveObservationGate.canEnableLiveObservation()
+            private set
+
         var liveObservationSafetyGate: String =
-            "locked_until_android_sdk_testing"
+            FocusShieldLiveObservationGate.gateStatus()
+            private set
+
+        var liveObservationUnlockAttempts: Int = 0
             private set
 
         var statusMessage: String =
@@ -91,7 +106,7 @@ class FocusShieldVpnService : VpnService() {
         blockingEnabled = false
         liveObservationToggleAvailable = true
         liveObservationRequested = false
-        liveObservationSafetyGate = "locked_until_android_sdk_testing"
+        syncLiveObservationGate()
         packetLoop.prepare()
         reloadBlocklist()
         statusMessage =
@@ -105,6 +120,7 @@ class FocusShieldVpnService : VpnService() {
             ACTION_RELOAD_BLOCKLIST -> reloadBlocklist()
             ACTION_PREPARE_LIVE_OBSERVATION -> prepareLiveObservation()
             ACTION_DISABLE_LIVE_OBSERVATION -> disableLiveObservation()
+            ACTION_REQUEST_LIVE_OBSERVATION_UNLOCK -> requestLiveObservationUnlock()
             else -> startProtection()
         }
 
@@ -112,7 +128,12 @@ class FocusShieldVpnService : VpnService() {
     }
 
     private fun startProtection() {
-        protectionMode = "dry_run_prepared"
+        protectionMode = if (liveObservationRequested) {
+            "observation_prepared_locked"
+        } else {
+            "dry_run_prepared"
+        }
+
         liveTrafficReadEnabled = false
         blockingEnabled = false
 
@@ -157,18 +178,56 @@ class FocusShieldVpnService : VpnService() {
     private fun prepareLiveObservation() {
         liveObservationToggleAvailable = true
         liveObservationRequested = true
-        liveObservationSafetyGate = "locked_until_android_sdk_testing"
+        syncLiveObservationGate()
 
-        liveTrafficReadEnabled = false
-        blockingEnabled = false
-        protectionMode = "observation_prepared_locked"
-
-        statusMessage =
-            "Live observation was requested, but the safety gate is locked. Live traffic reading remains disabled until Android SDK testing is available."
+        if (FocusShieldLiveObservationGate.canEnableLiveObservation()) {
+            protectionMode = FocusShieldLiveObservationGate.allowedProtectionModeWhenUnlocked
+            liveTrafficReadEnabled = true
+            blockingEnabled = false
+            statusMessage =
+                "Live observation is enabled by code gate. Blocking remains disabled."
+        } else {
+            liveTrafficReadEnabled = false
+            blockingEnabled = false
+            protectionMode = "observation_prepared_locked"
+            statusMessage =
+                "Live observation was requested, but the safety gate is locked. Live traffic reading remains disabled."
+        }
 
         packetLoop.start(
             vpnInterface = vpnInterface,
-            liveReadEnabled = false,
+            liveReadEnabled = liveTrafficReadEnabled,
+            dryRunModeEnabled = true
+        )
+
+        updateNativeStatus()
+    }
+
+    private fun requestLiveObservationUnlock() {
+        liveObservationUnlockAttempts += 1
+        syncLiveObservationGate()
+
+        if (FocusShieldLiveObservationGate.canEnableLiveObservation()) {
+            liveTrafficReadEnabled = true
+            blockingEnabled = false
+            protectionMode = FocusShieldLiveObservationGate.allowedProtectionModeWhenUnlocked
+            statusMessage =
+                "Live observation code gate is unlocked. Blocking remains disabled."
+        } else {
+            liveTrafficReadEnabled = false
+            blockingEnabled = false
+            protectionMode = if (liveObservationRequested) {
+                "observation_prepared_locked"
+            } else {
+                "dry_run_prepared"
+            }
+            statusMessage =
+                "Live observation code gate remains locked. Live traffic reading and blocking remain disabled."
+        }
+
+        packetLoop.start(
+            vpnInterface = vpnInterface,
+            liveReadEnabled = liveTrafficReadEnabled,
             dryRunModeEnabled = true
         )
 
@@ -179,6 +238,8 @@ class FocusShieldVpnService : VpnService() {
         liveObservationRequested = false
         liveTrafficReadEnabled = false
         blockingEnabled = false
+        syncLiveObservationGate()
+
         protectionMode = if (isRunning) {
             "dry_run_prepared"
         } else {
@@ -207,6 +268,7 @@ class FocusShieldVpnService : VpnService() {
         liveTrafficReadEnabled = false
         blockingEnabled = false
         liveObservationRequested = false
+        syncLiveObservationGate()
         protectionMode = "stopped"
         statusMessage = "Native protection is stopped."
         stopSelf()
@@ -223,6 +285,7 @@ class FocusShieldVpnService : VpnService() {
 
         nativeBlockedDomainCount = dnsFilter.blockedDomainCount()
         dnsFilteringReady = dnsFilter.hasBlocklist()
+        syncLiveObservationGate()
 
         if (dnsFilteringReady) {
             statusMessage =
@@ -235,7 +298,17 @@ class FocusShieldVpnService : VpnService() {
         updateNativeStatus()
     }
 
+    private fun syncLiveObservationGate() {
+        liveObservationGateVersion = FocusShieldLiveObservationGate.gateVersion
+        liveObservationCodeGateReady = true
+        liveObservationCodeGateUnlocked =
+            FocusShieldLiveObservationGate.canEnableLiveObservation()
+        liveObservationSafetyGate = FocusShieldLiveObservationGate.gateStatus()
+    }
+
     private fun updateNativeStatus() {
+        syncLiveObservationGate()
+
         packetLoopPrepared = packetLoop.prepared
         packetLoopRunning = packetLoop.running
         packetsObserved = packetLoop.packetsObserved
