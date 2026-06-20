@@ -12,6 +12,15 @@ class ProtectionStatus {
     required this.packetLoopPrepared,
     required this.packetLoopRunning,
     required this.packetsObserved,
+    required this.ipPacketsObserved,
+    required this.udpPacketsObserved,
+    required this.tcpPacketsObserved,
+    required this.dnsCandidatePacketsObserved,
+    required this.dnsParseAttempts,
+    required this.dnsParseFailures,
+    required this.lastPacketProtocol,
+    required this.lastParserError,
+    required this.lastPacketSummary,
     required this.dnsParserPrepared,
     required this.dnsQueriesParsed,
     required this.lastParsedHostname,
@@ -41,6 +50,15 @@ class ProtectionStatus {
   final bool packetLoopPrepared;
   final bool packetLoopRunning;
   final int packetsObserved;
+  final int ipPacketsObserved;
+  final int udpPacketsObserved;
+  final int tcpPacketsObserved;
+  final int dnsCandidatePacketsObserved;
+  final int dnsParseAttempts;
+  final int dnsParseFailures;
+  final String lastPacketProtocol;
+  final String lastParserError;
+  final String lastPacketSummary;
   final bool dnsParserPrepared;
   final int dnsQueriesParsed;
   final String lastParsedHostname;
@@ -58,77 +76,6 @@ class ProtectionStatus {
   final int liveObservationUnlockAttempts;
   final String statusMessage;
   final String blocklistError;
-
-  factory ProtectionStatus.fromMap(Map<Object?, Object?>? map) {
-    if (map == null) {
-      return const ProtectionStatus(
-        nativeStatusVersion: 0,
-        protectionMode: 'unavailable',
-        vpnActive: false,
-        blocklistLoaded: false,
-        blockedDomainCount: 0,
-        nativeDnsReady: false,
-        nativeLoadedDomainCount: 0,
-        packetLoopPrepared: false,
-        packetLoopRunning: false,
-        packetsObserved: 0,
-        dnsParserPrepared: false,
-        dnsQueriesParsed: 0,
-        lastParsedHostname: '',
-        dryRunModeReady: false,
-        dryRunBlocksDetected: 0,
-        lastDryRunDecision: '',
-        liveTrafficReadEnabled: false,
-        blockingEnabled: false,
-        liveObservationToggleAvailable: false,
-        liveObservationRequested: false,
-        liveObservationGateVersion: 0,
-        liveObservationCodeGateReady: false,
-        liveObservationCodeGateUnlocked: false,
-        liveObservationSafetyGate: '',
-        liveObservationUnlockAttempts: 0,
-        statusMessage: 'Native protection status is unavailable.',
-        blocklistError: '',
-      );
-    }
-
-    return ProtectionStatus(
-      nativeStatusVersion: _readInt(map['nativeStatusVersion']),
-      protectionMode: _readString(map['protectionMode']),
-      vpnActive: _readBool(map['vpnActive']),
-      blocklistLoaded: _readBool(map['blocklistLoaded']),
-      blockedDomainCount: _readInt(map['blockedDomainCount']),
-      nativeDnsReady: _readBool(map['nativeDnsReady']),
-      nativeLoadedDomainCount: _readInt(map['nativeLoadedDomainCount']),
-      packetLoopPrepared: _readBool(map['packetLoopPrepared']),
-      packetLoopRunning: _readBool(map['packetLoopRunning']),
-      packetsObserved: _readInt(map['packetsObserved']),
-      dnsParserPrepared: _readBool(map['dnsParserPrepared']),
-      dnsQueriesParsed: _readInt(map['dnsQueriesParsed']),
-      lastParsedHostname: _readString(map['lastParsedHostname']),
-      dryRunModeReady: _readBool(map['dryRunModeReady']),
-      dryRunBlocksDetected: _readInt(map['dryRunBlocksDetected']),
-      lastDryRunDecision: _readString(map['lastDryRunDecision']),
-      liveTrafficReadEnabled: _readBool(map['liveTrafficReadEnabled']),
-      blockingEnabled: _readBool(map['blockingEnabled']),
-      liveObservationToggleAvailable: _readBool(
-        map['liveObservationToggleAvailable'],
-      ),
-      liveObservationRequested: _readBool(map['liveObservationRequested']),
-      liveObservationGateVersion: _readInt(map['liveObservationGateVersion']),
-      liveObservationCodeGateReady: _readBool(map['liveObservationCodeGateReady']),
-      liveObservationCodeGateUnlocked:
-          _readBool(map['liveObservationCodeGateUnlocked']),
-      liveObservationSafetyGate: _readString(map['liveObservationSafetyGate']),
-      liveObservationUnlockAttempts: _readInt(map['liveObservationUnlockAttempts']),
-      statusMessage: _readString(map['statusMessage']),
-      blocklistError: _readString(map['blocklistError']),
-    );
-  }
-
-  bool get isSafeMode {
-    return blockingEnabled == false;
-  }
 
   bool get observationLocked {
     final normalizedGate = liveObservationSafetyGate.trim().toLowerCase();
@@ -148,8 +95,99 @@ class ProtectionStatus {
     return normalizedGate.isNotEmpty;
   }
 
-  static bool _readBool(Object? value) {
-    return value == true;
+  bool get isSafeMode {
+    return blockingEnabled == false;
+  }
+
+  factory ProtectionStatus.fromMap(Object? raw) {
+    if (raw is! Map) {
+      return ProtectionStatus.unavailable();
+    }
+
+    return ProtectionStatus(
+      nativeStatusVersion: _readInt(raw['nativeStatusVersion']),
+      protectionMode: _readString(raw['protectionMode']),
+      vpnActive: _readBool(raw['vpnActive']),
+      blocklistLoaded: _readBool(raw['blocklistLoaded']),
+      blockedDomainCount: _readInt(raw['blockedDomainCount']),
+      nativeDnsReady: _readBool(raw['nativeDnsReady']),
+      nativeLoadedDomainCount: _readInt(raw['nativeLoadedDomainCount']),
+      packetLoopPrepared: _readBool(raw['packetLoopPrepared']),
+      packetLoopRunning: _readBool(raw['packetLoopRunning']),
+      packetsObserved: _readInt(raw['packetsObserved']),
+      ipPacketsObserved: _readInt(raw['ipPacketsObserved']),
+      udpPacketsObserved: _readInt(raw['udpPacketsObserved']),
+      tcpPacketsObserved: _readInt(raw['tcpPacketsObserved']),
+      dnsCandidatePacketsObserved:
+          _readInt(raw['dnsCandidatePacketsObserved']),
+      dnsParseAttempts: _readInt(raw['dnsParseAttempts']),
+      dnsParseFailures: _readInt(raw['dnsParseFailures']),
+      lastPacketProtocol: _readString(raw['lastPacketProtocol']),
+      lastParserError: _readString(raw['lastParserError']),
+      lastPacketSummary: _readString(raw['lastPacketSummary']),
+      dnsParserPrepared: _readBool(raw['dnsParserPrepared']),
+      dnsQueriesParsed: _readInt(raw['dnsQueriesParsed']),
+      lastParsedHostname: _readString(raw['lastParsedHostname']),
+      dryRunModeReady: _readBool(raw['dryRunModeReady']),
+      dryRunBlocksDetected: _readInt(raw['dryRunBlocksDetected']),
+      lastDryRunDecision: _readString(raw['lastDryRunDecision']),
+      liveTrafficReadEnabled: _readBool(raw['liveTrafficReadEnabled']),
+      blockingEnabled: _readBool(raw['blockingEnabled']),
+      liveObservationToggleAvailable:
+          _readBool(raw['liveObservationToggleAvailable']),
+      liveObservationRequested: _readBool(raw['liveObservationRequested']),
+      liveObservationGateVersion: _readInt(raw['liveObservationGateVersion']),
+      liveObservationCodeGateReady:
+          _readBool(raw['liveObservationCodeGateReady']),
+      liveObservationCodeGateUnlocked:
+          _readBool(raw['liveObservationCodeGateUnlocked']),
+      liveObservationSafetyGate: _readString(raw['liveObservationSafetyGate']),
+      liveObservationUnlockAttempts:
+          _readInt(raw['liveObservationUnlockAttempts']),
+      statusMessage: _readString(raw['statusMessage']),
+      blocklistError: _readString(raw['blocklistError']),
+    );
+  }
+
+  factory ProtectionStatus.unavailable() {
+    return const ProtectionStatus(
+      nativeStatusVersion: 0,
+      protectionMode: 'unavailable',
+      vpnActive: false,
+      blocklistLoaded: false,
+      blockedDomainCount: 0,
+      nativeDnsReady: false,
+      nativeLoadedDomainCount: 0,
+      packetLoopPrepared: false,
+      packetLoopRunning: false,
+      packetsObserved: 0,
+      ipPacketsObserved: 0,
+      udpPacketsObserved: 0,
+      tcpPacketsObserved: 0,
+      dnsCandidatePacketsObserved: 0,
+      dnsParseAttempts: 0,
+      dnsParseFailures: 0,
+      lastPacketProtocol: '',
+      lastParserError: '',
+      lastPacketSummary: '',
+      dnsParserPrepared: false,
+      dnsQueriesParsed: 0,
+      lastParsedHostname: '',
+      dryRunModeReady: false,
+      dryRunBlocksDetected: 0,
+      lastDryRunDecision: '',
+      liveTrafficReadEnabled: false,
+      blockingEnabled: false,
+      liveObservationToggleAvailable: false,
+      liveObservationRequested: false,
+      liveObservationGateVersion: 0,
+      liveObservationCodeGateReady: false,
+      liveObservationCodeGateUnlocked: false,
+      liveObservationSafetyGate: '',
+      liveObservationUnlockAttempts: 0,
+      statusMessage: 'Native protection status is unavailable.',
+      blocklistError: '',
+    );
   }
 
   static int _readInt(Object? value) {
@@ -161,63 +199,68 @@ class ProtectionStatus {
       return value.toInt();
     }
 
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+
     return 0;
   }
 
-  static String _readString(Object? value) {
-    if (value is String) {
+  static bool _readBool(Object? value) {
+    if (value is bool) {
       return value;
     }
 
-    return '';
+    if (value is String) {
+      return value.toLowerCase() == 'true';
+    }
+
+    return false;
+  }
+
+  static String _readString(Object? value) {
+    return value?.toString() ?? '';
   }
 }
 
 class ProtectionChannel {
-  ProtectionChannel({MethodChannel? channel})
-    : _channel = channel ?? const MethodChannel('focus_shield/protection');
-
-  final MethodChannel _channel;
+  static const MethodChannel _channel = MethodChannel('focus_shield/protection');
 
   Future<String> startProtection() async {
-    final response = await _channel.invokeMethod<String>('startProtection');
-    return response ?? 'unknown';
+    return _invokeString('startProtection');
   }
 
   Future<String> stopProtection() async {
-    final response = await _channel.invokeMethod<String>('stopProtection');
-    return response ?? 'unknown';
-  }
-
-  Future<String> reloadBlocklist() async {
-    final response = await _channel.invokeMethod<String>('reloadBlocklist');
-    return response ?? 'unknown';
-  }
-
-  Future<String> prepareLiveObservation() async {
-    final response = await _channel.invokeMethod<String>(
-      'prepareLiveObservation',
-    );
-    return response ?? 'unknown';
-  }
-
-  Future<String> disableLiveObservation() async {
-    final response = await _channel.invokeMethod<String>(
-      'disableLiveObservation',
-    );
-    return response ?? 'unknown';
-  }
-
-  Future<String> openVpnSettings() async {
-    final response = await _channel.invokeMethod<String>('openVpnSettings');
-    return response ?? 'unknown';
+    return _invokeString('stopProtection');
   }
 
   Future<ProtectionStatus> protectionStatus() async {
-    final response = await _channel.invokeMapMethod<Object?, Object?>(
-      'protectionStatus',
-    );
+    final result = await _channel.invokeMethod<Object?>('protectionStatus');
+    return ProtectionStatus.fromMap(result);
+  }
 
-    return ProtectionStatus.fromMap(response);
+  Future<String> reloadBlocklist() async {
+    return _invokeString('reloadBlocklist');
+  }
+
+  Future<String> prepareLiveObservation() async {
+    return _invokeString('prepareLiveObservation');
+  }
+
+  Future<String> disableLiveObservation() async {
+    return _invokeString('disableLiveObservation');
+  }
+
+  Future<String> openVpnSettings() async {
+    return _invokeString('openVpnSettings');
+  }
+
+  Future<String> requestLiveObservationUnlock() async {
+    return _invokeString('requestLiveObservationUnlock');
+  }
+
+  Future<String> _invokeString(String method) async {
+    final result = await _channel.invokeMethod<Object?>(method);
+    return result?.toString() ?? '';
   }
 }

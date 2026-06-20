@@ -70,6 +70,33 @@ class FocusShieldVpnService : VpnService() {
         var packetsObserved: Long = 0
             private set
 
+        var ipPacketsObserved: Long = 0
+            private set
+
+        var udpPacketsObserved: Long = 0
+            private set
+
+        var tcpPacketsObserved: Long = 0
+            private set
+
+        var dnsCandidatePacketsObserved: Long = 0
+            private set
+
+        var dnsParseAttempts: Long = 0
+            private set
+
+        var dnsParseFailures: Long = 0
+            private set
+
+        var lastPacketProtocol: String = ""
+            private set
+
+        var lastParserError: String = ""
+            private set
+
+        var lastPacketSummary: String = ""
+            private set
+
         var dnsParserPrepared: Boolean = false
             private set
 
@@ -312,6 +339,19 @@ class FocusShieldVpnService : VpnService() {
         packetLoopPrepared = packetLoop.prepared
         packetLoopRunning = packetLoop.running
         packetsObserved = packetLoop.packetsObserved
+        ipPacketsObserved = packetLoop.ipPacketsObserved
+        udpPacketsObserved = packetLoop.udpPacketsObserved
+        tcpPacketsObserved = packetLoop.tcpPacketsObserved
+        dnsCandidatePacketsObserved = packetLoop.dnsCandidatePacketsObserved
+        dnsParseAttempts = packetLoop.dnsParseAttempts
+        dnsParseFailures = packetLoop.dnsParseFailures
+        lastPacketProtocol = packetLoop.lastPacketProtocol
+        lastParserError = if (packetLoop.lastParserError.isNotBlank()) {
+            packetLoop.lastParserError
+        } else {
+            dnsPacketParser.lastParserError
+        }
+        lastPacketSummary = packetLoop.lastPacketSummary
 
         dnsParserPrepared = dnsPacketParser.prepared
         dnsQueriesParsed = dnsPacketParser.parsedQueries
