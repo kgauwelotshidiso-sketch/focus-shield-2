@@ -352,6 +352,10 @@ class ProtectionChannel {
     return _invokeString('openVpnSettings');
   }
 
+  Future<String> testDnsForwarder() async {
+    return _invokeString('testDnsForwarder');
+  }
+
   Future<String> requestLiveObservationUnlock() async {
     return _invokeString('requestLiveObservationUnlock');
   }

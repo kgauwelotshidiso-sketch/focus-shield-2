@@ -59,6 +59,10 @@ object FocusShieldDnsProxy {
         }
     }
 
+    fun runForwarderDiagnostic(): Boolean {
+        return forwarder.runSafeDiagnosticQuery()
+    }
+
     fun forwarderSnapshot(): FocusShieldDnsForwarderStatus {
         return forwarder.snapshot()
     }
