@@ -99,5 +99,8 @@ Status: COMPLETE
 ## Phase 3.30 — Live Observation Code Gate Preparation
 Status: COMPLETE
 
+## Phase 3.31 — GitHub Actions Build and Real Device Gate Verification
+Status: COMPLETE
+
 ## Next
-Phase 3.31 — GitHub Actions Build and Real Device Gate Verification
+Phase 3.32 — Live Observation Unlock Planning
