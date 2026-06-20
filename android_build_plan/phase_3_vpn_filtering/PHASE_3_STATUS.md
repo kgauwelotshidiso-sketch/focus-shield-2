@@ -102,5 +102,8 @@ Status: COMPLETE
 ## Phase 3.31 — GitHub Actions Build and Real Device Gate Verification
 Status: COMPLETE
 
+## Phase 3.32 — Live Observation Unlock Planning
+Status: COMPLETE
+
 ## Next
-Phase 3.32 — Live Observation Unlock Planning
+Phase 3.33 — Live Observation Unlock Patch Without Blocking
