@@ -93,5 +93,8 @@ Status: COMPLETE
 ## Phase 3.28 — Real Device Full Native Protection Regression Test
 Status: COMPLETE
 
+## Phase 3.29 — Live Observation Risk Review and Unlock Criteria
+Status: COMPLETE
+
 ## Next
-Phase 3.29 — Live Observation Risk Review and Unlock Criteria
+Phase 3.30 — Live Observation Code Gate Preparation
