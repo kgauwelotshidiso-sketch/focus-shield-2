@@ -21,13 +21,25 @@ class FocusShieldVpnPacketLoop(
     var ipPacketsObserved: Long = 0
         private set
 
+    var ipv6PacketsObserved: Long = 0
+        private set
+
     var udpPacketsObserved: Long = 0
+        private set
+
+    var ipv6UdpPacketsObserved: Long = 0
         private set
 
     var tcpPacketsObserved: Long = 0
         private set
 
+    var ipv6TcpPacketsObserved: Long = 0
+        private set
+
     var dnsCandidatePacketsObserved: Long = 0
+        private set
+
+    var ipv6DnsCandidatePacketsObserved: Long = 0
         private set
 
     var dnsParseAttempts: Long = 0
@@ -133,12 +145,17 @@ class FocusShieldVpnPacketLoop(
 
         val version = (packet[0].toInt() shr 4) and 0x0F
 
-        if (version != 4) {
-            lastPacketProtocol = "non_ipv4"
-            lastPacketSummary = "non_ipv4_packet_length_$length"
-            return
+        when (version) {
+            4 -> inspectIpv4Packet(packet, length)
+            6 -> inspectIpv6Packet(packet, length)
+            else -> {
+                lastPacketProtocol = "unknown_ip_version_$version"
+                lastPacketSummary = "unknown_ip_version_$$version" + "_length_$length"
+            }
         }
+    }
 
+    private fun inspectIpv4Packet(packet: ByteArray, length: Int) {
         if (length < 20) {
             lastPacketProtocol = "ipv4_short"
             lastPacketSummary = "ipv4_packet_too_short"
@@ -158,39 +175,101 @@ class FocusShieldVpnPacketLoop(
         val protocol = packet[9].toInt() and 0xFF
 
         when (protocol) {
-            17 -> inspectUdpPacket(packet, length, headerLength)
+            17 -> inspectUdpPacket(
+                packet = packet,
+                length = length,
+                transportOffset = headerLength,
+                isIpv6 = false
+            )
             6 -> {
                 tcpPacketsObserved += 1
-                lastPacketProtocol = "tcp"
-                lastPacketSummary = "tcp_packet_length_$length"
+                lastPacketProtocol = "ipv4_tcp"
+                lastPacketSummary = "ipv4_tcp_packet_length_$length"
             }
             else -> {
-                lastPacketProtocol = "ip_protocol_$protocol"
+                lastPacketProtocol = "ipv4_protocol_$protocol"
                 lastPacketSummary = "ipv4_packet_protocol_$protocol"
             }
         }
     }
 
-    private fun inspectUdpPacket(packet: ByteArray, length: Int, headerLength: Int) {
-        udpPacketsObserved += 1
+    private fun inspectIpv6Packet(packet: ByteArray, length: Int) {
+        if (length < 40) {
+            lastPacketProtocol = "ipv6_short"
+            lastPacketSummary = "ipv6_packet_too_short"
+            return
+        }
 
-        if (length < headerLength + 8) {
-            lastPacketProtocol = "udp_short"
+        ipv6PacketsObserved += 1
+
+        val nextHeader = packet[6].toInt() and 0xFF
+        val transportOffset = 40
+
+        when (nextHeader) {
+            17 -> inspectUdpPacket(
+                packet = packet,
+                length = length,
+                transportOffset = transportOffset,
+                isIpv6 = true
+            )
+            6 -> {
+                ipv6TcpPacketsObserved += 1
+                lastPacketProtocol = "ipv6_tcp"
+                lastPacketSummary = "ipv6_tcp_packet_length_$length"
+            }
+            58 -> {
+                lastPacketProtocol = "ipv6_icmpv6"
+                lastPacketSummary = "ipv6_icmpv6_packet_length_$length"
+            }
+            else -> {
+                lastPacketProtocol = "ipv6_next_header_$nextHeader"
+                lastPacketSummary = "ipv6_packet_next_header_$nextHeader"
+            }
+        }
+    }
+
+    private fun inspectUdpPacket(
+        packet: ByteArray,
+        length: Int,
+        transportOffset: Int,
+        isIpv6: Boolean
+    ) {
+        if (length < transportOffset + 8) {
+            lastPacketProtocol = if (isIpv6) "ipv6_udp_short" else "ipv4_udp_short"
             lastPacketSummary = "udp_packet_too_short"
             return
         }
 
-        val sourcePort = readUInt16(packet, headerLength)
-        val destinationPort = readUInt16(packet, headerLength + 2)
+        if (isIpv6) {
+            ipv6UdpPacketsObserved += 1
+        } else {
+            udpPacketsObserved += 1
+        }
 
-        lastPacketProtocol = "udp"
-        lastPacketSummary = "udp_src_$sourcePort" + "_dst_$destinationPort"
+        val sourcePort = readUInt16(packet, transportOffset)
+        val destinationPort = readUInt16(packet, transportOffset + 2)
+
+        lastPacketProtocol = if (isIpv6) "ipv6_udp" else "ipv4_udp"
+        lastPacketSummary = if (isIpv6) {
+            "ipv6_udp_src_$sourcePort" + "_dst_$destinationPort"
+        } else {
+            "ipv4_udp_src_$sourcePort" + "_dst_$destinationPort"
+        }
 
         if (sourcePort == 53 || destinationPort == 53) {
             dnsCandidatePacketsObserved += 1
+
+            if (isIpv6) {
+                ipv6DnsCandidatePacketsObserved += 1
+            }
+
             dnsParseAttempts += 1
-            lastPacketProtocol = "dns_candidate"
-            lastPacketSummary = "dns_candidate_src_$sourcePort" + "_dst_$destinationPort"
+            lastPacketProtocol = if (isIpv6) "ipv6_dns_candidate" else "ipv4_dns_candidate"
+            lastPacketSummary = if (isIpv6) {
+                "ipv6_dns_candidate_src_$sourcePort" + "_dst_$destinationPort"
+            } else {
+                "ipv4_dns_candidate_src_$sourcePort" + "_dst_$destinationPort"
+            }
 
             val result = dnsPacketParser.parseQueryHostname(packet.copyOf(length), length)
 

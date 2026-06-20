@@ -12,9 +12,13 @@ data class FocusShieldProtectionStatus(
     val packetLoopRunning: Boolean,
     val packetsObserved: Long,
     val ipPacketsObserved: Long,
+    val ipv6PacketsObserved: Long,
     val udpPacketsObserved: Long,
+    val ipv6UdpPacketsObserved: Long,
     val tcpPacketsObserved: Long,
+    val ipv6TcpPacketsObserved: Long,
     val dnsCandidatePacketsObserved: Long,
+    val ipv6DnsCandidatePacketsObserved: Long,
     val dnsParseAttempts: Long,
     val dnsParseFailures: Long,
     val lastPacketProtocol: String,
@@ -51,9 +55,13 @@ data class FocusShieldProtectionStatus(
             "packetLoopRunning" to packetLoopRunning,
             "packetsObserved" to packetsObserved,
             "ipPacketsObserved" to ipPacketsObserved,
+            "ipv6PacketsObserved" to ipv6PacketsObserved,
             "udpPacketsObserved" to udpPacketsObserved,
+            "ipv6UdpPacketsObserved" to ipv6UdpPacketsObserved,
             "tcpPacketsObserved" to tcpPacketsObserved,
+            "ipv6TcpPacketsObserved" to ipv6TcpPacketsObserved,
             "dnsCandidatePacketsObserved" to dnsCandidatePacketsObserved,
+            "ipv6DnsCandidatePacketsObserved" to ipv6DnsCandidatePacketsObserved,
             "dnsParseAttempts" to dnsParseAttempts,
             "dnsParseFailures" to dnsParseFailures,
             "lastPacketProtocol" to lastPacketProtocol,
@@ -80,7 +88,7 @@ data class FocusShieldProtectionStatus(
     }
 
     companion object {
-        const val CURRENT_VERSION = 4
+        const val CURRENT_VERSION = 5
 
         fun build(blocklistStatus: FocusShieldBlocklistStatus): FocusShieldProtectionStatus {
             return FocusShieldProtectionStatus(
@@ -95,10 +103,15 @@ data class FocusShieldProtectionStatus(
                 packetLoopRunning = FocusShieldVpnService.packetLoopRunning,
                 packetsObserved = FocusShieldVpnService.packetsObserved,
                 ipPacketsObserved = FocusShieldVpnService.ipPacketsObserved,
+                ipv6PacketsObserved = FocusShieldVpnService.ipv6PacketsObserved,
                 udpPacketsObserved = FocusShieldVpnService.udpPacketsObserved,
+                ipv6UdpPacketsObserved = FocusShieldVpnService.ipv6UdpPacketsObserved,
                 tcpPacketsObserved = FocusShieldVpnService.tcpPacketsObserved,
+                ipv6TcpPacketsObserved = FocusShieldVpnService.ipv6TcpPacketsObserved,
                 dnsCandidatePacketsObserved =
                     FocusShieldVpnService.dnsCandidatePacketsObserved,
+                ipv6DnsCandidatePacketsObserved =
+                    FocusShieldVpnService.ipv6DnsCandidatePacketsObserved,
                 dnsParseAttempts = FocusShieldVpnService.dnsParseAttempts,
                 dnsParseFailures = FocusShieldVpnService.dnsParseFailures,
                 lastPacketProtocol = FocusShieldVpnService.lastPacketProtocol,

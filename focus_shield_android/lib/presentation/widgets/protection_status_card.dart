@@ -252,20 +252,36 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
               value: _status.packetsObserved.toString(),
             ),
             _StatusRow(
-              label: 'IP packets observed',
+              label: 'IPv4 packets observed',
               value: _status.ipPacketsObserved.toString(),
             ),
             _StatusRow(
-              label: 'UDP packets observed',
+              label: 'IPv6 packets observed',
+              value: _status.ipv6PacketsObserved.toString(),
+            ),
+            _StatusRow(
+              label: 'IPv4 UDP packets',
               value: _status.udpPacketsObserved.toString(),
             ),
             _StatusRow(
-              label: 'TCP packets observed',
+              label: 'IPv6 UDP packets',
+              value: _status.ipv6UdpPacketsObserved.toString(),
+            ),
+            _StatusRow(
+              label: 'IPv4 TCP packets',
               value: _status.tcpPacketsObserved.toString(),
+            ),
+            _StatusRow(
+              label: 'IPv6 TCP packets',
+              value: _status.ipv6TcpPacketsObserved.toString(),
             ),
             _StatusRow(
               label: 'DNS candidates',
               value: _status.dnsCandidatePacketsObserved.toString(),
+            ),
+            _StatusRow(
+              label: 'IPv6 DNS candidates',
+              value: _status.ipv6DnsCandidatePacketsObserved.toString(),
             ),
             _StatusRow(
               label: 'DNS parse attempts',

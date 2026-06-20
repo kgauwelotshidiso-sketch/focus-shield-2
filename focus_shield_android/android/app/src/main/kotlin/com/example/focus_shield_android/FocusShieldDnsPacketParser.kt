@@ -110,10 +110,10 @@ class FocusShieldDnsPacketParser {
     }
 
     private fun detectDnsOffset(packet: ByteArray, length: Int): Int {
-        if (length >= 28) {
+        if (length >= 1) {
             val version = (packet[0].toInt() shr 4) and 0x0F
 
-            if (version == 4) {
+            if (version == 4 && length >= 28) {
                 val headerLength = (packet[0].toInt() and 0x0F) * 4
                 val protocol = packet[9].toInt() and 0xFF
 
@@ -123,6 +123,20 @@ class FocusShieldDnsPacketParser {
 
                     if (sourcePort == 53 || destinationPort == 53) {
                         return headerLength + 8
+                    }
+                }
+            }
+
+            if (version == 6 && length >= 40 + 8 + 12) {
+                val nextHeader = packet[6].toInt() and 0xFF
+                val transportOffset = 40
+
+                if (nextHeader == 17) {
+                    val sourcePort = readUInt16(packet, transportOffset)
+                    val destinationPort = readUInt16(packet, transportOffset + 2)
+
+                    if (sourcePort == 53 || destinationPort == 53) {
+                        return transportOffset + 8
                     }
                 }
             }

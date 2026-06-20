@@ -73,13 +73,25 @@ class FocusShieldVpnService : VpnService() {
         var ipPacketsObserved: Long = 0
             private set
 
+        var ipv6PacketsObserved: Long = 0
+            private set
+
         var udpPacketsObserved: Long = 0
+            private set
+
+        var ipv6UdpPacketsObserved: Long = 0
             private set
 
         var tcpPacketsObserved: Long = 0
             private set
 
+        var ipv6TcpPacketsObserved: Long = 0
+            private set
+
         var dnsCandidatePacketsObserved: Long = 0
+            private set
+
+        var ipv6DnsCandidatePacketsObserved: Long = 0
             private set
 
         var dnsParseAttempts: Long = 0
@@ -340,9 +352,14 @@ class FocusShieldVpnService : VpnService() {
         packetLoopRunning = packetLoop.running
         packetsObserved = packetLoop.packetsObserved
         ipPacketsObserved = packetLoop.ipPacketsObserved
+        ipv6PacketsObserved = packetLoop.ipv6PacketsObserved
         udpPacketsObserved = packetLoop.udpPacketsObserved
+        ipv6UdpPacketsObserved = packetLoop.ipv6UdpPacketsObserved
         tcpPacketsObserved = packetLoop.tcpPacketsObserved
+        ipv6TcpPacketsObserved = packetLoop.ipv6TcpPacketsObserved
         dnsCandidatePacketsObserved = packetLoop.dnsCandidatePacketsObserved
+        ipv6DnsCandidatePacketsObserved =
+            packetLoop.ipv6DnsCandidatePacketsObserved
         dnsParseAttempts = packetLoop.dnsParseAttempts
         dnsParseFailures = packetLoop.dnsParseFailures
         lastPacketProtocol = packetLoop.lastPacketProtocol

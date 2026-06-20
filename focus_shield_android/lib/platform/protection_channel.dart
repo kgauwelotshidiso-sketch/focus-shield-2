@@ -13,9 +13,13 @@ class ProtectionStatus {
     required this.packetLoopRunning,
     required this.packetsObserved,
     required this.ipPacketsObserved,
+    this.ipv6PacketsObserved = 0,
     required this.udpPacketsObserved,
+    this.ipv6UdpPacketsObserved = 0,
     required this.tcpPacketsObserved,
+    this.ipv6TcpPacketsObserved = 0,
     required this.dnsCandidatePacketsObserved,
+    this.ipv6DnsCandidatePacketsObserved = 0,
     required this.dnsParseAttempts,
     required this.dnsParseFailures,
     required this.lastPacketProtocol,
@@ -51,9 +55,13 @@ class ProtectionStatus {
   final bool packetLoopRunning;
   final int packetsObserved;
   final int ipPacketsObserved;
+  final int ipv6PacketsObserved;
   final int udpPacketsObserved;
+  final int ipv6UdpPacketsObserved;
   final int tcpPacketsObserved;
+  final int ipv6TcpPacketsObserved;
   final int dnsCandidatePacketsObserved;
+  final int ipv6DnsCandidatePacketsObserved;
   final int dnsParseAttempts;
   final int dnsParseFailures;
   final String lastPacketProtocol;
@@ -116,10 +124,15 @@ class ProtectionStatus {
       packetLoopRunning: _readBool(raw['packetLoopRunning']),
       packetsObserved: _readInt(raw['packetsObserved']),
       ipPacketsObserved: _readInt(raw['ipPacketsObserved']),
+      ipv6PacketsObserved: _readInt(raw['ipv6PacketsObserved']),
       udpPacketsObserved: _readInt(raw['udpPacketsObserved']),
+      ipv6UdpPacketsObserved: _readInt(raw['ipv6UdpPacketsObserved']),
       tcpPacketsObserved: _readInt(raw['tcpPacketsObserved']),
+      ipv6TcpPacketsObserved: _readInt(raw['ipv6TcpPacketsObserved']),
       dnsCandidatePacketsObserved:
           _readInt(raw['dnsCandidatePacketsObserved']),
+      ipv6DnsCandidatePacketsObserved:
+          _readInt(raw['ipv6DnsCandidatePacketsObserved']),
       dnsParseAttempts: _readInt(raw['dnsParseAttempts']),
       dnsParseFailures: _readInt(raw['dnsParseFailures']),
       lastPacketProtocol: _readString(raw['lastPacketProtocol']),
@@ -162,9 +175,13 @@ class ProtectionStatus {
       packetLoopRunning: false,
       packetsObserved: 0,
       ipPacketsObserved: 0,
+      ipv6PacketsObserved: 0,
       udpPacketsObserved: 0,
+      ipv6UdpPacketsObserved: 0,
       tcpPacketsObserved: 0,
+      ipv6TcpPacketsObserved: 0,
       dnsCandidatePacketsObserved: 0,
+      ipv6DnsCandidatePacketsObserved: 0,
       dnsParseAttempts: 0,
       dnsParseFailures: 0,
       lastPacketProtocol: '',
