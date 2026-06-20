@@ -126,5 +126,8 @@ Status: COMPLETE
 ## Phase 3.39 — DNS Packet Diagnostic Patch Without Blocking
 Status: COMPLETE
 
+## Phase 3.40 — Build APK and Real Device DNS Diagnostic Test
+Status: COMPLETE
+
 ## Next
-Phase 3.40 — Build APK and Real Device DNS Diagnostic Test
+Phase 3.41 — IPv6 Packet Diagnostic Patch Without Blocking
