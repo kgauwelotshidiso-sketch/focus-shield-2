@@ -185,7 +185,7 @@ class FocusShieldVpnService : VpnService() {
             liveTrafficReadEnabled = true
             blockingEnabled = false
             statusMessage =
-                "Live observation is enabled by code gate. Blocking remains disabled."
+                "Live observation only is enabled by code gate. Blocking remains disabled."
         } else {
             liveTrafficReadEnabled = false
             blockingEnabled = false
@@ -212,7 +212,7 @@ class FocusShieldVpnService : VpnService() {
             blockingEnabled = false
             protectionMode = FocusShieldLiveObservationGate.allowedProtectionModeWhenUnlocked
             statusMessage =
-                "Live observation code gate is unlocked. Blocking remains disabled."
+                "Live observation code gate is unlocked for observation only. Blocking remains disabled."
         } else {
             liveTrafficReadEnabled = false
             blockingEnabled = false
