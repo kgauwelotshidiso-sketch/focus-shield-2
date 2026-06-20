@@ -87,5 +87,8 @@ Status: COMPLETE
 ## Phase 3.26 — Real Device Observation Button Safety Test
 Status: COMPLETE
 
+## Phase 3.27 — Real Device Blocklist Reload Safety Test
+Status: COMPLETE
+
 ## Next
-Phase 3.27 — Real Device Blocklist Reload Safety Test
+Phase 3.28 — Real Device Full Native Protection Regression Test
