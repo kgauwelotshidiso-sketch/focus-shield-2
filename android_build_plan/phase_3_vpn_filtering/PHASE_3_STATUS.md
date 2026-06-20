@@ -114,5 +114,8 @@ Status: COMPLETE
 ## Phase 3.35 — Live Observation Status Message Cleanup
 Status: COMPLETE
 
+## Phase 3.36 — Build APK and Real Device Message Verification
+Status: COMPLETE
+
 ## Next
-Phase 3.36 — Build APK and Real Device Message Verification
+Phase 3.37 — Live Observation Packet Counter Stability Test
