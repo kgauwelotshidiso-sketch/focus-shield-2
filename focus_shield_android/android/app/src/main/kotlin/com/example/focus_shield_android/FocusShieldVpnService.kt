@@ -186,7 +186,7 @@ class FocusShieldVpnService : VpnService() {
                 dryRunModeEnabled = true
             )
             statusMessage =
-                "VPN shell is active. Dry-run mode is prepared. Live traffic reading is disabled."
+                "VPN shell is active with DNS-route diagnostics prepared. Live traffic reading is disabled."
             updateNativeStatus()
             return
         }
@@ -195,6 +195,32 @@ class FocusShieldVpnService : VpnService() {
             .setSession("Focus Shield")
             .addAddress("10.8.0.2", 32)
             .addDnsServer("1.1.1.1")
+            .addDnsServer("8.8.8.8")
+
+        try {
+            builder.addAddress("fd00:7:7:7::2", 128)
+            builder.addDnsServer("2606:4700:4700::1111")
+            builder.addDnsServer("2001:4860:4860::8888")
+        } catch (_: Exception) {
+            // Some Android/network combinations may reject IPv6 tunnel setup.
+            // IPv4 DNS-route diagnostics can still run safely.
+        }
+
+        try {
+            // Diagnostic-only DNS route coverage.
+            // This is intentionally not a full 0.0.0.0/0 or ::/0 traffic route.
+            builder.addRoute("1.1.1.1", 32)
+            builder.addRoute("8.8.8.8", 32)
+        } catch (_: Exception) {
+            // Route setup failure should not crash the app.
+        }
+
+        try {
+            builder.addRoute("2606:4700:4700::1111", 128)
+            builder.addRoute("2001:4860:4860::8888", 128)
+        } catch (_: Exception) {
+            // IPv6 DNS-route diagnostics are optional and device-dependent.
+        }
 
         vpnInterface = builder.establish()
         isRunning = vpnInterface != null
@@ -206,7 +232,7 @@ class FocusShieldVpnService : VpnService() {
         )
 
         statusMessage = if (isRunning) {
-            "VPN shell started. Dry-run mode is prepared. Live traffic reading is disabled."
+            "VPN shell started with DNS-route diagnostics prepared. Live traffic reading is disabled."
         } else {
             "VPN shell could not start. Android permission may still be required."
         }
