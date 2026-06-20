@@ -178,6 +178,11 @@ class ProtectionChannel {
     return response ?? 'unknown';
   }
 
+  Future<String> openVpnSettings() async {
+    final response = await _channel.invokeMethod<String>('openVpnSettings');
+    return response ?? 'unknown';
+  }
+
   Future<ProtectionStatus> protectionStatus() async {
     final response = await _channel.invokeMapMethod<Object?, Object?>(
       'protectionStatus',

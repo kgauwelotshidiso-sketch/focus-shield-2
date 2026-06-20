@@ -126,6 +126,12 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
         return 'Observation toggle prepared, but safety gate remains locked.';
       case 'observation_disabled':
         return 'Live observation request disabled.';
+      case 'vpn_settings_opened':
+        return 'Android VPN settings opened.';
+      case 'vpn_settings_unavailable':
+        return 'Android VPN settings could not be opened.';
+      case 'vpn_permission_screen_requested':
+        return 'VPN permission screen requested. If nothing appears, tap Open VPN Settings.';
       default:
         return 'Native response: $response';
     }

@@ -1,13 +1,16 @@
 package com.example.focus_shield_android
 
+import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val protectionChannelName = "focus_shield/protection"
+    private val vpnPermissionRequestCode = 4207
 
     private val blocklistStore: FocusShieldBlocklistStore by lazy {
         FocusShieldBlocklistStore(applicationContext)
@@ -27,6 +30,7 @@ class MainActivity : FlutterActivity() {
                 "reloadBlocklist" -> reloadBlocklist(result)
                 "prepareLiveObservation" -> prepareLiveObservation(result)
                 "disableLiveObservation" -> disableLiveObservation(result)
+                "openVpnSettings" -> openVpnSettings(result)
                 else -> result.notImplemented()
             }
         }
@@ -36,18 +40,33 @@ class MainActivity : FlutterActivity() {
         val permissionIntent = VpnService.prepare(this)
 
         if (permissionIntent != null) {
-            permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(permissionIntent)
-            result.success("vpn_permission_screen_requested")
+            try {
+                startActivityForResult(permissionIntent, vpnPermissionRequestCode)
+                result.success("vpn_permission_screen_requested")
+            } catch (_: Exception) {
+                openVpnSettings(result)
+            }
             return
         }
 
+        startVpnService()
+        result.success("started")
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == vpnPermissionRequestCode && resultCode == Activity.RESULT_OK) {
+            startVpnService()
+        }
+    }
+
+    private fun startVpnService() {
         val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
             action = FocusShieldVpnService.ACTION_START
         }
 
         startService(serviceIntent)
-        result.success("started")
     }
 
     private fun stopProtection(result: MethodChannel.Result) {
@@ -91,5 +110,15 @@ class MainActivity : FlutterActivity() {
 
         startService(serviceIntent)
         result.success("observation_disabled")
+    }
+
+    private fun openVpnSettings(result: MethodChannel.Result) {
+        try {
+            val intent = Intent(Settings.ACTION_VPN_SETTINGS)
+            startActivity(intent)
+            result.success("vpn_settings_opened")
+        } catch (_: Exception) {
+            result.success("vpn_settings_unavailable")
+        }
     }
 }
