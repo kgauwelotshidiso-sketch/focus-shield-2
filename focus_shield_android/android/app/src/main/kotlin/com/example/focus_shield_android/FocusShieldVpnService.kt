@@ -186,7 +186,7 @@ class FocusShieldVpnService : VpnService() {
                 dryRunModeEnabled = true
             )
             statusMessage =
-                "VPN shell is active with DNS-route diagnostics prepared. Live traffic reading is disabled."
+                "VPN shell is active without DNS route capture. Live traffic reading is disabled."
             updateNativeStatus()
             return
         }
@@ -203,24 +203,13 @@ class FocusShieldVpnService : VpnService() {
             builder.addDnsServer("2001:4860:4860::8888")
         } catch (_: Exception) {
             // Some Android/network combinations may reject IPv6 tunnel setup.
-            // IPv4 DNS-route diagnostics can still run safely.
+            // Route capture stays disabled until forwarding is implemented.
         }
 
-        try {
-            // Diagnostic-only DNS route coverage.
-            // This is intentionally not a full 0.0.0.0/0 or ::/0 traffic route.
-            builder.addRoute("1.1.1.1", 32)
-            builder.addRoute("8.8.8.8", 32)
-        } catch (_: Exception) {
-            // Route setup failure should not crash the app.
-        }
-
-        try {
-            builder.addRoute("2606:4700:4700::1111", 128)
-            builder.addRoute("2001:4860:4860::8888", 128)
-        } catch (_: Exception) {
-            // IPv6 DNS-route diagnostics are optional and device-dependent.
-        }
+        // IMPORTANT:
+        // Do not add DNS routes here until packet forwarding or DNS proxying exists.
+        // Phase 3.45 proved DNS route capture works, but it breaks internet access
+        // because captured packets are not forwarded yet.
 
         vpnInterface = builder.establish()
         isRunning = vpnInterface != null
@@ -232,7 +221,7 @@ class FocusShieldVpnService : VpnService() {
         )
 
         statusMessage = if (isRunning) {
-            "VPN shell started with DNS-route diagnostics prepared. Live traffic reading is disabled."
+            "VPN shell started without DNS route capture. Live traffic reading is disabled."
         } else {
             "VPN shell could not start. Android permission may still be required."
         }

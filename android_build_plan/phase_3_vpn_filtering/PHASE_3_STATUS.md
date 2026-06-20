@@ -141,5 +141,11 @@ Status: COMPLETE
 ## Phase 3.44 — VPN Route Coverage Patch Without Blocking
 Status: COMPLETE
 
+## Phase 3.45 — Real Device DNS Route Coverage Test
+Status: COMPLETE WITH INTERNET INTERRUPTION
+
+## Phase 3.46 — DNS Route Safety Rollback Without Blocking
+Status: COMPLETE
+
 ## Next
-Phase 3.45 — Build APK and Real Device DNS Route Coverage Test
+Phase 3.47 — DNS Forwarding or Local DNS Proxy Planning
