@@ -127,12 +127,25 @@ class ProtectionStatus {
   }
 
   bool get isSafeMode {
-    return !liveTrafficReadEnabled && !blockingEnabled;
+    return blockingEnabled == false;
   }
 
   bool get observationLocked {
-    return liveObservationSafetyGate.isNotEmpty &&
-        liveObservationSafetyGate != 'unlocked';
+    final normalizedGate = liveObservationSafetyGate.trim().toLowerCase();
+
+    if (liveObservationCodeGateUnlocked) {
+      return false;
+    }
+
+    if (normalizedGate == 'unlocked_by_code') {
+      return false;
+    }
+
+    if (normalizedGate.startsWith('unlocked')) {
+      return false;
+    }
+
+    return normalizedGate.isNotEmpty;
   }
 
   static bool _readBool(Object? value) {
