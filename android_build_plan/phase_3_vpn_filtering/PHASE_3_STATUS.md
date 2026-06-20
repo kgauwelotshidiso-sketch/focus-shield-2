@@ -147,5 +147,8 @@ Status: COMPLETE WITH INTERNET INTERRUPTION
 ## Phase 3.46 — DNS Route Safety Rollback Without Blocking
 Status: COMPLETE
 
+## Phase 3.47 — DNS Forwarding or Local DNS Proxy Planning
+Status: COMPLETE
+
 ## Next
-Phase 3.47 — DNS Forwarding or Local DNS Proxy Planning
+Phase 3.48 — DNS Proxy Diagnostic Architecture Preparation
