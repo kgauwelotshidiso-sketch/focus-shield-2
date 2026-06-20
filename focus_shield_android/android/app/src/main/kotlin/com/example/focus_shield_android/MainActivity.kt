@@ -36,8 +36,9 @@ class MainActivity : FlutterActivity() {
         val permissionIntent = VpnService.prepare(this)
 
         if (permissionIntent != null) {
+            permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(permissionIntent)
-            result.success("permission_required")
+            result.success("vpn_permission_screen_requested")
             return
         }
 
