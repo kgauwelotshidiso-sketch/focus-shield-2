@@ -120,5 +120,8 @@ Status: COMPLETE
 ## Phase 3.37 — Live Observation Packet Counter Stability Test
 Status: COMPLETE
 
+## Phase 3.38 — Live Observation DNS Parser Stability Review
+Status: COMPLETE
+
 ## Next
-Phase 3.38 — Live Observation DNS Parser Stability Review
+Phase 3.39 — DNS Packet Diagnostic Patch Without Blocking
