@@ -6,45 +6,21 @@ Complete.
 
 ## Purpose
 
-Wire the DNS forwarder skeleton into the native protection status and Flutter UI without enabling routing, forwarding, or blocking.
-
-## Added Status Fields
-
-- dnsForwarderPrepared
-- dnsForwarderEnabled
-- dnsForwarderMode
-- upstreamPrimary
-- upstreamFallback
-- forwardAttempts
-- forwardSuccesses
-- forwardFailures
-- lastForwarderDecision
-- lastForwarderError
+Wire the DNS forwarder skeleton into native status and the Flutter Native Protection screen.
 
 ## Native Status Version
 
 Native status version is now 7.
 
-## Expected Real Device State
-
-- DNS forwarder prepared: Yes
-- DNS forwarder enabled: No
-- DNS forwarder mode: dns_forwarder_skeleton_only
-- Upstream primary: 1.1.1.1
-- Upstream fallback: 8.8.8.8
-- Forward attempts: 0
-- Forward successes: 0
-- Forward failures: 0
-
 ## Safety State
 
-This phase does not restore DNS route capture.
+No routing was restored.
 
-This phase does not forward DNS.
+No DNS forwarding was enabled.
 
-This phase does not enable blocking.
+No blocking was enabled.
 
-Current safe values:
+Safe values:
 
 - dnsForwarderEnabled: false
 - blockingEnabled: false

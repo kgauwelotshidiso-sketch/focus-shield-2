@@ -57,6 +57,10 @@ object FocusShieldDnsProxy {
         }
     }
 
+    fun forwarderSnapshot(): FocusShieldDnsForwarderStatus {
+        return forwarder.snapshot()
+    }
+
     fun snapshot(): FocusShieldDnsProxyStatus {
         return FocusShieldDnsProxyStatus(
             dnsProxyPrepared = prepared,
