@@ -304,6 +304,40 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
                   : _status.lastParserError,
             ),
             _StatusRow(
+              label: 'DNS proxy prepared',
+              value: _status.dnsProxyPrepared ? 'Yes' : 'No',
+            ),
+            _StatusRow(
+              label: 'DNS proxy running',
+              value: _status.dnsProxyRunning ? 'Yes' : 'No',
+            ),
+            _StatusRow(
+              label: 'DNS proxy mode',
+              value: _status.dnsProxyMode.isEmpty ? '-' : _status.dnsProxyMode,
+            ),
+            _StatusRow(
+              label: 'Proxy queries received',
+              value: _status.dnsProxyQueriesReceived.toString(),
+            ),
+            _StatusRow(
+              label: 'Proxy queries forwarded',
+              value: _status.dnsProxyQueriesForwarded.toString(),
+            ),
+            _StatusRow(
+              label: 'Proxy responses returned',
+              value: _status.dnsProxyResponsesReturned.toString(),
+            ),
+            _StatusRow(
+              label: 'Proxy errors',
+              value: _status.dnsProxyErrors.toString(),
+            ),
+            _StatusRow(
+              label: 'Last proxy decision',
+              value: _status.lastDnsProxyDecision.isEmpty
+                  ? '-'
+                  : _status.lastDnsProxyDecision,
+            ),
+            _StatusRow(
               label: 'DNS queries parsed',
               value: _status.dnsQueriesParsed.toString(),
             ),

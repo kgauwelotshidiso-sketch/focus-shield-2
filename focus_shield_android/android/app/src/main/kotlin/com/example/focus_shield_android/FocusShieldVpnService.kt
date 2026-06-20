@@ -140,6 +140,7 @@ class FocusShieldVpnService : VpnService() {
     override fun onCreate() {
         super.onCreate()
         blocklistStore = FocusShieldBlocklistStore(applicationContext)
+        FocusShieldDnsProxy.prepareDiagnosticOnly()
         protectionMode = "dry_run_prepared"
         liveTrafficReadEnabled = false
         blockingEnabled = false
@@ -309,11 +310,13 @@ class FocusShieldVpnService : VpnService() {
             dryRunModeEnabled = true
         )
 
+        FocusShieldDnsProxy.startDiagnosticOnlyWithoutRouting()
         updateNativeStatus()
     }
 
     private fun stopProtection() {
         packetLoop.stop()
+        FocusShieldDnsProxy.stop()
         updateNativeStatus()
 
         vpnInterface?.close()

@@ -31,6 +31,16 @@ class ProtectionStatus {
     required this.dryRunModeReady,
     required this.dryRunBlocksDetected,
     required this.lastDryRunDecision,
+    this.dnsProxyPrepared = false,
+    this.dnsProxyRunning = false,
+    this.dnsProxyMode = '',
+    this.dnsProxyQueriesReceived = 0,
+    this.dnsProxyQueriesForwarded = 0,
+    this.dnsProxyResponsesReturned = 0,
+    this.dnsProxyErrors = 0,
+    this.lastDnsProxyHost = '',
+    this.lastDnsProxyDecision = '',
+    this.lastDnsProxyError = '',
     required this.liveTrafficReadEnabled,
     required this.blockingEnabled,
     required this.liveObservationToggleAvailable,
@@ -73,6 +83,16 @@ class ProtectionStatus {
   final bool dryRunModeReady;
   final int dryRunBlocksDetected;
   final String lastDryRunDecision;
+  final bool dnsProxyPrepared;
+  final bool dnsProxyRunning;
+  final String dnsProxyMode;
+  final int dnsProxyQueriesReceived;
+  final int dnsProxyQueriesForwarded;
+  final int dnsProxyResponsesReturned;
+  final int dnsProxyErrors;
+  final String lastDnsProxyHost;
+  final String lastDnsProxyDecision;
+  final String lastDnsProxyError;
   final bool liveTrafficReadEnabled;
   final bool blockingEnabled;
   final bool liveObservationToggleAvailable;
@@ -144,6 +164,16 @@ class ProtectionStatus {
       dryRunModeReady: _readBool(raw['dryRunModeReady']),
       dryRunBlocksDetected: _readInt(raw['dryRunBlocksDetected']),
       lastDryRunDecision: _readString(raw['lastDryRunDecision']),
+      dnsProxyPrepared: _readBool(raw['dnsProxyPrepared']),
+      dnsProxyRunning: _readBool(raw['dnsProxyRunning']),
+      dnsProxyMode: _readString(raw['dnsProxyMode']),
+      dnsProxyQueriesReceived: _readInt(raw['dnsProxyQueriesReceived']),
+      dnsProxyQueriesForwarded: _readInt(raw['dnsProxyQueriesForwarded']),
+      dnsProxyResponsesReturned: _readInt(raw['dnsProxyResponsesReturned']),
+      dnsProxyErrors: _readInt(raw['dnsProxyErrors']),
+      lastDnsProxyHost: _readString(raw['lastDnsProxyHost']),
+      lastDnsProxyDecision: _readString(raw['lastDnsProxyDecision']),
+      lastDnsProxyError: _readString(raw['lastDnsProxyError']),
       liveTrafficReadEnabled: _readBool(raw['liveTrafficReadEnabled']),
       blockingEnabled: _readBool(raw['blockingEnabled']),
       liveObservationToggleAvailable:

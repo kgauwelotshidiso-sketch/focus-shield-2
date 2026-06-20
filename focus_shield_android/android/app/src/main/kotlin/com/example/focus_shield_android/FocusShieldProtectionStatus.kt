@@ -30,6 +30,16 @@ data class FocusShieldProtectionStatus(
     val dryRunModeReady: Boolean,
     val dryRunBlocksDetected: Long,
     val lastDryRunDecision: String,
+    val dnsProxyPrepared: Boolean,
+    val dnsProxyRunning: Boolean,
+    val dnsProxyMode: String,
+    val dnsProxyQueriesReceived: Long,
+    val dnsProxyQueriesForwarded: Long,
+    val dnsProxyResponsesReturned: Long,
+    val dnsProxyErrors: Long,
+    val lastDnsProxyHost: String,
+    val lastDnsProxyDecision: String,
+    val lastDnsProxyError: String,
     val liveTrafficReadEnabled: Boolean,
     val blockingEnabled: Boolean,
     val liveObservationToggleAvailable: Boolean,
@@ -73,6 +83,16 @@ data class FocusShieldProtectionStatus(
             "dryRunModeReady" to dryRunModeReady,
             "dryRunBlocksDetected" to dryRunBlocksDetected,
             "lastDryRunDecision" to lastDryRunDecision,
+            "dnsProxyPrepared" to dnsProxyPrepared,
+            "dnsProxyRunning" to dnsProxyRunning,
+            "dnsProxyMode" to dnsProxyMode,
+            "dnsProxyQueriesReceived" to dnsProxyQueriesReceived,
+            "dnsProxyQueriesForwarded" to dnsProxyQueriesForwarded,
+            "dnsProxyResponsesReturned" to dnsProxyResponsesReturned,
+            "dnsProxyErrors" to dnsProxyErrors,
+            "lastDnsProxyHost" to lastDnsProxyHost,
+            "lastDnsProxyDecision" to lastDnsProxyDecision,
+            "lastDnsProxyError" to lastDnsProxyError,
             "liveTrafficReadEnabled" to liveTrafficReadEnabled,
             "blockingEnabled" to blockingEnabled,
             "liveObservationToggleAvailable" to liveObservationToggleAvailable,
@@ -88,9 +108,11 @@ data class FocusShieldProtectionStatus(
     }
 
     companion object {
-        const val CURRENT_VERSION = 5
+        const val CURRENT_VERSION = 6
 
         fun build(blocklistStatus: FocusShieldBlocklistStatus): FocusShieldProtectionStatus {
+            val dnsProxyStatus = FocusShieldDnsProxy.snapshot()
+
             return FocusShieldProtectionStatus(
                 nativeStatusVersion = CURRENT_VERSION,
                 protectionMode = FocusShieldVpnService.protectionMode,
@@ -123,6 +145,16 @@ data class FocusShieldProtectionStatus(
                 dryRunModeReady = FocusShieldVpnService.dryRunModeReady,
                 dryRunBlocksDetected = FocusShieldVpnService.dryRunBlocksDetected,
                 lastDryRunDecision = FocusShieldVpnService.lastDryRunDecision,
+                dnsProxyPrepared = dnsProxyStatus.dnsProxyPrepared,
+                dnsProxyRunning = dnsProxyStatus.dnsProxyRunning,
+                dnsProxyMode = dnsProxyStatus.dnsProxyMode,
+                dnsProxyQueriesReceived = dnsProxyStatus.dnsProxyQueriesReceived,
+                dnsProxyQueriesForwarded = dnsProxyStatus.dnsProxyQueriesForwarded,
+                dnsProxyResponsesReturned = dnsProxyStatus.dnsProxyResponsesReturned,
+                dnsProxyErrors = dnsProxyStatus.dnsProxyErrors,
+                lastDnsProxyHost = dnsProxyStatus.lastDnsProxyHost,
+                lastDnsProxyDecision = dnsProxyStatus.lastDnsProxyDecision,
+                lastDnsProxyError = dnsProxyStatus.lastDnsProxyError,
                 liveTrafficReadEnabled = FocusShieldVpnService.liveTrafficReadEnabled,
                 blockingEnabled = FocusShieldVpnService.blockingEnabled,
                 liveObservationToggleAvailable =

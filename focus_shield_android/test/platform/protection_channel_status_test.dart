@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_shield_android/platform/protection_channel.dart';
 
 void main() {
-  test('ProtectionStatus reads IPv6 diagnostic live observation map safely', () {
+  test('ProtectionStatus reads DNS proxy skeleton status safely', () {
     final status = ProtectionStatus.fromMap(
       <Object?, Object?>{
-        'nativeStatusVersion': 5,
+        'nativeStatusVersion': 6,
         'protectionMode': 'live_observation_only',
         'vpnActive': true,
         'blocklistLoaded': true,
@@ -18,22 +18,33 @@ void main() {
         'ipPacketsObserved': 0,
         'ipv6PacketsObserved': 10,
         'udpPacketsObserved': 0,
-        'ipv6UdpPacketsObserved': 4,
+        'ipv6UdpPacketsObserved': 0,
         'tcpPacketsObserved': 0,
-        'ipv6TcpPacketsObserved': 6,
-        'dnsCandidatePacketsObserved': 1,
-        'ipv6DnsCandidatePacketsObserved': 1,
-        'dnsParseAttempts': 1,
+        'ipv6TcpPacketsObserved': 0,
+        'dnsCandidatePacketsObserved': 0,
+        'ipv6DnsCandidatePacketsObserved': 0,
+        'dnsParseAttempts': 0,
         'dnsParseFailures': 0,
-        'lastPacketProtocol': 'ipv6_dns_candidate',
+        'lastPacketProtocol': 'ipv6_icmpv6',
         'lastParserError': '',
-        'lastPacketSummary': 'ipv6_dns_candidate_src_43000_dst_53',
+        'lastPacketSummary': 'ipv6_icmpv6_packet_length_80',
         'dnsParserPrepared': true,
-        'dnsQueriesParsed': 1,
-        'lastParsedHostname': 'blocked-example.com',
+        'dnsQueriesParsed': 0,
+        'lastParsedHostname': '',
         'dryRunModeReady': true,
-        'dryRunBlocksDetected': 1,
-        'lastDryRunDecision': 'would_block:blocked-example.com',
+        'dryRunBlocksDetected': 0,
+        'lastDryRunDecision': '',
+        'dnsProxyPrepared': true,
+        'dnsProxyRunning': false,
+        'dnsProxyMode': 'dns_proxy_diagnostic_only',
+        'dnsProxyQueriesReceived': 0,
+        'dnsProxyQueriesForwarded': 0,
+        'dnsProxyResponsesReturned': 0,
+        'dnsProxyErrors': 0,
+        'lastDnsProxyHost': '',
+        'lastDnsProxyDecision':
+            'dns_forwarder_skeleton_ready_forwarding_disabled',
+        'lastDnsProxyError': '',
         'liveTrafficReadEnabled': true,
         'blockingEnabled': false,
         'liveObservationToggleAvailable': true,
@@ -49,25 +60,16 @@ void main() {
       },
     );
 
-    expect(status.nativeStatusVersion, 5);
-    expect(status.protectionMode, 'live_observation_only');
-    expect(status.vpnActive, true);
-    expect(status.packetLoopRunning, true);
-    expect(status.packetsObserved, 10);
-    expect(status.ipPacketsObserved, 0);
-    expect(status.ipv6PacketsObserved, 10);
-    expect(status.udpPacketsObserved, 0);
-    expect(status.ipv6UdpPacketsObserved, 4);
-    expect(status.tcpPacketsObserved, 0);
-    expect(status.ipv6TcpPacketsObserved, 6);
-    expect(status.dnsCandidatePacketsObserved, 1);
-    expect(status.ipv6DnsCandidatePacketsObserved, 1);
-    expect(status.dnsParseAttempts, 1);
-    expect(status.dnsParseFailures, 0);
-    expect(status.lastPacketProtocol, 'ipv6_dns_candidate');
-    expect(status.lastParserError, '');
-    expect(status.dnsQueriesParsed, 1);
-    expect(status.lastParsedHostname, 'blocked-example.com');
+    expect(status.nativeStatusVersion, 6);
+    expect(status.dnsProxyPrepared, true);
+    expect(status.dnsProxyRunning, false);
+    expect(status.dnsProxyMode, 'dns_proxy_diagnostic_only');
+    expect(status.dnsProxyQueriesReceived, 0);
+    expect(status.dnsProxyQueriesForwarded, 0);
+    expect(status.dnsProxyResponsesReturned, 0);
+    expect(status.dnsProxyErrors, 0);
+    expect(status.lastDnsProxyDecision,
+        'dns_forwarder_skeleton_ready_forwarding_disabled');
     expect(status.liveTrafficReadEnabled, true);
     expect(status.blockingEnabled, false);
     expect(status.isSafeMode, true);
@@ -79,20 +81,13 @@ void main() {
     expect(status.nativeStatusVersion, 0);
     expect(status.protectionMode, 'unavailable');
     expect(status.vpnActive, false);
-    expect(status.packetLoopRunning, false);
-    expect(status.packetsObserved, 0);
-    expect(status.ipPacketsObserved, 0);
-    expect(status.ipv6PacketsObserved, 0);
-    expect(status.udpPacketsObserved, 0);
-    expect(status.ipv6UdpPacketsObserved, 0);
-    expect(status.tcpPacketsObserved, 0);
-    expect(status.ipv6TcpPacketsObserved, 0);
-    expect(status.dnsCandidatePacketsObserved, 0);
-    expect(status.ipv6DnsCandidatePacketsObserved, 0);
-    expect(status.dnsParseAttempts, 0);
-    expect(status.dnsParseFailures, 0);
-    expect(status.lastPacketProtocol, '');
-    expect(status.lastParserError, '');
+    expect(status.dnsProxyPrepared, false);
+    expect(status.dnsProxyRunning, false);
+    expect(status.dnsProxyMode, '');
+    expect(status.dnsProxyQueriesReceived, 0);
+    expect(status.dnsProxyQueriesForwarded, 0);
+    expect(status.dnsProxyResponsesReturned, 0);
+    expect(status.dnsProxyErrors, 0);
     expect(status.liveTrafficReadEnabled, false);
     expect(status.blockingEnabled, false);
     expect(status.isSafeMode, true);
