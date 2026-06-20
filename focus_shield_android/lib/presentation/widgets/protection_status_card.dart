@@ -338,6 +338,50 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
                   : _status.lastDnsProxyDecision,
             ),
             _StatusRow(
+              label: 'DNS forwarder prepared',
+              value: _status.dnsForwarderPrepared ? 'Yes' : 'No',
+            ),
+            _StatusRow(
+              label: 'DNS forwarder enabled',
+              value: _status.dnsForwarderEnabled ? 'Yes' : 'No',
+            ),
+            _StatusRow(
+              label: 'DNS forwarder mode',
+              value: _status.dnsForwarderMode.isEmpty
+                  ? '-'
+                  : _status.dnsForwarderMode,
+            ),
+            _StatusRow(
+              label: 'Upstream primary',
+              value: _status.upstreamPrimary.isEmpty
+                  ? '-'
+                  : _status.upstreamPrimary,
+            ),
+            _StatusRow(
+              label: 'Upstream fallback',
+              value: _status.upstreamFallback.isEmpty
+                  ? '-'
+                  : _status.upstreamFallback,
+            ),
+            _StatusRow(
+              label: 'Forward attempts',
+              value: _status.forwardAttempts.toString(),
+            ),
+            _StatusRow(
+              label: 'Forward successes',
+              value: _status.forwardSuccesses.toString(),
+            ),
+            _StatusRow(
+              label: 'Forward failures',
+              value: _status.forwardFailures.toString(),
+            ),
+            _StatusRow(
+              label: 'Last forwarder decision',
+              value: _status.lastForwarderDecision.isEmpty
+                  ? '-'
+                  : _status.lastForwarderDecision,
+            ),
+            _StatusRow(
               label: 'DNS queries parsed',
               value: _status.dnsQueriesParsed.toString(),
             ),

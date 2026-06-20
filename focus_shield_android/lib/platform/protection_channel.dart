@@ -41,6 +41,16 @@ class ProtectionStatus {
     this.lastDnsProxyHost = '',
     this.lastDnsProxyDecision = '',
     this.lastDnsProxyError = '',
+    this.dnsForwarderPrepared = false,
+    this.dnsForwarderEnabled = false,
+    this.dnsForwarderMode = '',
+    this.upstreamPrimary = '',
+    this.upstreamFallback = '',
+    this.forwardAttempts = 0,
+    this.forwardSuccesses = 0,
+    this.forwardFailures = 0,
+    this.lastForwarderDecision = '',
+    this.lastForwarderError = '',
     required this.liveTrafficReadEnabled,
     required this.blockingEnabled,
     required this.liveObservationToggleAvailable,
@@ -93,6 +103,16 @@ class ProtectionStatus {
   final String lastDnsProxyHost;
   final String lastDnsProxyDecision;
   final String lastDnsProxyError;
+  final bool dnsForwarderPrepared;
+  final bool dnsForwarderEnabled;
+  final String dnsForwarderMode;
+  final String upstreamPrimary;
+  final String upstreamFallback;
+  final int forwardAttempts;
+  final int forwardSuccesses;
+  final int forwardFailures;
+  final String lastForwarderDecision;
+  final String lastForwarderError;
   final bool liveTrafficReadEnabled;
   final bool blockingEnabled;
   final bool liveObservationToggleAvailable;
@@ -174,6 +194,16 @@ class ProtectionStatus {
       lastDnsProxyHost: _readString(raw['lastDnsProxyHost']),
       lastDnsProxyDecision: _readString(raw['lastDnsProxyDecision']),
       lastDnsProxyError: _readString(raw['lastDnsProxyError']),
+      dnsForwarderPrepared: _readBool(raw['dnsForwarderPrepared']),
+      dnsForwarderEnabled: _readBool(raw['dnsForwarderEnabled']),
+      dnsForwarderMode: _readString(raw['dnsForwarderMode']),
+      upstreamPrimary: _readString(raw['upstreamPrimary']),
+      upstreamFallback: _readString(raw['upstreamFallback']),
+      forwardAttempts: _readInt(raw['forwardAttempts']),
+      forwardSuccesses: _readInt(raw['forwardSuccesses']),
+      forwardFailures: _readInt(raw['forwardFailures']),
+      lastForwarderDecision: _readString(raw['lastForwarderDecision']),
+      lastForwarderError: _readString(raw['lastForwarderError']),
       liveTrafficReadEnabled: _readBool(raw['liveTrafficReadEnabled']),
       blockingEnabled: _readBool(raw['blockingEnabled']),
       liveObservationToggleAvailable:
@@ -223,6 +253,26 @@ class ProtectionStatus {
       dryRunModeReady: false,
       dryRunBlocksDetected: 0,
       lastDryRunDecision: '',
+      dnsProxyPrepared: false,
+      dnsProxyRunning: false,
+      dnsProxyMode: '',
+      dnsProxyQueriesReceived: 0,
+      dnsProxyQueriesForwarded: 0,
+      dnsProxyResponsesReturned: 0,
+      dnsProxyErrors: 0,
+      lastDnsProxyHost: '',
+      lastDnsProxyDecision: '',
+      lastDnsProxyError: '',
+      dnsForwarderPrepared: false,
+      dnsForwarderEnabled: false,
+      dnsForwarderMode: '',
+      upstreamPrimary: '',
+      upstreamFallback: '',
+      forwardAttempts: 0,
+      forwardSuccesses: 0,
+      forwardFailures: 0,
+      lastForwarderDecision: '',
+      lastForwarderError: '',
       liveTrafficReadEnabled: false,
       blockingEnabled: false,
       liveObservationToggleAvailable: false,

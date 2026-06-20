@@ -40,6 +40,16 @@ data class FocusShieldProtectionStatus(
     val lastDnsProxyHost: String,
     val lastDnsProxyDecision: String,
     val lastDnsProxyError: String,
+    val dnsForwarderPrepared: Boolean,
+    val dnsForwarderEnabled: Boolean,
+    val dnsForwarderMode: String,
+    val upstreamPrimary: String,
+    val upstreamFallback: String,
+    val forwardAttempts: Long,
+    val forwardSuccesses: Long,
+    val forwardFailures: Long,
+    val lastForwarderDecision: String,
+    val lastForwarderError: String,
     val liveTrafficReadEnabled: Boolean,
     val blockingEnabled: Boolean,
     val liveObservationToggleAvailable: Boolean,
@@ -93,6 +103,16 @@ data class FocusShieldProtectionStatus(
             "lastDnsProxyHost" to lastDnsProxyHost,
             "lastDnsProxyDecision" to lastDnsProxyDecision,
             "lastDnsProxyError" to lastDnsProxyError,
+            "dnsForwarderPrepared" to dnsForwarderPrepared,
+            "dnsForwarderEnabled" to dnsForwarderEnabled,
+            "dnsForwarderMode" to dnsForwarderMode,
+            "upstreamPrimary" to upstreamPrimary,
+            "upstreamFallback" to upstreamFallback,
+            "forwardAttempts" to forwardAttempts,
+            "forwardSuccesses" to forwardSuccesses,
+            "forwardFailures" to forwardFailures,
+            "lastForwarderDecision" to lastForwarderDecision,
+            "lastForwarderError" to lastForwarderError,
             "liveTrafficReadEnabled" to liveTrafficReadEnabled,
             "blockingEnabled" to blockingEnabled,
             "liveObservationToggleAvailable" to liveObservationToggleAvailable,
@@ -108,10 +128,11 @@ data class FocusShieldProtectionStatus(
     }
 
     companion object {
-        const val CURRENT_VERSION = 6
+        const val CURRENT_VERSION = 7
 
         fun build(blocklistStatus: FocusShieldBlocklistStatus): FocusShieldProtectionStatus {
             val dnsProxyStatus = FocusShieldDnsProxy.snapshot()
+            val dnsForwarderStatus = FocusShieldDnsProxy.forwarderSnapshot()
 
             return FocusShieldProtectionStatus(
                 nativeStatusVersion = CURRENT_VERSION,
@@ -155,6 +176,16 @@ data class FocusShieldProtectionStatus(
                 lastDnsProxyHost = dnsProxyStatus.lastDnsProxyHost,
                 lastDnsProxyDecision = dnsProxyStatus.lastDnsProxyDecision,
                 lastDnsProxyError = dnsProxyStatus.lastDnsProxyError,
+                dnsForwarderPrepared = dnsForwarderStatus.dnsForwarderPrepared,
+                dnsForwarderEnabled = dnsForwarderStatus.dnsForwarderEnabled,
+                dnsForwarderMode = dnsForwarderStatus.dnsForwarderMode,
+                upstreamPrimary = dnsForwarderStatus.upstreamPrimary,
+                upstreamFallback = dnsForwarderStatus.upstreamFallback,
+                forwardAttempts = dnsForwarderStatus.forwardAttempts,
+                forwardSuccesses = dnsForwarderStatus.forwardSuccesses,
+                forwardFailures = dnsForwarderStatus.forwardFailures,
+                lastForwarderDecision = dnsForwarderStatus.lastForwarderDecision,
+                lastForwarderError = dnsForwarderStatus.lastForwarderError,
                 liveTrafficReadEnabled = FocusShieldVpnService.liveTrafficReadEnabled,
                 blockingEnabled = FocusShieldVpnService.blockingEnabled,
                 liveObservationToggleAvailable =
