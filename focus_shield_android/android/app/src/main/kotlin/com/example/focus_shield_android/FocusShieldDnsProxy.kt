@@ -1,6 +1,10 @@
 package com.example.focus_shield_android
 
 object FocusShieldDnsProxy {
+    fun attachVpnService(service: android.net.VpnService?) {
+        FocusShieldDnsForwarder.attachVpnService(service)
+    }
+
     private val forwarder = FocusShieldDnsForwarder()
 
     var prepared: Boolean = true

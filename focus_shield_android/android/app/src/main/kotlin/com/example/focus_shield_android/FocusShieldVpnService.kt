@@ -138,6 +138,7 @@ class FocusShieldVpnService : VpnService() {
     )
 
     override fun onCreate() {
+        FocusShieldDnsProxy.attachVpnService(this)
         super.onCreate()
         blocklistStore = FocusShieldBlocklistStore(applicationContext)
         FocusShieldDnsProxy.prepareDiagnosticOnly()
@@ -408,6 +409,7 @@ class FocusShieldVpnService : VpnService() {
     }
 
     override fun onDestroy() {
+        FocusShieldDnsProxy.attachVpnService(null)
         stopProtection()
         super.onDestroy()
     }

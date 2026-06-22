@@ -1,5 +1,7 @@
 package com.example.focus_shield_android
 
+import android.net.VpnService
+
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -35,7 +37,7 @@ class FocusShieldDnsForwarder {
     fun prepareSkeletonOnly() {
         prepared = true
         forwardingEnabled = false
-        mode = "dns_forwarder_diagnostic_only"
+        mode = if (vpnService == null) "dns_forwarder_diagnostic_only" else "dns_forwarder_diagnostic_only_vpn_protect_ready"
         lastDecision = "dns_forwarder_diagnostic_ready_no_routing"
         lastError = ""
     }
@@ -51,7 +53,7 @@ class FocusShieldDnsForwarder {
     fun runSafeDiagnosticQuery(): Boolean {
         prepared = true
         forwardingEnabled = false
-        mode = "dns_forwarder_diagnostic_only"
+        mode = if (vpnService == null) "dns_forwarder_diagnostic_only" else "dns_forwarder_diagnostic_only_vpn_protect_ready"
         forwardAttempts += 1
 
         return try {
