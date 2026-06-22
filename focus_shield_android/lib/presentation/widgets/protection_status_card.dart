@@ -7,6 +7,37 @@ class ProtectionStatusCard extends StatefulWidget {
 
   final ProtectionChannel? protectionChannel;
 
+  Future<void> _testDnsForwarder() async {
+    setState(() {
+      _loading = true;
+      _message = 'Testing DNS forwarder diagnostic...';
+    });
+
+    try {
+      final response = await _channel.testDnsForwarder();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _message = response == 'dns_forwarder_diagnostic_success'
+            ? 'DNS forwarder diagnostic succeeded. Tap Refresh to update counters.'
+            : 'DNS forwarder diagnostic failed. Tap Refresh to update counters.';
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _message = 'DNS forwarder diagnostic error: $error';
+        _loading = false;
+      });
+    }
+  }
+
   @override
   State<ProtectionStatusCard> createState() => _ProtectionStatusCardState();
 }
@@ -438,7 +469,7 @@ class _ProtectionStatusCardState extends State<ProtectionStatusCard> {
                     onPressed: () =>
                         _runAction(_protectionChannel.reloadBlocklist),
                     icon: const Icon(Icons.sync_rounded),
-                    label: const Text('Reload Blocklist'),
+                    label: const Text('Test DNS Forwarder'),
                   ),
                   TextButton.icon(
                     onPressed: _refreshStatus,
