@@ -1,88 +1,70 @@
 package com.example.focus_shield_android
 
 object FocusShieldDnsProxy {
+    private var dnsProxyPrepared: Boolean = true
+    private var dnsProxyRunning: Boolean = false
+    private var dnsProxyMode: String = "disabled"
+    private var dnsProxyQueriesReceived: Int = 0
+    private var dnsProxyQueriesForwarded: Int = 0
+    private var dnsProxyResponsesReturned: Int = 0
+    private var dnsProxyErrors: Int = 0
+    private var lastDnsProxyHost: String = "-"
+    private var lastDnsProxyDecision: String = "dns_proxy_skeleton_ready_routing_disabled"
+    private var lastDnsProxyError: String = "-"
+
     fun attachVpnService(service: android.net.VpnService?) {
         FocusShieldDnsForwarder.attachVpnService(service)
-    }
-
-    private val forwarder = FocusShieldDnsForwarder()
-
-    var prepared: Boolean = true
-        private set
-
-    var running: Boolean = false
-        private set
-
-    var mode: FocusShieldDnsProxyMode = FocusShieldDnsProxyMode.DISABLED
-        private set
-
-    var queriesReceived: Long = 0
-        private set
-
-    var queriesForwarded: Long = 0
-        private set
-
-    var responsesReturned: Long = 0
-        private set
-
-    var errors: Long = 0
-        private set
-
-    var lastHost: String = ""
-        private set
-
-    var lastDecision: String = "dns_proxy_skeleton_ready_routing_disabled"
-        private set
-
-    var lastError: String = ""
-        private set
-
-    fun prepareDiagnosticOnly() {
-        prepared = true
-        running = false
-        mode = FocusShieldDnsProxyMode.DNS_PROXY_DIAGNOSTIC_ONLY
-        forwarder.prepareSkeletonOnly()
-        lastDecision = "dns_proxy_diagnostic_skeleton_prepared_no_routing"
-        lastError = ""
-    }
-
-    fun startDiagnosticOnlyWithoutRouting() {
-        prepared = true
-        running = false
-        mode = FocusShieldDnsProxyMode.DNS_PROXY_DIAGNOSTIC_ONLY
-        forwarder.prepareSkeletonOnly()
-        lastDecision = forwarder.describe()
-        lastError = ""
-    }
-
-    fun stop() {
-        running = false
-
-        if (mode == FocusShieldDnsProxyMode.DNS_PROXY_DIAGNOSTIC_ONLY) {
-            lastDecision = "dns_proxy_stopped_safely"
+        lastDnsProxyDecision = if (service == null) {
+            "dns_proxy_vpn_service_detached"
+        } else {
+            "dns_proxy_vpn_service_attached"
         }
     }
 
-    fun runForwarderDiagnostic(): Boolean {
-        return forwarder.runSafeDiagnosticQuery()
+    fun prepareSkeletonOnly(): FocusShieldDnsProxyStatus {
+        dnsProxyPrepared = true
+        dnsProxyRunning = false
+        dnsProxyMode = "disabled"
+        lastDnsProxyDecision = "dns_proxy_skeleton_ready_routing_disabled"
+        FocusShieldDnsForwarder.prepareSkeletonOnly()
+        return snapshot()
     }
 
-    fun forwarderSnapshot(): FocusShieldDnsForwarderStatus {
-        return forwarder.snapshot()
+    fun runForwarderDiagnostic(): Boolean {
+        val success = FocusShieldDnsForwarder.runSafeDiagnosticQuery()
+        lastDnsProxyDecision = if (success) {
+            "dns_proxy_forwarder_diagnostic_success"
+        } else {
+            "dns_proxy_forwarder_diagnostic_failed"
+        }
+        return success
     }
+
+    fun describe(): String = lastDnsProxyDecision
 
     fun snapshot(): FocusShieldDnsProxyStatus {
         return FocusShieldDnsProxyStatus(
-            dnsProxyPrepared = prepared,
-            dnsProxyRunning = running,
-            dnsProxyMode = mode.label,
-            dnsProxyQueriesReceived = queriesReceived,
-            dnsProxyQueriesForwarded = queriesForwarded,
-            dnsProxyResponsesReturned = responsesReturned,
-            dnsProxyErrors = errors,
-            lastDnsProxyHost = lastHost,
-            lastDnsProxyDecision = lastDecision,
-            lastDnsProxyError = lastError
+            dnsProxyPrepared = dnsProxyPrepared,
+            dnsProxyRunning = dnsProxyRunning,
+            dnsProxyMode = dnsProxyMode,
+            dnsProxyQueriesReceived = dnsProxyQueriesReceived,
+            dnsProxyQueriesForwarded = dnsProxyQueriesForwarded,
+            dnsProxyResponsesReturned = dnsProxyResponsesReturned,
+            dnsProxyErrors = dnsProxyErrors,
+            lastDnsProxyHost = lastDnsProxyHost,
+            lastDnsProxyDecision = lastDnsProxyDecision,
+            lastDnsProxyError = lastDnsProxyError,
         )
     }
+
+    fun isPrepared(): Boolean = dnsProxyPrepared
+    fun isRunning(): Boolean = dnsProxyRunning
+    fun getMode(): String = dnsProxyMode
+    fun getQueriesReceived(): Int = dnsProxyQueriesReceived
+    fun getQueriesForwarded(): Int = dnsProxyQueriesForwarded
+    fun getResponsesReturned(): Int = dnsProxyResponsesReturned
+    fun getErrors(): Int = dnsProxyErrors
+    fun getLastHost(): String = lastDnsProxyHost
+    fun getLastDecision(): String = lastDnsProxyDecision
+    fun getLastError(): String = lastDnsProxyError
 }

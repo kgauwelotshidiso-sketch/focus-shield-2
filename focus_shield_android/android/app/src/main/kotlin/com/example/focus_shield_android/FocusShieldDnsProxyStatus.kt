@@ -4,11 +4,11 @@ data class FocusShieldDnsProxyStatus(
     val dnsProxyPrepared: Boolean,
     val dnsProxyRunning: Boolean,
     val dnsProxyMode: String,
-    val dnsProxyQueriesReceived: Long,
-    val dnsProxyQueriesForwarded: Long,
-    val dnsProxyResponsesReturned: Long,
-    val dnsProxyErrors: Long,
+    val dnsProxyQueriesReceived: Int,
+    val dnsProxyQueriesForwarded: Int,
+    val dnsProxyResponsesReturned: Int,
+    val dnsProxyErrors: Int,
     val lastDnsProxyHost: String,
     val lastDnsProxyDecision: String,
-    val lastDnsProxyError: String
+    val lastDnsProxyError: String,
 )

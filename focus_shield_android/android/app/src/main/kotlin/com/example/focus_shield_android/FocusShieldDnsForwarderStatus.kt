@@ -6,9 +6,9 @@ data class FocusShieldDnsForwarderStatus(
     val dnsForwarderMode: String,
     val upstreamPrimary: String,
     val upstreamFallback: String,
-    val forwardAttempts: Long,
-    val forwardSuccesses: Long,
-    val forwardFailures: Long,
+    val forwardAttempts: Int,
+    val forwardSuccesses: Int,
+    val forwardFailures: Int,
     val lastForwarderDecision: String,
-    val lastForwarderError: String
+    val lastForwarderError: String,
 )

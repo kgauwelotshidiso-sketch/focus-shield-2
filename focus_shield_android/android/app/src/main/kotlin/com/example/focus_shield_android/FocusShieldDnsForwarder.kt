@@ -26,16 +26,40 @@ object FocusShieldDnsForwarder {
         }
     }
 
-    fun isPrepared(): Boolean = true
-    fun isEnabled(): Boolean = false
-    fun getMode(): String {
-        return if (vpnService == null) {
-            "dns_forwarder_diagnostic_only"
+    fun prepareSkeletonOnly(): FocusShieldDnsForwarderStatus {
+        lastDecision = if (vpnService == null) {
+            "dns_forwarder_skeleton_prepared_no_network_forwarding"
         } else {
-            "dns_forwarder_diagnostic_only_vpn_protect_ready"
+            "dns_forwarder_skeleton_prepared_vpn_protect_ready"
         }
+
+        return snapshot()
     }
 
+    fun describe(): String = lastDecision
+
+    fun snapshot(): FocusShieldDnsForwarderStatus {
+        return FocusShieldDnsForwarderStatus(
+            dnsForwarderPrepared = true,
+            dnsForwarderEnabled = false,
+            dnsForwarderMode = if (vpnService == null) {
+                "dns_forwarder_diagnostic_only"
+            } else {
+                "dns_forwarder_diagnostic_only_vpn_protect_ready"
+            },
+            upstreamPrimary = upstreamPrimary,
+            upstreamFallback = upstreamFallback,
+            forwardAttempts = forwardAttempts,
+            forwardSuccesses = forwardSuccesses,
+            forwardFailures = forwardFailures,
+            lastForwarderDecision = lastDecision,
+            lastForwarderError = lastError,
+        )
+    }
+
+    fun isPrepared(): Boolean = true
+    fun isEnabled(): Boolean = false
+    fun getMode(): String = snapshot().dnsForwarderMode
     fun getUpstreamPrimary(): String = upstreamPrimary
     fun getUpstreamFallback(): String = upstreamFallback
     fun getForwardAttempts(): Int = forwardAttempts
