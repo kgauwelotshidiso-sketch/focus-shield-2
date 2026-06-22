@@ -86,14 +86,23 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun reloadBlocklist(result: MethodChannel.Result) {
-        val success = FocusShieldDnsProxy.runForwarderDiagnostic()
-        result.success(
-            if (success) {
-                "dns_forwarder_diagnostic_success"
-            } else {
-                "dns_forwarder_diagnostic_failed"
+        Thread {
+            val response = try {
+                val success = FocusShieldDnsProxy.runForwarderDiagnostic()
+
+                if (success) {
+                    "dns_forwarder_diagnostic_success"
+                } else {
+                    "dns_forwarder_diagnostic_failed"
+                }
+            } catch (error: Exception) {
+                "dns_forwarder_diagnostic_error:${error.javaClass.simpleName}"
             }
-        )
+
+            runOnUiThread {
+                result.success(response)
+            }
+        }.start()
     }
 
     private fun prepareLiveObservation(result: MethodChannel.Result) {
