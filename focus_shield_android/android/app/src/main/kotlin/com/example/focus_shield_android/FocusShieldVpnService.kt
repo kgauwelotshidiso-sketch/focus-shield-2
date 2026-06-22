@@ -213,9 +213,8 @@ class FocusShieldVpnService : VpnService() {
         // Phase 3.45 proved DNS route capture works, but it breaks internet access
         // because captured packets are not forwarded yet.
 
-        vpnInterface = builder
-            addFocusShieldDnsRoutes(builder)
-
+        vpnInterface = builder.addRoute("1.1.1.1", 32)
+            builder.addRoute("8.8.8.8", 32)
             builder.establish()
         isRunning = vpnInterface != null
 
@@ -416,17 +415,4 @@ class FocusShieldVpnService : VpnService() {
         stopProtection()
         super.onDestroy()
     }
-
-    private fun addFocusShieldDnsRoutes(builder: Builder) {
-        // Phase 3.62: IPv4 DNS route capture is enabled only after:
-        // 1. DNS forwarder works on real device.
-        // 2. Forwarder socket is protected from VPN recursion.
-        // 3. DNS TUN response engine exists.
-        // 4. Packet loop output bridge exists.
-        //
-        // IPv6 DNS routes stay disabled until IPv6 response writing is complete.
-        builder.addRoute("1.1.1.1", 32)
-        builder.addRoute("8.8.8.8", 32)
-    }
-
 }

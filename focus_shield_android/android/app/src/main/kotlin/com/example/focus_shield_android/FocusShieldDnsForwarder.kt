@@ -1,172 +1,61 @@
 package com.example.focus_shield_android
 
 import android.net.VpnService
-
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 
-class FocusShieldDnsForwarder {
-    private val upstreamPrimaryValue: String = "1.1.1.1"
-    private val upstreamFallbackValue: String = "8.8.8.8"
+object FocusShieldDnsForwarder {
+    private var vpnService: VpnService? = null
 
-    var prepared: Boolean = true
-        private set
+    private const val upstreamPrimary: String = "1.1.1.1"
+    private const val upstreamFallback: String = "8.8.8.8"
 
-    var forwardingEnabled: Boolean = false
-        private set
+    private var forwardAttempts: Int = 0
+    private var forwardSuccesses: Int = 0
+    private var forwardFailures: Int = 0
+    private var lastDecision: String = "dns_forwarder_diagnostic_ready_no_routing"
+    private var lastError: String = "-"
 
-    var mode: String = "dns_forwarder_diagnostic_only"
-        private set
-
-    var forwardAttempts: Long = 0
-        private set
-
-    var forwardSuccesses: Long = 0
-        private set
-
-    var forwardFailures: Long = 0
-        private set
-
-    var lastDecision: String = "dns_forwarder_diagnostic_ready_no_routing"
-        private set
-
-    var lastError: String = ""
-        private set
-
-    fun prepareSkeletonOnly() {
-        prepared = true
-        forwardingEnabled = false
-        mode = if (vpnService == null) "dns_forwarder_diagnostic_only" else "dns_forwarder_diagnostic_only_vpn_protect_ready"
-        lastDecision = "dns_forwarder_diagnostic_ready_no_routing"
-        lastError = ""
-    }
-
-    fun describe(): String {
-        return if (forwardingEnabled) {
-            "dns_forwarder_enabled"
+    fun attachVpnService(service: VpnService?) {
+        vpnService = service
+        lastDecision = if (service == null) {
+            "vpn_protect_hook_detached"
         } else {
-            "dns_forwarder_diagnostic_ready_no_routing"
+            "vpn_protect_hook_attached"
         }
     }
+
+    fun isPrepared(): Boolean = true
+    fun isEnabled(): Boolean = false
+    fun getMode(): String {
+        return if (vpnService == null) {
+            "dns_forwarder_diagnostic_only"
+        } else {
+            "dns_forwarder_diagnostic_only_vpn_protect_ready"
+        }
+    }
+
+    fun getUpstreamPrimary(): String = upstreamPrimary
+    fun getUpstreamFallback(): String = upstreamFallback
+    fun getForwardAttempts(): Int = forwardAttempts
+    fun getForwardSuccesses(): Int = forwardSuccesses
+    fun getForwardFailures(): Int = forwardFailures
+    fun getLastDecision(): String = lastDecision
+    fun getLastError(): String = lastError
 
     fun runSafeDiagnosticQuery(): Boolean {
-        prepared = true
-        forwardingEnabled = false
-        mode = if (vpnService == null) "dns_forwarder_diagnostic_only" else "dns_forwarder_diagnostic_only_vpn_protect_ready"
-        forwardAttempts += 1
+        val query = buildDnsQuery("example.com")
+        val response = forwardRawDnsQuery(query, query.size)
+        val success = response != null
 
-        return try {
-            val query = buildDnsQuery("example.com")
-            val response = forwardToUpstream(query, upstreamPrimaryValue)
-
-            if (response.isNotEmpty()) {
-                forwardSuccesses += 1
-                lastDecision = "diagnostic_forward_success:example.com"
-                lastError = ""
-                true
-            } else {
-                forwardFailures += 1
-                lastDecision = "diagnostic_forward_empty_response"
-                lastError = "empty_dns_response"
-                false
-            }
-        } catch (primaryError: Exception) {
-            try {
-                val query = buildDnsQuery("example.com")
-                val response = forwardToUpstream(query, upstreamFallbackValue)
-
-                if (response.isNotEmpty()) {
-                    forwardSuccesses += 1
-                    lastDecision = "diagnostic_forward_success_fallback:example.com"
-                    lastError = ""
-                    true
-                } else {
-                    forwardFailures += 1
-                    lastDecision = "diagnostic_forward_empty_fallback_response"
-                    lastError = "empty_dns_fallback_response"
-                    false
-                }
-            } catch (fallbackError: Exception) {
-                forwardFailures += 1
-                lastDecision = "diagnostic_forward_failed"
-                lastError = fallbackError.message ?: "unknown_dns_forward_error"
-                false
-            }
-        }
-    }
-
-    fun forwardDiagnosticDisabled(query: ByteArray): ByteArray? {
-        prepared = true
-        forwardingEnabled = false
-        forwardAttempts += 1
-        forwardFailures += 1
-        lastDecision = "forwarding_blocked_by_safety_gate"
-        lastError = "dns_forwarding_not_enabled_yet"
-        return null
-    }
-
-    private fun forwardToUpstream(query: ByteArray, upstream: String): ByteArray {
-        DatagramSocket().use { socket ->
-            socket.soTimeout = 3000
-
-            val address = InetAddress.getByName(upstream)
-            val request = DatagramPacket(query, query.size, address, 53)
-
-            socket.send(request)
-
-            val buffer = ByteArray(512)
-            val response = DatagramPacket(buffer, buffer.size)
-
-            socket.receive(response)
-
-            return buffer.copyOf(response.length)
-        }
-    }
-
-    private fun buildDnsQuery(hostname: String): ByteArray {
-        val output = ArrayList<Byte>()
-
-        output.add(0x12)
-        output.add(0x34)
-        output.add(0x01)
-        output.add(0x00)
-        output.add(0x00)
-        output.add(0x01)
-        output.add(0x00)
-        output.add(0x00)
-        output.add(0x00)
-        output.add(0x00)
-        output.add(0x00)
-        output.add(0x00)
-
-        hostname.split(".").forEach { label ->
-            output.add(label.length.toByte())
-            label.encodeToByteArray().forEach { output.add(it) }
+        lastDecision = if (success) {
+            "diagnostic_forward_success:example.com"
+        } else {
+            "diagnostic_forward_failed"
         }
 
-        output.add(0x00)
-        output.add(0x00)
-        output.add(0x01)
-        output.add(0x00)
-        output.add(0x01)
-
-        return output.toByteArray()
-    }
-
-    fun snapshot(): FocusShieldDnsForwarderStatus {
-        return FocusShieldDnsForwarderStatus(
-            dnsForwarderPrepared = prepared,
-            dnsForwarderEnabled = forwardingEnabled,
-            dnsForwarderMode = mode,
-            upstreamPrimary = upstreamPrimaryValue,
-            upstreamFallback = upstreamFallbackValue,
-            forwardAttempts = forwardAttempts,
-            forwardSuccesses = forwardSuccesses,
-            forwardFailures = forwardFailures,
-            lastForwarderDecision = lastDecision,
-            lastForwarderError = lastError
-        )
+        return success
     }
 
     fun forwardRawDnsQuery(queryBytes: ByteArray, queryLength: Int): ByteArray? {
@@ -228,4 +117,33 @@ class FocusShieldDnsForwarder {
         }
     }
 
+    private fun buildDnsQuery(hostname: String): ByteArray {
+        val output = ArrayList<Byte>()
+
+        output.add(0x12)
+        output.add(0x34)
+        output.add(0x01)
+        output.add(0x00)
+        output.add(0x00)
+        output.add(0x01)
+        output.add(0x00)
+        output.add(0x00)
+        output.add(0x00)
+        output.add(0x00)
+        output.add(0x00)
+        output.add(0x00)
+
+        hostname.split(".").forEach { label ->
+            output.add(label.length.toByte())
+            label.toByteArray(Charsets.UTF_8).forEach { output.add(it) }
+        }
+
+        output.add(0x00)
+        output.add(0x00)
+        output.add(0x01)
+        output.add(0x00)
+        output.add(0x01)
+
+        return output.toByteArray()
+    }
 }
