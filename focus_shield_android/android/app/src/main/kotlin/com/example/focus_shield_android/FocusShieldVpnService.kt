@@ -213,9 +213,13 @@ class FocusShieldVpnService : VpnService() {
         // Phase 3.45 proved DNS route capture works, but it breaks internet access
         // because captured packets are not forwarded yet.
 
-        vpnInterface = builder.addRoute("1.1.1.1", 32)
-            builder.addRoute("8.8.8.8", 32)
-            builder.establish()
+        builder.addRoute("1.1.1.1", 32)
+
+
+        builder.addRoute("8.8.8.8", 32)
+
+
+        vpnInterface = builder.establish()
         isRunning = vpnInterface != null
 
         packetLoop.start(
