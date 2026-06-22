@@ -86,12 +86,14 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun reloadBlocklist(result: MethodChannel.Result) {
-        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
-            action = FocusShieldVpnService.ACTION_RELOAD_BLOCKLIST
-        }
-
-        startService(serviceIntent)
-        result.success("reloaded")
+        val success = FocusShieldDnsProxy.runForwarderDiagnostic()
+        result.success(
+            if (success) {
+                "dns_forwarder_diagnostic_success"
+            } else {
+                "dns_forwarder_diagnostic_failed"
+            }
+        )
     }
 
     private fun prepareLiveObservation(result: MethodChannel.Result) {

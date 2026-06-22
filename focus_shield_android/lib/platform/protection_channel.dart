@@ -337,7 +337,7 @@ class ProtectionChannel {
   }
 
   Future<String> reloadBlocklist() async {
-    return _invokeString('testDnsForwarder');
+    return _invokeString('reloadBlocklist');
   }
 
   Future<String> prepareLiveObservation() async {
@@ -353,7 +353,7 @@ class ProtectionChannel {
   }
 
   Future<String> testDnsForwarder() async {
-    return _invokeString('testDnsForwarder');
+    return _invokeString('reloadBlocklist');
   }
 
   Future<String> requestLiveObservationUnlock() async {
