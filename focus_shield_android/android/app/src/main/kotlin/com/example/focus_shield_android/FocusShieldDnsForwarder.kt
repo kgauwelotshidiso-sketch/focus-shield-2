@@ -168,4 +168,64 @@ class FocusShieldDnsForwarder {
             lastForwarderError = lastError
         )
     }
+
+    fun forwardRawDnsQuery(queryBytes: ByteArray, queryLength: Int): ByteArray? {
+        forwardAttempts += 1
+
+        val safeLength = queryLength.coerceAtMost(queryBytes.size)
+        if (safeLength <= 0) {
+            forwardFailures += 1
+            lastDecision = "raw_forward_failed_empty_query"
+            lastError = "empty_query"
+            return null
+        }
+
+        val query = queryBytes.copyOfRange(0, safeLength)
+
+        val primaryResponse = sendRawDnsQuery(query, upstreamPrimary)
+        if (primaryResponse != null) {
+            forwardSuccesses += 1
+            lastDecision = "raw_forward_success:$upstreamPrimary"
+            lastError = "-"
+            return primaryResponse
+        }
+
+        val fallbackResponse = sendRawDnsQuery(query, upstreamFallback)
+        if (fallbackResponse != null) {
+            forwardSuccesses += 1
+            lastDecision = "raw_forward_success_fallback:$upstreamFallback"
+            lastError = "-"
+            return fallbackResponse
+        }
+
+        forwardFailures += 1
+        lastDecision = "raw_forward_failed"
+        lastError = "no_upstream_response"
+        return null
+    }
+
+    private fun sendRawDnsQuery(query: ByteArray, upstream: String): ByteArray? {
+        val socket = DatagramSocket()
+
+        try {
+            vpnService?.protect(socket)
+            socket.soTimeout = 3000
+
+            val upstreamAddress = InetAddress.getByName(upstream)
+            val outbound = DatagramPacket(query, query.size, upstreamAddress, 53)
+            socket.send(outbound)
+
+            val buffer = ByteArray(4096)
+            val inbound = DatagramPacket(buffer, buffer.size)
+            socket.receive(inbound)
+
+            return buffer.copyOfRange(0, inbound.length)
+        } catch (error: Exception) {
+            lastError = error.javaClass.simpleName
+            return null
+        } finally {
+            socket.close()
+        }
+    }
+
 }
