@@ -2,6 +2,21 @@ package com.example.focus_shield_android
 
 object FocusShieldDnsProxy {
 
+    fun prepareDiagnosticOnly(): FocusShieldDnsProxyStatus {
+        return prepareSkeletonOnly()
+    }
+
+
+    fun startDiagnosticOnlyWithoutRouting(): FocusShieldDnsProxyStatus {
+        return prepareSkeletonOnly()
+    }
+
+
+    fun stop(): FocusShieldDnsProxyStatus {
+        return prepareSkeletonOnly()
+    }
+
+
     fun forwarderSnapshot(): FocusShieldDnsForwarderStatus {
         return FocusShieldDnsForwarder.snapshot()
     }
