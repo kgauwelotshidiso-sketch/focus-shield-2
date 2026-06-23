@@ -135,73 +135,106 @@ data class FocusShieldProtectionStatus(
             val dnsForwarderStatus = FocusShieldDnsProxy.forwarderSnapshot()
 
             return FocusShieldProtectionStatus(
-                nativeStatusVersion = (CURRENT_VERSION).toInt(),
-                protectionMode = FocusShieldVpnService.protectionMode,
+                nativeStatusVersion = (CURRENT_VERSION).focusShieldStatusInt(),
+                protectionMode = (FocusShieldVpnService.protectionMode).focusShieldStatusString(),
                 vpnActive = FocusShieldVpnService.isRunning,
                 blocklistLoaded = blocklistStatus.loaded,
-                blockedDomainCount = (blocklistStatus.count).toInt(),
+                blockedDomainCount = (blocklistStatus.count).focusShieldStatusInt(),
                 nativeDnsReady = FocusShieldVpnService.dnsFilteringReady,
-                nativeLoadedDomainCount = (FocusShieldVpnService.nativeBlockedDomainCount).toInt(),
+                nativeLoadedDomainCount = (FocusShieldVpnService.nativeBlockedDomainCount).focusShieldStatusInt(),
                 packetLoopPrepared = (FocusShieldVpnService.packetLoopPrepared).toInt(),
                 packetLoopRunning = (FocusShieldVpnService.packetLoopRunning).toInt(),
-                packetsObserved = (FocusShieldVpnService.packetsObserved).toInt(),
-                ipPacketsObserved = (FocusShieldVpnService.ipPacketsObserved).toInt(),
-                ipv6PacketsObserved = (FocusShieldVpnService.ipv6PacketsObserved).toInt(),
-                udpPacketsObserved = (FocusShieldVpnService.udpPacketsObserved).toInt(),
-                ipv6UdpPacketsObserved = (FocusShieldVpnService.ipv6UdpPacketsObserved).toInt(),
-                tcpPacketsObserved = (FocusShieldVpnService.tcpPacketsObserved).toInt(),
-                ipv6TcpPacketsObserved = (FocusShieldVpnService.ipv6TcpPacketsObserved).toInt(),
+                packetsObserved = (FocusShieldVpnService.packetsObserved).focusShieldStatusInt(),
+                ipPacketsObserved = (FocusShieldVpnService.ipPacketsObserved).focusShieldStatusInt(),
+                ipv6PacketsObserved = (FocusShieldVpnService.ipv6PacketsObserved).focusShieldStatusInt(),
+                udpPacketsObserved = (FocusShieldVpnService.udpPacketsObserved).focusShieldStatusInt(),
+                ipv6UdpPacketsObserved = (FocusShieldVpnService.ipv6UdpPacketsObserved).focusShieldStatusInt(),
+                tcpPacketsObserved = (FocusShieldVpnService.tcpPacketsObserved).focusShieldStatusInt(),
+                ipv6TcpPacketsObserved = (FocusShieldVpnService.ipv6TcpPacketsObserved).focusShieldStatusInt(),
                 dnsCandidatePacketsObserved =
                     FocusShieldVpnService.dnsCandidatePacketsObserved,
                 ipv6DnsCandidatePacketsObserved =
                     FocusShieldVpnService.ipv6DnsCandidatePacketsObserved,
-                dnsParseAttempts = (FocusShieldVpnService.dnsParseAttempts).toInt(),
-                dnsParseFailures = (FocusShieldVpnService.dnsParseFailures).toInt(),
-                lastPacketProtocol = (FocusShieldVpnService.lastPacketProtocol).toInt(),
-                lastParserError = (FocusShieldVpnService.lastParserError).toInt(),
-                lastPacketSummary = (FocusShieldVpnService.lastPacketSummary).toInt(),
+                dnsParseAttempts = (FocusShieldVpnService.dnsParseAttempts).focusShieldStatusInt(),
+                dnsParseFailures = (FocusShieldVpnService.dnsParseFailures).focusShieldStatusInt(),
+                lastPacketProtocol = (FocusShieldVpnService.lastPacketProtocol).focusShieldStatusString(),
+                lastParserError = (FocusShieldVpnService.lastParserError).focusShieldStatusString(),
+                lastPacketSummary = (FocusShieldVpnService.lastPacketSummary).focusShieldStatusString(),
                 dnsParserPrepared = (FocusShieldVpnService.dnsParserPrepared).toInt(),
-                dnsQueriesParsed = (FocusShieldVpnService.dnsQueriesParsed).toInt(),
-                lastParsedHostname = (FocusShieldVpnService.lastParsedHostname).toInt(),
+                dnsQueriesParsed = (FocusShieldVpnService.dnsQueriesParsed).focusShieldStatusInt(),
+                lastParsedHostname = (FocusShieldVpnService.lastParsedHostname).focusShieldStatusString(),
                 dryRunModeReady = FocusShieldVpnService.dryRunModeReady,
-                dryRunBlocksDetected = (FocusShieldVpnService.dryRunBlocksDetected).toInt(),
-                lastDryRunDecision = FocusShieldVpnService.lastDryRunDecision,
+                dryRunBlocksDetected = (FocusShieldVpnService.dryRunBlocksDetected).focusShieldStatusInt(),
+                lastDryRunDecision = (FocusShieldVpnService.lastDryRunDecision).focusShieldStatusString(),
                 dnsProxyPrepared = dnsProxyStatus.dnsProxyPrepared,
                 dnsProxyRunning = dnsProxyStatus.dnsProxyRunning,
-                dnsProxyMode = dnsProxyStatus.dnsProxyMode,
-                dnsProxyQueriesReceived = (dnsProxyStatus.dnsProxyQueriesReceived).toInt(),
-                dnsProxyQueriesForwarded = (dnsProxyStatus.dnsProxyQueriesForwarded).toInt(),
-                dnsProxyResponsesReturned = (dnsProxyStatus.dnsProxyResponsesReturned).toInt(),
-                dnsProxyErrors = (dnsProxyStatus.dnsProxyErrors).toInt(),
-                lastDnsProxyHost = dnsProxyStatus.lastDnsProxyHost,
-                lastDnsProxyDecision = dnsProxyStatus.lastDnsProxyDecision,
-                lastDnsProxyError = dnsProxyStatus.lastDnsProxyError,
+                dnsProxyMode = (dnsProxyStatus.dnsProxyMode).focusShieldStatusString(),
+                dnsProxyQueriesReceived = (dnsProxyStatus.dnsProxyQueriesReceived).focusShieldStatusInt(),
+                dnsProxyQueriesForwarded = (dnsProxyStatus.dnsProxyQueriesForwarded).focusShieldStatusInt(),
+                dnsProxyResponsesReturned = (dnsProxyStatus.dnsProxyResponsesReturned).focusShieldStatusInt(),
+                dnsProxyErrors = (dnsProxyStatus.dnsProxyErrors).focusShieldStatusInt(),
+                lastDnsProxyHost = (dnsProxyStatus.lastDnsProxyHost).focusShieldStatusString(),
+                lastDnsProxyDecision = (dnsProxyStatus.lastDnsProxyDecision).focusShieldStatusString(),
+                lastDnsProxyError = (dnsProxyStatus.lastDnsProxyError).focusShieldStatusString(),
                 dnsForwarderPrepared = dnsForwarderStatus.dnsForwarderPrepared,
                 dnsForwarderEnabled = dnsForwarderStatus.dnsForwarderEnabled,
-                dnsForwarderMode = dnsForwarderStatus.dnsForwarderMode,
-                upstreamPrimary = dnsForwarderStatus.upstreamPrimary,
-                upstreamFallback = dnsForwarderStatus.upstreamFallback,
-                forwardAttempts = (dnsForwarderStatus.forwardAttempts).toInt(),
-                forwardSuccesses = (dnsForwarderStatus.forwardSuccesses).toInt(),
-                forwardFailures = (dnsForwarderStatus.forwardFailures).toInt(),
-                lastForwarderDecision = dnsForwarderStatus.lastForwarderDecision,
-                lastForwarderError = dnsForwarderStatus.lastForwarderError,
+                dnsForwarderMode = (dnsForwarderStatus.dnsForwarderMode).focusShieldStatusString(),
+                upstreamPrimary = (dnsForwarderStatus.upstreamPrimary).focusShieldStatusString(),
+                upstreamFallback = (dnsForwarderStatus.upstreamFallback).focusShieldStatusString(),
+                forwardAttempts = (dnsForwarderStatus.forwardAttempts).focusShieldStatusInt(),
+                forwardSuccesses = (dnsForwarderStatus.forwardSuccesses).focusShieldStatusInt(),
+                forwardFailures = (dnsForwarderStatus.forwardFailures).focusShieldStatusInt(),
+                lastForwarderDecision = (dnsForwarderStatus.lastForwarderDecision).focusShieldStatusString(),
+                lastForwarderError = (dnsForwarderStatus.lastForwarderError).focusShieldStatusString(),
                 liveTrafficReadEnabled = FocusShieldVpnService.liveTrafficReadEnabled,
                 blockingEnabled = FocusShieldVpnService.blockingEnabled,
                 liveObservationToggleAvailable =
                     FocusShieldVpnService.liveObservationToggleAvailable,
                 liveObservationRequested = FocusShieldVpnService.liveObservationRequested,
-                liveObservationGateVersion = (FocusShieldVpnService.liveObservationGateVersion).toInt(),
+                liveObservationGateVersion = (FocusShieldVpnService.liveObservationGateVersion).focusShieldStatusInt(),
                 liveObservationCodeGateReady =
                     FocusShieldVpnService.liveObservationCodeGateReady,
                 liveObservationCodeGateUnlocked =
                     FocusShieldVpnService.liveObservationCodeGateUnlocked,
-                liveObservationSafetyGate = FocusShieldVpnService.liveObservationSafetyGate,
+                liveObservationSafetyGate = (FocusShieldVpnService.liveObservationSafetyGate).focusShieldStatusString(),
                 liveObservationUnlockAttempts =
                     FocusShieldVpnService.liveObservationUnlockAttempts,
-                statusMessage = FocusShieldVpnService.statusMessage,
-                blocklistError = blocklistStatus.error ?: ""
+                statusMessage = (FocusShieldVpnService.statusMessage).focusShieldStatusString(),
+                blocklistError = (blocklistStatus.error ?: "").focusShieldStatusString()
             )
         }
     }
 }
+
+private fun Any?.focusShieldStatusInt(): Int {
+    return when (this) {
+        is Int -> this
+        is Long -> this.toInt()
+        is Short -> this.toInt()
+        is Byte -> this.toInt()
+        is Double -> this.toInt()
+        is Float -> this.toInt()
+        is String -> this.toIntOrNull() ?: 0
+        is Boolean -> if (this) 1 else 0
+        else -> 0
+    }
+}
+
+private fun Any?.focusShieldStatusLong(): Long {
+    return when (this) {
+        is Long -> this
+        is Int -> this.toLong()
+        is Short -> this.toLong()
+        is Byte -> this.toLong()
+        is Double -> this.toLong()
+        is Float -> this.toLong()
+        is String -> this.toLongOrNull() ?: 0L
+        is Boolean -> if (this) 1L else 0L
+        else -> 0L
+    }
+}
+
+private fun Any?.focusShieldStatusString(): String {
+    return this?.toString() ?: "-"
+}
+
