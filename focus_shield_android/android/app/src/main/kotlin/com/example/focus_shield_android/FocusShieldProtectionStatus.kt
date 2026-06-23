@@ -4,12 +4,10 @@ data class FocusShieldProtectionStatus(
     val nativeStatusVersion: Int,
     val protectionMode: String,
     val vpnActive: Boolean,
-
     val blocklistLoaded: Boolean,
     val blockedDomainCount: Int,
     val nativeDnsReady: Boolean,
     val nativeLoadedDomainCount: Int,
-
     val packetLoopPrepared: Boolean,
     val packetLoopRunning: Boolean,
     val packetsObserved: Int,
@@ -26,15 +24,12 @@ data class FocusShieldProtectionStatus(
     val lastPacketProtocol: String,
     val lastParserError: String,
     val lastPacketSummary: String,
-
     val dnsParserPrepared: Boolean,
     val dnsQueriesParsed: Int,
     val lastParsedHostname: String,
-
     val dryRunModeReady: Boolean,
     val dryRunBlocksDetected: Int,
     val lastDryRunDecision: String,
-
     val dnsProxyPrepared: Boolean,
     val dnsProxyRunning: Boolean,
     val dnsProxyMode: String,
@@ -45,7 +40,6 @@ data class FocusShieldProtectionStatus(
     val lastDnsProxyHost: String,
     val lastDnsProxyDecision: String,
     val lastDnsProxyError: String,
-
     val dnsForwarderPrepared: Boolean,
     val dnsForwarderEnabled: Boolean,
     val dnsForwarderMode: String,
@@ -56,7 +50,6 @@ data class FocusShieldProtectionStatus(
     val forwardFailures: Int,
     val lastForwarderDecision: String,
     val lastForwarderError: String,
-
     val liveTrafficReadEnabled: Boolean,
     val blockingEnabled: Boolean,
     val liveObservationToggleAvailable: Boolean,
@@ -66,7 +59,6 @@ data class FocusShieldProtectionStatus(
     val liveObservationCodeGateUnlocked: Boolean,
     val liveObservationSafetyGate: String,
     val liveObservationUnlockAttempts: Int,
-
     val statusMessage: String,
     val blocklistError: String
 ) {
@@ -75,12 +67,10 @@ data class FocusShieldProtectionStatus(
             "nativeStatusVersion" to nativeStatusVersion,
             "protectionMode" to protectionMode,
             "vpnActive" to vpnActive,
-
             "blocklistLoaded" to blocklistLoaded,
             "blockedDomainCount" to blockedDomainCount,
             "nativeDnsReady" to nativeDnsReady,
             "nativeLoadedDomainCount" to nativeLoadedDomainCount,
-
             "packetLoopPrepared" to packetLoopPrepared,
             "packetLoopRunning" to packetLoopRunning,
             "packetsObserved" to packetsObserved,
@@ -97,15 +87,12 @@ data class FocusShieldProtectionStatus(
             "lastPacketProtocol" to lastPacketProtocol,
             "lastParserError" to lastParserError,
             "lastPacketSummary" to lastPacketSummary,
-
             "dnsParserPrepared" to dnsParserPrepared,
             "dnsQueriesParsed" to dnsQueriesParsed,
             "lastParsedHostname" to lastParsedHostname,
-
             "dryRunModeReady" to dryRunModeReady,
             "dryRunBlocksDetected" to dryRunBlocksDetected,
             "lastDryRunDecision" to lastDryRunDecision,
-
             "dnsProxyPrepared" to dnsProxyPrepared,
             "dnsProxyRunning" to dnsProxyRunning,
             "dnsProxyMode" to dnsProxyMode,
@@ -116,7 +103,6 @@ data class FocusShieldProtectionStatus(
             "lastDnsProxyHost" to lastDnsProxyHost,
             "lastDnsProxyDecision" to lastDnsProxyDecision,
             "lastDnsProxyError" to lastDnsProxyError,
-
             "dnsForwarderPrepared" to dnsForwarderPrepared,
             "dnsForwarderEnabled" to dnsForwarderEnabled,
             "dnsForwarderMode" to dnsForwarderMode,
@@ -127,7 +113,6 @@ data class FocusShieldProtectionStatus(
             "forwardFailures" to forwardFailures,
             "lastForwarderDecision" to lastForwarderDecision,
             "lastForwarderError" to lastForwarderError,
-
             "liveTrafficReadEnabled" to liveTrafficReadEnabled,
             "blockingEnabled" to blockingEnabled,
             "liveObservationToggleAvailable" to liveObservationToggleAvailable,
@@ -137,7 +122,6 @@ data class FocusShieldProtectionStatus(
             "liveObservationCodeGateUnlocked" to liveObservationCodeGateUnlocked,
             "liveObservationSafetyGate" to liveObservationSafetyGate,
             "liveObservationUnlockAttempts" to liveObservationUnlockAttempts,
-
             "statusMessage" to statusMessage,
             "blocklistError" to blocklistError
         )
@@ -145,10 +129,6 @@ data class FocusShieldProtectionStatus(
 
     companion object {
         const val CURRENT_VERSION = 7
-
-        private fun Long.toSafeInt(): Int {
-            return coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt()
-        }
 
         fun build(blocklistStatus: FocusShieldBlocklistStatus): FocusShieldProtectionStatus {
             val dnsProxyStatus = FocusShieldDnsProxy.snapshot()
@@ -158,37 +138,32 @@ data class FocusShieldProtectionStatus(
                 nativeStatusVersion = CURRENT_VERSION,
                 protectionMode = FocusShieldVpnService.protectionMode,
                 vpnActive = FocusShieldVpnService.isRunning,
-
                 blocklistLoaded = blocklistStatus.loaded,
                 blockedDomainCount = blocklistStatus.count,
                 nativeDnsReady = FocusShieldVpnService.dnsFilteringReady,
                 nativeLoadedDomainCount = FocusShieldVpnService.nativeBlockedDomainCount,
-
                 packetLoopPrepared = FocusShieldVpnService.packetLoopPrepared,
                 packetLoopRunning = FocusShieldVpnService.packetLoopRunning,
-                packetsObserved = FocusShieldVpnService.packetsObserved.toSafeInt(),
-                ipPacketsObserved = FocusShieldVpnService.ipPacketsObserved.toSafeInt(),
-                ipv6PacketsObserved = FocusShieldVpnService.ipv6PacketsObserved.toSafeInt(),
-                udpPacketsObserved = FocusShieldVpnService.udpPacketsObserved.toSafeInt(),
-                ipv6UdpPacketsObserved = FocusShieldVpnService.ipv6UdpPacketsObserved.toSafeInt(),
-                tcpPacketsObserved = FocusShieldVpnService.tcpPacketsObserved.toSafeInt(),
-                ipv6TcpPacketsObserved = FocusShieldVpnService.ipv6TcpPacketsObserved.toSafeInt(),
-                dnsCandidatePacketsObserved = FocusShieldVpnService.dnsCandidatePacketsObserved.toSafeInt(),
-                ipv6DnsCandidatePacketsObserved = FocusShieldVpnService.ipv6DnsCandidatePacketsObserved.toSafeInt(),
-                dnsParseAttempts = FocusShieldVpnService.dnsParseAttempts.toSafeInt(),
-                dnsParseFailures = FocusShieldVpnService.dnsParseFailures.toSafeInt(),
+                packetsObserved = FocusShieldVpnService.packetsObserved.safeInt(),
+                ipPacketsObserved = FocusShieldVpnService.ipPacketsObserved.safeInt(),
+                ipv6PacketsObserved = FocusShieldVpnService.ipv6PacketsObserved.safeInt(),
+                udpPacketsObserved = FocusShieldVpnService.udpPacketsObserved.safeInt(),
+                ipv6UdpPacketsObserved = FocusShieldVpnService.ipv6UdpPacketsObserved.safeInt(),
+                tcpPacketsObserved = FocusShieldVpnService.tcpPacketsObserved.safeInt(),
+                ipv6TcpPacketsObserved = FocusShieldVpnService.ipv6TcpPacketsObserved.safeInt(),
+                dnsCandidatePacketsObserved = FocusShieldVpnService.dnsCandidatePacketsObserved.safeInt(),
+                ipv6DnsCandidatePacketsObserved = FocusShieldVpnService.ipv6DnsCandidatePacketsObserved.safeInt(),
+                dnsParseAttempts = FocusShieldVpnService.dnsParseAttempts.safeInt(),
+                dnsParseFailures = FocusShieldVpnService.dnsParseFailures.safeInt(),
                 lastPacketProtocol = FocusShieldVpnService.lastPacketProtocol,
                 lastParserError = FocusShieldVpnService.lastParserError,
                 lastPacketSummary = FocusShieldVpnService.lastPacketSummary,
-
                 dnsParserPrepared = FocusShieldVpnService.dnsParserPrepared,
-                dnsQueriesParsed = FocusShieldVpnService.dnsQueriesParsed.toSafeInt(),
+                dnsQueriesParsed = FocusShieldVpnService.dnsQueriesParsed.safeInt(),
                 lastParsedHostname = FocusShieldVpnService.lastParsedHostname,
-
                 dryRunModeReady = FocusShieldVpnService.dryRunModeReady,
-                dryRunBlocksDetected = FocusShieldVpnService.dryRunBlocksDetected.toSafeInt(),
+                dryRunBlocksDetected = FocusShieldVpnService.dryRunBlocksDetected.safeInt(),
                 lastDryRunDecision = FocusShieldVpnService.lastDryRunDecision,
-
                 dnsProxyPrepared = dnsProxyStatus.dnsProxyPrepared,
                 dnsProxyRunning = dnsProxyStatus.dnsProxyRunning,
                 dnsProxyMode = dnsProxyStatus.dnsProxyMode,
@@ -199,7 +174,6 @@ data class FocusShieldProtectionStatus(
                 lastDnsProxyHost = dnsProxyStatus.lastDnsProxyHost,
                 lastDnsProxyDecision = dnsProxyStatus.lastDnsProxyDecision,
                 lastDnsProxyError = dnsProxyStatus.lastDnsProxyError,
-
                 dnsForwarderPrepared = dnsForwarderStatus.dnsForwarderPrepared,
                 dnsForwarderEnabled = dnsForwarderStatus.dnsForwarderEnabled,
                 dnsForwarderMode = dnsForwarderStatus.dnsForwarderMode,
@@ -210,7 +184,6 @@ data class FocusShieldProtectionStatus(
                 forwardFailures = dnsForwarderStatus.forwardFailures,
                 lastForwarderDecision = dnsForwarderStatus.lastForwarderDecision,
                 lastForwarderError = dnsForwarderStatus.lastForwarderError,
-
                 liveTrafficReadEnabled = FocusShieldVpnService.liveTrafficReadEnabled,
                 blockingEnabled = FocusShieldVpnService.blockingEnabled,
                 liveObservationToggleAvailable = FocusShieldVpnService.liveObservationToggleAvailable,
@@ -220,10 +193,17 @@ data class FocusShieldProtectionStatus(
                 liveObservationCodeGateUnlocked = FocusShieldVpnService.liveObservationCodeGateUnlocked,
                 liveObservationSafetyGate = FocusShieldVpnService.liveObservationSafetyGate,
                 liveObservationUnlockAttempts = FocusShieldVpnService.liveObservationUnlockAttempts,
-
                 statusMessage = FocusShieldVpnService.statusMessage,
                 blocklistError = blocklistStatus.error ?: ""
             )
+        }
+
+        private fun Long.safeInt(): Int {
+            return when {
+                this > Int.MAX_VALUE -> Int.MAX_VALUE
+                this < Int.MIN_VALUE -> Int.MIN_VALUE
+                else -> this.toInt()
+            }
         }
     }
 }
