@@ -1,6 +1,11 @@
 package com.example.focus_shield_android
 
 object FocusShieldDnsProxy {
+
+    fun forwarderSnapshot(): FocusShieldDnsForwarderStatus {
+        return FocusShieldDnsForwarder.snapshot()
+    }
+
     private var dnsProxyPrepared: Boolean = true
     private var dnsProxyRunning: Boolean = false
     private var dnsProxyMode: String = "disabled"
