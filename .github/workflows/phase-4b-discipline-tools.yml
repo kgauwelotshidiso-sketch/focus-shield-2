@@ -489,3 +489,549 @@ jobs:
             }
           }
           ''')
+write("lib/data/database/sqlite_schema.dart", r'''
+          class SqliteSchema {
+            static const statements = [
+              '''
+              CREATE TABLE IF NOT EXISTS app_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                listening_wins_today INTEGER NOT NULL DEFAULT 0,
+                mission_target INTEGER NOT NULL DEFAULT 3,
+                xp INTEGER NOT NULL DEFAULT 0,
+                blocked_attempts INTEGER NOT NULL DEFAULT 0,
+                recovered_attempts INTEGER NOT NULL DEFAULT 0,
+                focus_sessions_today INTEGER NOT NULL DEFAULT 0,
+                reflections_today INTEGER NOT NULL DEFAULT 0,
+                concentration_wins_today INTEGER NOT NULL DEFAULT 0,
+                protection_enabled INTEGER NOT NULL DEFAULT 0,
+                morning_command_set INTEGER NOT NULL DEFAULT 0,
+                end_reviews_today INTEGER NOT NULL DEFAULT 0,
+                last_active_date TEXT NOT NULL,
+                current_streak INTEGER NOT NULL DEFAULT 0,
+                longest_streak INTEGER NOT NULL DEFAULT 0,
+                completed_days INTEGER NOT NULL DEFAULT 0,
+                commitment_days INTEGER NOT NULL DEFAULT 0,
+                commitment_start_date TEXT NOT NULL DEFAULT '',
+                total_websites_scanned INTEGER NOT NULL DEFAULT 0,
+                websites_scanned_today INTEGER NOT NULL DEFAULT 0,
+                new_websites_scanned_today INTEGER NOT NULL DEFAULT 0,
+                scanned_domains_today TEXT NOT NULL DEFAULT '',
+                last_reflection_text TEXT NOT NULL DEFAULT '',
+                updated_at TEXT NOT NULL
+              );
+              ''',
+              '''
+              CREATE TABLE IF NOT EXISTS blocked_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                domain TEXT NOT NULL,
+                category TEXT NOT NULL,
+                confidence REAL NOT NULL,
+                recovered INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+              );
+              ''',
+              '''
+              CREATE TABLE IF NOT EXISTS settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                protection_enabled INTEGER NOT NULL DEFAULT 0,
+                lock_enabled INTEGER NOT NULL DEFAULT 1,
+                delayed_disable_hours INTEGER NOT NULL DEFAULT 24,
+                updated_at TEXT NOT NULL
+              );
+              ''',
+              '''
+              CREATE TABLE IF NOT EXISTS goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+              );
+              ''',
+              '''
+              CREATE TABLE IF NOT EXISTS affirmations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                text TEXT NOT NULL,
+                favorite INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+              );
+              ''',
+              '''
+              CREATE TABLE IF NOT EXISTS blocked_domains (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                domain TEXT UNIQUE NOT NULL,
+                category TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+              );
+              ''',
+              '''
+              CREATE TABLE IF NOT EXISTS daily_summaries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date_key TEXT UNIQUE NOT NULL,
+                listening_wins INTEGER NOT NULL DEFAULT 0,
+                mission_target INTEGER NOT NULL DEFAULT 3,
+                mission_complete INTEGER NOT NULL DEFAULT 0,
+                xp_total INTEGER NOT NULL DEFAULT 0,
+                focus_sessions INTEGER NOT NULL DEFAULT 0,
+                reflections INTEGER NOT NULL DEFAULT 0,
+                concentration_wins INTEGER NOT NULL DEFAULT 0,
+                blocked_attempts INTEGER NOT NULL DEFAULT 0,
+                recovered_attempts INTEGER NOT NULL DEFAULT 0,
+                recovery_rate INTEGER NOT NULL DEFAULT 100,
+                coach_score INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+              );
+              ''',
+            ];
+
+            static const schema = '''
+            Focus Shield SQLite schema version 4.
+            Version 4 adds commitment duration, scanner metrics, and saved reflection text.
+            ''';
+          }
+          ''')
+
+          write("lib/data/database/database_migrations.dart", r'''
+          import 'sqlite_schema.dart';
+
+          class DatabaseMigrations {
+            static const currentVersion = 4;
+
+            static List<String> creationScripts() {
+              return SqliteSchema.statements;
+            }
+
+            static List<String> upgradeScripts({
+              required int oldVersion,
+              required int newVersion,
+            }) {
+              final scripts = <String>[];
+
+              if (oldVersion < 2 && newVersion >= 2) {
+                scripts.add(
+                  "ALTER TABLE app_state ADD COLUMN last_active_date TEXT NOT NULL DEFAULT '1970-01-01';",
+                );
+              }
+
+              if (oldVersion < 3 && newVersion >= 3) {
+                scripts.addAll([
+                  'ALTER TABLE app_state ADD COLUMN current_streak INTEGER NOT NULL DEFAULT 0;',
+                  'ALTER TABLE app_state ADD COLUMN longest_streak INTEGER NOT NULL DEFAULT 0;',
+                  'ALTER TABLE app_state ADD COLUMN completed_days INTEGER NOT NULL DEFAULT 0;',
+                  '''
+                  CREATE TABLE IF NOT EXISTS daily_summaries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date_key TEXT UNIQUE NOT NULL,
+                    listening_wins INTEGER NOT NULL DEFAULT 0,
+                    mission_target INTEGER NOT NULL DEFAULT 3,
+                    mission_complete INTEGER NOT NULL DEFAULT 0,
+                    xp_total INTEGER NOT NULL DEFAULT 0,
+                    focus_sessions INTEGER NOT NULL DEFAULT 0,
+                    reflections INTEGER NOT NULL DEFAULT 0,
+                    concentration_wins INTEGER NOT NULL DEFAULT 0,
+                    blocked_attempts INTEGER NOT NULL DEFAULT 0,
+                    recovered_attempts INTEGER NOT NULL DEFAULT 0,
+                    recovery_rate INTEGER NOT NULL DEFAULT 100,
+                    coach_score INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL
+                  );
+                  ''',
+                ]);
+              }
+
+              if (oldVersion < 4 && newVersion >= 4) {
+                scripts.addAll([
+                  'ALTER TABLE app_state ADD COLUMN commitment_days INTEGER NOT NULL DEFAULT 0;',
+                  "ALTER TABLE app_state ADD COLUMN commitment_start_date TEXT NOT NULL DEFAULT '';",
+                  'ALTER TABLE app_state ADD COLUMN total_websites_scanned INTEGER NOT NULL DEFAULT 0;',
+                  'ALTER TABLE app_state ADD COLUMN websites_scanned_today INTEGER NOT NULL DEFAULT 0;',
+                  'ALTER TABLE app_state ADD COLUMN new_websites_scanned_today INTEGER NOT NULL DEFAULT 0;',
+                  "ALTER TABLE app_state ADD COLUMN scanned_domains_today TEXT NOT NULL DEFAULT '';",
+                  "ALTER TABLE app_state ADD COLUMN last_reflection_text TEXT NOT NULL DEFAULT '';",
+                ]);
+              }
+
+              return scripts;
+            }
+
+            static List<String> migrationScriptsForVersion(int version) {
+              return creationScripts();
+            }
+          }
+          ''')
+
+          write("lib/presentation/screens/focus_timer_screen.dart", r'''
+          import 'dart:async';
+          import 'package:flutter/material.dart';
+          import '../../core/theme/app_theme.dart';
+          import '../widgets/action_button.dart';
+          import '../widgets/shield_card.dart';
+
+          class FocusTimerScreen extends StatefulWidget {
+            const FocusTimerScreen({
+              super.key,
+              required this.onBack,
+              required this.onCompleted,
+            });
+
+            final VoidCallback onBack;
+            final ValueChanged<int> onCompleted;
+
+            @override
+            State<FocusTimerScreen> createState() => _FocusTimerScreenState();
+          }
+
+          class _FocusTimerScreenState extends State<FocusTimerScreen> {
+            final _minutesController = TextEditingController(text: '10');
+            Timer? _timer;
+            int _remainingSeconds = 0;
+            int _selectedMinutes = 10;
+            bool _running = false;
+
+            @override
+            void dispose() {
+              _timer?.cancel();
+              _minutesController.dispose();
+              super.dispose();
+            }
+
+            String get _countdownText {
+              final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+              final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+              return '$minutes:$seconds';
+            }
+
+            void _start() {
+              final parsed = int.tryParse(_minutesController.text.trim()) ?? 10;
+              final minutes = parsed < 1 ? 1 : parsed > 180 ? 180 : parsed;
+
+              _timer?.cancel();
+              setState(() {
+                _selectedMinutes = minutes;
+                _remainingSeconds = minutes * 60;
+                _running = true;
+              });
+
+              _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                if (_remainingSeconds <= 1) {
+                  timer.cancel();
+                  _finish();
+                  return;
+                }
+
+                setState(() {
+                  _remainingSeconds -= 1;
+                });
+              });
+            }
+
+            void _pause() {
+              _timer?.cancel();
+              setState(() {
+                _running = false;
+              });
+            }
+
+            void _finish() {
+              _timer?.cancel();
+              setState(() {
+                _running = false;
+                _remainingSeconds = 0;
+              });
+              widget.onCompleted(_selectedMinutes);
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return ListView(
+                padding: const EdgeInsets.all(18),
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: widget.onBack,
+                        icon: const Icon(Icons.arrow_back_rounded),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Focus Timer',
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Text('Set your own time, then complete a real focus session.'),
+                  const SizedBox(height: 18),
+                  ShieldCard(
+                    borderColor: AppTheme.primary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Custom focus duration'),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _minutesController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Minutes',
+                            hintText: '10',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Center(
+                          child: Text(
+                            _remainingSeconds == 0 ? 'Ready' : _countdownText,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineLarge
+                                ?.copyWith(fontSize: 54),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        ActionButton(
+                          label: _running ? 'Pause Timer' : 'Start Timer',
+                          subtitle: _running ? 'Keep control' : 'Begin countdown',
+                          onPressed: _running ? _pause : _start,
+                        ),
+                        const SizedBox(height: 10),
+                        ActionButton(
+                          label: 'Complete Focus Session',
+                          subtitle: '+20 XP',
+                          onPressed: _finish,
+                        ),
+                      ],
+                    ),
+                  ),
+                  ShieldCard(
+                    borderColor: AppTheme.secondary,
+                    child: const Text(
+                      'Focus rule: one session, one task, no switching until the countdown ends.',
+                    ),
+                  ),
+                ],
+              );
+            }
+          }
+          ''')
+
+          write("lib/presentation/screens/concentration_screen.dart", r'''
+          import 'dart:async';
+          import 'package:flutter/material.dart';
+          import '../../core/constants/app_constants.dart';
+          import '../../core/theme/app_theme.dart';
+          import '../../domain/models/affirmation.dart';
+          import '../../domain/models/goal.dart';
+          import '../widgets/action_button.dart';
+          import '../widgets/shield_card.dart';
+
+          class ConcentrationScreen extends StatefulWidget {
+            const ConcentrationScreen({
+              super.key,
+              required this.goals,
+              required this.affirmations,
+              required this.primaryAffirmation,
+              required this.onBack,
+              required this.onCompleted,
+            });
+
+            final List<Goal> goals;
+            final List<Affirmation> affirmations;
+            final String primaryAffirmation;
+            final VoidCallback onBack;
+            final ValueChanged<String> onCompleted;
+
+            @override
+            State<ConcentrationScreen> createState() =>
+                _ConcentrationScreenState();
+          }
+
+          class _ConcentrationScreenState extends State<ConcentrationScreen> {
+            final _customThoughtController = TextEditingController();
+            Timer? _timer;
+            String _source = 'affirmation';
+            int _remainingSeconds = 0;
+            bool _running = false;
+
+            @override
+            void dispose() {
+              _timer?.cancel();
+              _customThoughtController.dispose();
+              super.dispose();
+            }
+
+            String get _selectedThought {
+              if (_source == 'goal') {
+                if (widget.goals.isEmpty) {
+                  return 'Create a goal first, then concentrate on it.';
+                }
+                return widget.goals.first.title;
+              }
+
+              if (_source == 'custom') {
+                final custom = _customThoughtController.text.trim();
+                return custom.isEmpty
+                    ? 'Type one clear thought to concentrate on.'
+                    : custom;
+              }
+
+              if (widget.affirmations.isNotEmpty) {
+                for (final affirmation in widget.affirmations) {
+                  if (affirmation.favorite) {
+                    return affirmation.text;
+                  }
+                }
+                return widget.affirmations.first.text;
+              }
+
+              if (widget.primaryAffirmation.trim().isNotEmpty) {
+                return widget.primaryAffirmation;
+              }
+
+              return AppConstants.affirmation;
+            }
+
+            String get _countdownText {
+              final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+              final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+              return '$minutes:$seconds';
+            }
+
+            void _start() {
+              _timer?.cancel();
+              setState(() {
+                _remainingSeconds = 5 * 60;
+                _running = true;
+              });
+
+              _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                if (_remainingSeconds <= 1) {
+                  timer.cancel();
+                  _finish();
+                  return;
+                }
+                setState(() {
+                  _remainingSeconds -= 1;
+                });
+              });
+            }
+
+            void _finish() {
+              _timer?.cancel();
+              setState(() {
+                _running = false;
+                _remainingSeconds = 0;
+              });
+              widget.onCompleted(_selectedThought);
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return ListView(
+                padding: const EdgeInsets.all(18),
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: widget.onBack,
+                        icon: const Icon(Icons.arrow_back_rounded),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Concentration',
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Text('Choose what to concentrate on, then hold attention.'),
+                  const SizedBox(height: 18),
+                  ShieldCard(
+                    borderColor: AppTheme.primary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Choose concentration source'),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Affirmation'),
+                              selected: _source == 'affirmation',
+                              onSelected: (_) =>
+                                  setState(() => _source = 'affirmation'),
+                            ),
+                            ChoiceChip(
+                              label: const Text('Goal'),
+                              selected: _source == 'goal',
+                              onSelected: (_) => setState(() => _source = 'goal'),
+                            ),
+                            ChoiceChip(
+                              label: const Text('Custom thought'),
+                              selected: _source == 'custom',
+                              onSelected: (_) =>
+                                  setState(() => _source = 'custom'),
+                            ),
+                          ],
+                        ),
+                        if (_source == 'custom') ...[
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _customThoughtController,
+                            minLines: 2,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              labelText: 'Custom thought',
+                              hintText:
+                                  'I pause, I listen, and I follow my dreams.',
+                              border: OutlineInputBorder(),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  ShieldCard(
+                    borderColor: AppTheme.secondary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Concentrate on this'),
+                        const SizedBox(height: 12),
+                        Text(
+                          _selectedThought,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(color: Colors.lightBlueAccent),
+                        ),
+                        const SizedBox(height: 18),
+                        Center(
+                          child: Text(
+                            _remainingSeconds == 0 ? '05:00' : _countdownText,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineLarge
+                                ?.copyWith(fontSize: 48),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        ActionButton(
+                          label: _running
+                              ? 'Complete Concentration'
+                              : 'Start 5 Minute Session',
+                          subtitle: '+15 XP',
+                          onPressed: _running ? _finish : _start,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+          }
+          ''')
