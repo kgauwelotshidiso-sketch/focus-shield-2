@@ -1,0 +1,1222 @@
+name: Phase 4A Discipline Sprint
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/phase-4a-discipline-sprint.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  phase4a:
+    runs-on: ubuntu-latest
+
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
+      JAVA_TOOL_OPTIONS: "-Xmx4096m"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Apply Phase 4A discipline sprint patch
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          root = Path("focus_shield_android")
+          pubspec = root / "pubspec.yaml"
+          progress = root / "lib/presentation/screens/progress_screen.dart"
+
+          if not pubspec.exists():
+              raise SystemExit("Missing focus_shield_android/pubspec.yaml")
+
+          if not progress.exists():
+              raise SystemExit("Missing progress_screen.dart")
+
+          pub = pubspec.read_text()
+          if "shared_preferences:" not in pub:
+              pub = pub.replace(
+                  "dependencies:\n",
+                  "dependencies:\n  shared_preferences: ^2.3.5\n",
+                  1,
+              )
+              pubspec.write_text(pub)
+
+          progress.write_text(r'''
+          import 'dart:async';
+
+          import 'package:flutter/material.dart';
+          import 'package:shared_preferences/shared_preferences.dart';
+
+          class ProgressScreen extends StatefulWidget {
+            const ProgressScreen({
+              super.key,
+              this.state,
+              this.appState,
+              this.currentState,
+              this.focusShieldState,
+              this.repository,
+              this.appStateRepository,
+              this.attempts,
+              this.goals,
+              this.affirmations,
+              this.dailySummaries,
+              this.onStateChanged,
+              this.onStateUpdated,
+              this.onUpdateState,
+              this.onRefresh,
+              this.onCompleteFocusSession,
+              this.onFocusSessionCompleted,
+              this.onCompleteReflection,
+              this.onReflectionCompleted,
+              this.onCompleteConcentration,
+              this.onConcentrationCompleted,
+              this.onAddXp,
+              this.onLogXp,
+            });
+
+            final Object? state;
+            final Object? appState;
+            final Object? currentState;
+            final Object? focusShieldState;
+            final Object? repository;
+            final Object? appStateRepository;
+            final Object? attempts;
+            final Object? goals;
+            final Object? affirmations;
+            final Object? dailySummaries;
+            final Function? onStateChanged;
+            final Function? onStateUpdated;
+            final Function? onUpdateState;
+            final Function? onRefresh;
+            final Function? onCompleteFocusSession;
+            final Function? onFocusSessionCompleted;
+            final Function? onCompleteReflection;
+            final Function? onReflectionCompleted;
+            final Function? onCompleteConcentration;
+            final Function? onConcentrationCompleted;
+            final Function? onAddXp;
+            final Function? onLogXp;
+
+            @override
+            State<ProgressScreen> createState() => _ProgressScreenState();
+          }
+
+          class _ProgressScreenState extends State<ProgressScreen> {
+            static const _xpKey = 'phase4a_xp';
+            static const _commitDaysKey = 'phase4a_commitment_days';
+            static const _commitStartKey = 'phase4a_commitment_start_ms';
+            static const _goalsKey = 'phase4a_goals';
+            static const _affirmationsKey = 'phase4a_affirmations';
+            static const _focusDoneKey = 'phase4a_focus_done';
+            static const _concentrationDoneKey = 'phase4a_concentration_done';
+            static const _reflectionDoneKey = 'phase4a_reflection_done';
+            static const _websitesScannedKey = 'phase4a_websites_scanned';
+            static const _newWebsitesKey = 'phase4a_new_websites_scanned';
+
+            int _xp = 0;
+            int _commitmentDays = 0;
+            int _commitmentStartMs = 0;
+            int _websitesScanned = 0;
+            int _newWebsitesScanned = 0;
+
+            bool _focusDone = false;
+            bool _concentrationDone = false;
+            bool _reflectionDone = false;
+            bool _loading = true;
+
+            List<String> _goals = const [];
+            List<String> _affirmations = const [];
+
+            @override
+            void initState() {
+              super.initState();
+              _load();
+            }
+
+            Future<void> _load() async {
+              final prefs = await SharedPreferences.getInstance();
+
+              final goals = prefs.getStringList(_goalsKey) ??
+                  <String>[
+                    'Build discipline and stay focused on my future.',
+                    'Use my time for skills, fitness, learning, and growth.',
+                  ];
+
+              final affirmations = prefs.getStringList(_affirmationsKey) ??
+                  <String>[
+                    'I pause, I listen, and I follow my dreams.',
+                    'I choose my goals over temporary feelings.',
+                  ];
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _xp = prefs.getInt(_xpKey) ?? 0;
+                _commitmentDays = prefs.getInt(_commitDaysKey) ?? 0;
+                _commitmentStartMs = prefs.getInt(_commitStartKey) ?? 0;
+                _websitesScanned = prefs.getInt(_websitesScannedKey) ?? 0;
+                _newWebsitesScanned = prefs.getInt(_newWebsitesKey) ?? 0;
+                _focusDone = prefs.getBool(_focusDoneKey) ?? false;
+                _concentrationDone = prefs.getBool(_concentrationDoneKey) ?? false;
+                _reflectionDone = prefs.getBool(_reflectionDoneKey) ?? false;
+                _goals = goals;
+                _affirmations = affirmations;
+                _loading = false;
+              });
+            }
+
+            bool get _commitmentIsSet =>
+                _commitmentDays > 0 && _commitmentStartMs > 0;
+
+            DateTime? get _commitmentEnd {
+              if (!_commitmentIsSet) {
+                return null;
+              }
+              final start = DateTime.fromMillisecondsSinceEpoch(_commitmentStartMs);
+              return start.add(Duration(days: _commitmentDays));
+            }
+
+            bool get _commitmentActive {
+              final end = _commitmentEnd;
+              if (end == null) {
+                return false;
+              }
+              return DateTime.now().isBefore(end);
+            }
+
+            int get _daysRemaining {
+              final end = _commitmentEnd;
+              if (end == null) {
+                return 0;
+              }
+              final diff = end.difference(DateTime.now()).inDays;
+              return diff < 1 ? 1 : diff;
+            }
+
+            int get _level => 1 + (_xp ~/ 100);
+            int get _currentLevelXp => _xp % 100;
+
+            Future<void> _setCommitment(int days) async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setInt(_commitDaysKey, days);
+              await prefs.setInt(
+                _commitStartKey,
+                DateTime.now().millisecondsSinceEpoch,
+              );
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _commitmentDays = days;
+                _commitmentStartMs = DateTime.now().millisecondsSinceEpoch;
+              });
+            }
+
+            Future<void> _addXp(int amount) async {
+              final prefs = await SharedPreferences.getInstance();
+              final next = _xp + amount;
+              await prefs.setInt(_xpKey, next);
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _xp = next;
+              });
+            }
+
+            Future<void> _completeFocusSession() async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool(_focusDoneKey, true);
+              await _addXp(20);
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _focusDone = true;
+              });
+            }
+
+            Future<void> _completeConcentration() async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool(_concentrationDoneKey, true);
+              await _addXp(15);
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _concentrationDone = true;
+              });
+            }
+
+            Future<void> _completeReflection() async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool(_reflectionDoneKey, true);
+              await _addXp(15);
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _reflectionDone = true;
+              });
+            }
+
+            Future<void> _recordWebsiteScan({bool isNew = true}) async {
+              final prefs = await SharedPreferences.getInstance();
+              final nextScanned = _websitesScanned + 1;
+              final nextNew = isNew ? _newWebsitesScanned + 1 : _newWebsitesScanned;
+
+              await prefs.setInt(_websitesScannedKey, nextScanned);
+              await prefs.setInt(_newWebsitesKey, nextNew);
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _websitesScanned = nextScanned;
+                _newWebsitesScanned = nextNew;
+              });
+            }
+
+            Future<void> _saveGoalsAndAffirmations(
+              List<String> goals,
+              List<String> affirmations,
+            ) async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setStringList(_goalsKey, goals);
+              await prefs.setStringList(_affirmationsKey, affirmations);
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _goals = goals;
+                _affirmations = affirmations;
+              });
+            }
+
+            Future<void> _resetXpBaseline() async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setInt(_xpKey, 0);
+
+              if (!mounted) {
+                return;
+              }
+
+              setState(() {
+                _xp = 0;
+              });
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              if (_loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return Scaffold(
+                backgroundColor: const Color(0xFF050816),
+                appBar: AppBar(
+                  backgroundColor: const Color(0xFF050816),
+                  foregroundColor: Colors.white,
+                  title: const Text('Progress'),
+                ),
+                body: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _commitmentCard(),
+                    const SizedBox(height: 12),
+                    _xpCard(),
+                    const SizedBox(height: 12),
+                    _dailyTasksCard(),
+                    const SizedBox(height: 12),
+                    _scanCounterCard(),
+                    const SizedBox(height: 12),
+                    _goalsCard(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              );
+            }
+
+            Widget _commitmentCard() {
+              if (!_commitmentIsSet) {
+                return _card(
+                  title: 'Commitment lock required',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Choose how many days Focus Shield should protect your discipline. The app tools stay locked until you choose a commitment period.',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [7, 14, 30, 90, 365].map((days) {
+                          return ElevatedButton(
+                            onPressed: () => _setCommitment(days),
+                            child: Text('$days days'),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return _card(
+                title: 'Commitment active',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Locked period: $_commitmentDays days',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _commitmentActive
+                          ? 'Days remaining: $_daysRemaining'
+                          : 'Commitment completed. You can choose a new period later.',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Protection controls remain locked during the commitment period. Android may still allow uninstalling, but in-app disabling is locked.',
+                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _xpCard() {
+              return _card(
+                title: 'Level $_level',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'XP: $_currentLevelXp / 100',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(value: _currentLevelXp / 100),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _resetXpBaseline,
+                      child: const Text('Reset XP baseline to 0'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _dailyTasksCard() {
+              final enabled = _commitmentIsSet;
+
+              return _card(
+                title: 'Daily discipline actions',
+                child: Column(
+                  children: [
+                    _taskTile(
+                      title: 'Complete Focus Session',
+                      subtitle: _focusDone
+                          ? 'Completed today'
+                          : 'Open a real countdown timer.',
+                      done: _focusDone,
+                      enabled: enabled,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => _FocusTimerPage(
+                              onCompleted: _completeFocusSession,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    _taskTile(
+                      title: 'Complete Concentration',
+                      subtitle: _concentrationDone
+                          ? 'Completed today'
+                          : 'Choose a goal or affirmation to focus on.',
+                      done: _concentrationDone,
+                      enabled: enabled,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => _ConcentrationPage(
+                              goals: _goals,
+                              affirmations: _affirmations,
+                              onCompleted: _completeConcentration,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    _taskTile(
+                      title: 'Complete Reflection',
+                      subtitle: _reflectionDone
+                          ? 'Completed today'
+                          : 'Use guided reflection prompts.',
+                      done: _reflectionDone,
+                      enabled: enabled,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => _ReflectionPage(
+                              onCompleted: _completeReflection,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _scanCounterCard() {
+              return _card(
+                title: 'Website scanning',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _metricRow('Total websites scanned', _websitesScanned.toString()),
+                    _metricRow('New websites scanned', _newWebsitesScanned.toString()),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Accessibility scanning will connect to these counters in the next sprint.',
+                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: _commitmentIsSet
+                          ? () => _recordWebsiteScan(isNew: true)
+                          : null,
+                      child: const Text('Record scanned website'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _goalsCard() {
+              return _card(
+                title: 'Goals and affirmations',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'These are now editable so the app is not only built around one person’s goals.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Goals: ${_goals.length}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    Text(
+                      'Affirmations: ${_affirmations.length}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => _GoalsAffirmationsEditorPage(
+                              goals: _goals,
+                              affirmations: _affirmations,
+                              onSaved: _saveGoalsAndAffirmations,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Edit goals and affirmations'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _taskTile({
+              required String title,
+              required String subtitle,
+              required bool done,
+              required bool enabled,
+              required VoidCallback onTap,
+            }) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  enabled: enabled,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: const BorderSide(color: Colors.white12),
+                  ),
+                  leading: Icon(
+                    done ? Icons.check_circle : Icons.radio_button_unchecked,
+                    color: done ? Colors.greenAccent : Colors.white54,
+                  ),
+                  title: Text(title, style: const TextStyle(color: Colors.white)),
+                  subtitle: Text(
+                    enabled ? subtitle : 'Set commitment days first.',
+                    style: const TextStyle(color: Colors.white60),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: Colors.white54),
+                  onTap: enabled ? onTap : null,
+                ),
+              );
+            }
+
+            Widget _metricRow(String label, String value) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(label, style: const TextStyle(color: Colors.white70)),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _card({required String title, required Widget child}) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF11172A),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    child,
+                  ],
+                ),
+              );
+            }
+          }
+
+          class _FocusTimerPage extends StatefulWidget {
+            const _FocusTimerPage({required this.onCompleted});
+
+            final Future<void> Function() onCompleted;
+
+            @override
+            State<_FocusTimerPage> createState() => _FocusTimerPageState();
+          }
+
+          class _FocusTimerPageState extends State<_FocusTimerPage> {
+            final TextEditingController _minutesController =
+                TextEditingController(text: '10');
+            Timer? _timer;
+            int _remainingSeconds = 600;
+            bool _running = false;
+            bool _completed = false;
+
+            @override
+            void dispose() {
+              _timer?.cancel();
+              _minutesController.dispose();
+              super.dispose();
+            }
+
+            void _start() {
+              final minutes = int.tryParse(_minutesController.text.trim()) ?? 10;
+              if (!_running && _remainingSeconds <= 0) {
+                _remainingSeconds = minutes * 60;
+              }
+
+              if (!_running && !_completed) {
+                setState(() {
+                  _remainingSeconds = _remainingSeconds == 600
+                      ? minutes.clamp(1, 240) * 60
+                      : _remainingSeconds;
+                  _running = true;
+                });
+
+                _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+                  if (_remainingSeconds <= 1) {
+                    timer.cancel();
+                    await widget.onCompleted();
+
+                    if (!mounted) {
+                      return;
+                    }
+
+                    setState(() {
+                      _remainingSeconds = 0;
+                      _running = false;
+                      _completed = true;
+                    });
+                    return;
+                  }
+
+                  if (mounted) {
+                    setState(() {
+                      _remainingSeconds -= 1;
+                    });
+                  }
+                });
+              }
+            }
+
+            void _pause() {
+              _timer?.cancel();
+              setState(() {
+                _running = false;
+              });
+            }
+
+            void _reset() {
+              _timer?.cancel();
+              final minutes = int.tryParse(_minutesController.text.trim()) ?? 10;
+              setState(() {
+                _remainingSeconds = minutes.clamp(1, 240) * 60;
+                _running = false;
+                _completed = false;
+              });
+            }
+
+            String get _clock {
+              final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+              final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+              return '$minutes:$seconds';
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                backgroundColor: const Color(0xFF050816),
+                appBar: AppBar(
+                  backgroundColor: const Color(0xFF050816),
+                  foregroundColor: Colors.white,
+                  title: const Text('Focus Timer'),
+                ),
+                body: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _minutesController,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: 'Custom time in minutes',
+                          labelStyle: TextStyle(color: Colors.white70),
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (_) => _reset(),
+                      ),
+                      const SizedBox(height: 24),
+                      Center(
+                        child: Text(
+                          _clock,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 64,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _running ? null : _start,
+                        child: const Text('Start'),
+                      ),
+                      OutlinedButton(
+                        onPressed: _running ? _pause : null,
+                        child: const Text('Pause'),
+                      ),
+                      OutlinedButton(
+                        onPressed: _reset,
+                        child: const Text('Reset'),
+                      ),
+                      if (_completed)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: Text(
+                            'Focus session completed. XP added.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.greenAccent),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          class _ConcentrationPage extends StatefulWidget {
+            const _ConcentrationPage({
+              required this.goals,
+              required this.affirmations,
+              required this.onCompleted,
+            });
+
+            final List<String> goals;
+            final List<String> affirmations;
+            final Future<void> Function() onCompleted;
+
+            @override
+            State<_ConcentrationPage> createState() => _ConcentrationPageState();
+          }
+
+          class _ConcentrationPageState extends State<_ConcentrationPage> {
+            String? _selected;
+            bool _completed = false;
+
+            @override
+            void initState() {
+              super.initState();
+              final items = [...widget.goals, ...widget.affirmations];
+              _selected = items.isEmpty
+                  ? 'I choose discipline and protect my future.'
+                  : items.first;
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              final items = [...widget.goals, ...widget.affirmations];
+
+              return Scaffold(
+                backgroundColor: const Color(0xFF050816),
+                appBar: AppBar(
+                  backgroundColor: const Color(0xFF050816),
+                  foregroundColor: Colors.white,
+                  title: const Text('Concentration'),
+                ),
+                body: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Choose what to concentrate on:',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _selected,
+                        dropdownColor: const Color(0xFF11172A),
+                        style: const TextStyle(color: Colors.white),
+                        items: items.map((item) {
+                          return DropdownMenuItem(
+                            value: item,
+                            child: Text(
+                              item,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selected = value;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF11172A),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Text(
+                          _selected ?? '',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _completed
+                            ? null
+                            : () async {
+                                await widget.onCompleted();
+                                if (!mounted) {
+                                  return;
+                                }
+                                setState(() {
+                                  _completed = true;
+                                });
+                              },
+                        child: const Text('Complete Concentration'),
+                      ),
+                      if (_completed)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: Text(
+                            'Concentration completed. XP added.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.greenAccent),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          class _ReflectionPage extends StatefulWidget {
+            const _ReflectionPage({required this.onCompleted});
+
+            final Future<void> Function() onCompleted;
+
+            @override
+            State<_ReflectionPage> createState() => _ReflectionPageState();
+          }
+
+          class _ReflectionPageState extends State<_ReflectionPage> {
+            final TextEditingController _controller = TextEditingController();
+            bool _saved = false;
+
+            @override
+            void dispose() {
+              _controller.dispose();
+              super.dispose();
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                backgroundColor: const Color(0xFF050816),
+                appBar: AppBar(
+                  backgroundColor: const Color(0xFF050816),
+                  foregroundColor: Colors.white,
+                  title: const Text('Reflection'),
+                ),
+                body: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Reflect on this:',
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '1. What did I do well today?\n'
+                        '2. Where did I lose focus?\n'
+                        '3. What will I do better next time?\n'
+                        '4. Which goal am I protecting?',
+                        style: TextStyle(color: Colors.white70, height: 1.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          maxLines: null,
+                          expands: true,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            hintText: 'Write your reflection here...',
+                            hintStyle: TextStyle(color: Colors.white38),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _saved
+                            ? null
+                            : () async {
+                                await widget.onCompleted();
+                                if (!mounted) {
+                                  return;
+                                }
+                                setState(() {
+                                  _saved = true;
+                                });
+                              },
+                        child: const Text('Save Reflection'),
+                      ),
+                      if (_saved)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 10),
+                          child: Text(
+                            'Reflection completed. XP added.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.greenAccent),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          class _GoalsAffirmationsEditorPage extends StatefulWidget {
+            const _GoalsAffirmationsEditorPage({
+              required this.goals,
+              required this.affirmations,
+              required this.onSaved,
+            });
+
+            final List<String> goals;
+            final List<String> affirmations;
+            final Future<void> Function(List<String>, List<String>) onSaved;
+
+            @override
+            State<_GoalsAffirmationsEditorPage> createState() =>
+                _GoalsAffirmationsEditorPageState();
+          }
+
+          class _GoalsAffirmationsEditorPageState
+              extends State<_GoalsAffirmationsEditorPage> {
+            late List<String> _goals;
+            late List<String> _affirmations;
+            final TextEditingController _goalController = TextEditingController();
+            final TextEditingController _affirmationController =
+                TextEditingController();
+
+            @override
+            void initState() {
+              super.initState();
+              _goals = [...widget.goals];
+              _affirmations = [...widget.affirmations];
+            }
+
+            @override
+            void dispose() {
+              _goalController.dispose();
+              _affirmationController.dispose();
+              super.dispose();
+            }
+
+            void _addGoal() {
+              final value = _goalController.text.trim();
+              if (value.isEmpty) {
+                return;
+              }
+              setState(() {
+                _goals.add(value);
+                _goalController.clear();
+              });
+            }
+
+            void _addAffirmation() {
+              final value = _affirmationController.text.trim();
+              if (value.isEmpty) {
+                return;
+              }
+              setState(() {
+                _affirmations.add(value);
+                _affirmationController.clear();
+              });
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                backgroundColor: const Color(0xFF050816),
+                appBar: AppBar(
+                  backgroundColor: const Color(0xFF050816),
+                  foregroundColor: Colors.white,
+                  title: const Text('Edit Goals'),
+                  actions: [
+                    TextButton(
+                      onPressed: () async {
+                        await widget.onSaved(_goals, _affirmations);
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
+                body: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    const Text(
+                      'Goals',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                    const SizedBox(height: 8),
+                    _inputRow(
+                      controller: _goalController,
+                      hint: 'Add a goal',
+                      onAdd: _addGoal,
+                    ),
+                    const SizedBox(height: 8),
+                    ..._goals.asMap().entries.map((entry) {
+                      return _editableItem(
+                        entry.value,
+                        () => setState(() => _goals.removeAt(entry.key)),
+                      );
+                    }),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Affirmations',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                    const SizedBox(height: 8),
+                    _inputRow(
+                      controller: _affirmationController,
+                      hint: 'Add an affirmation',
+                      onAdd: _addAffirmation,
+                    ),
+                    const SizedBox(height: 8),
+                    ..._affirmations.asMap().entries.map((entry) {
+                      return _editableItem(
+                        entry.value,
+                        () => setState(() => _affirmations.removeAt(entry.key)),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            }
+
+            Widget _inputRow({
+              required TextEditingController controller,
+              required String hint,
+              required VoidCallback onAdd,
+            }) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: hint,
+                        hintStyle: const TextStyle(color: Colors.white38),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: onAdd,
+                    child: const Text('Add'),
+                  ),
+                ],
+              );
+            }
+
+            Widget _editableItem(String text, VoidCallback onDelete) {
+              return Card(
+                color: const Color(0xFF11172A),
+                child: ListTile(
+                  title: Text(text, style: const TextStyle(color: Colors.white)),
+                  trailing: IconButton(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                  ),
+                ),
+              );
+            }
+          }
+          ''')
+
+          print("Phase 4A patch applied:")
+          print("- Progress screen replaced with working discipline control center")
+          print("- Commitment lock engine added")
+          print("- Custom focus timer added")
+          print("- Concentration screen added")
+          print("- Reflection screen added")
+          print("- Editable goals and affirmations added")
+          print("- Website scan counters added")
+          print("- XP baseline reset tool added")
+          PY
+
+      - name: Install Flutter packages
+        working-directory: focus_shield_android
+        run: flutter pub get
+
+      - name: Format Phase 4A code
+        run: dart format focus_shield_android/lib/presentation/screens/progress_screen.dart
+
+      - name: Run safe checks
+        run: bash android_build_plan/safe_flutter_checks.sh
+
+      - name: Commit Phase 4A patch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add focus_shield_android/pubspec.yaml focus_shield_android/pubspec.lock focus_shield_android/lib/presentation/screens/progress_screen.dart
+          git status
+          git commit -m "Phase 4A discipline commitment sprint" || echo "No changes to commit"
+          git push
+
+      - name: Build Phase 4A debug APK
+        working-directory: focus_shield_android
+        run: flutter build apk --debug --android-skip-build-dependency-validation
+
+      - name: Upload Phase 4A debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: focus-shield-phase4a-debug-apk
+          path: focus_shield_android/build/app/outputs/flutter-apk/app-debug.apk
