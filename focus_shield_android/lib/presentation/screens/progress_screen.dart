@@ -26,7 +26,9 @@ class ProgressScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final xpProgress = (state.xp % 100) / 100;
+    final focusDone = state.focusSessionCompletedToday;
+    final reflectionDone = state.reflectionCompletedToday;
+    final concentrationDone = state.concentrationCompletedToday;
 
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -42,9 +44,10 @@ class ProgressScreen extends StatelessWidget {
                 'Level ${state.level}',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              Text('${state.xp} XP total'),
+              Text('${state.xpInCurrentLevel} / ${state.xpForNextLevel} XP'),
+              Text('${state.xp} total XP'),
               const SizedBox(height: 12),
-              LinearProgressIndicator(value: xpProgress),
+              LinearProgressIndicator(value: state.levelProgress),
             ],
           ),
         ),
@@ -53,9 +56,11 @@ class ProgressScreen extends StatelessWidget {
           child: StatGrid(
             items: {
               'Listening Wins': '${state.listeningWinsToday}',
-              'Focus Sessions': '${state.focusSessionsToday}',
-              'Reflections': '${state.reflectionsToday}',
-              'Concentration': '${state.concentrationWinsToday}',
+              'Focus Task': focusDone ? 'Done' : 'Pending',
+              'Reflection Task': reflectionDone ? 'Done' : 'Pending',
+              'Concentration Task': concentrationDone ? 'Done' : 'Pending',
+              'Daily Core': state.dailyCoreTasksComplete ? 'Complete' : 'Open',
+              'Streak': '${state.currentStreak}',
             },
           ),
         ),
@@ -69,21 +74,27 @@ class ProgressScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ActionButton(
-                label: 'Complete Focus Session',
-                subtitle: '+20 XP',
-                onPressed: onFocusSession,
+                label: focusDone
+                    ? 'Focus Session Completed'
+                    : 'Complete Focus Session',
+                subtitle: focusDone ? 'Completed today' : '+20 XP',
+                onPressed: focusDone ? null : onFocusSession,
               ),
               const SizedBox(height: 10),
               ActionButton(
-                label: 'Complete Reflection',
-                subtitle: '+15 XP',
-                onPressed: onReflection,
+                label: reflectionDone
+                    ? 'Reflection Completed'
+                    : 'Complete Reflection',
+                subtitle: reflectionDone ? 'Completed today' : '+15 XP',
+                onPressed: reflectionDone ? null : onReflection,
               ),
               const SizedBox(height: 10),
               ActionButton(
-                label: 'Complete Concentration',
-                subtitle: '+15 XP',
-                onPressed: onConcentration,
+                label: concentrationDone
+                    ? 'Concentration Completed'
+                    : 'Complete Concentration',
+                subtitle: concentrationDone ? 'Completed today' : '+15 XP',
+                onPressed: concentrationDone ? null : onConcentration,
               ),
               const SizedBox(height: 10),
               ActionButton(
