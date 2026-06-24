@@ -93,14 +93,18 @@ class InterventionScreen extends StatelessWidget {
               if (goals.isEmpty)
                 const Text('No goals saved yet.')
               else
-                ...goals
-                    .take(3)
-                    .map(
+                ...goals.take(3).map(
                       (goal) => Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text('• ${goal.title}'),
                       ),
                     ),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Edit Goals & Affirmations',
+                subtitle: 'Go to Settings manager',
+                onPressed: () => onNavigate(5),
+              ),
             ],
           ),
         ),
