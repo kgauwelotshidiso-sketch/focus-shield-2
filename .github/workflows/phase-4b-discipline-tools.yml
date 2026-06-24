@@ -489,7 +489,7 @@ jobs:
             }
           }
           ''')
-write("lib/data/database/sqlite_schema.dart", r'''
+          write("lib/data/database/sqlite_schema.dart", r'''
           class SqliteSchema {
             static const statements = [
               '''
