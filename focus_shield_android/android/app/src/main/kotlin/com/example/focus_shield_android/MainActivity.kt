@@ -37,27 +37,16 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startProtection(result: MethodChannel.Result) {
-        val permissionIntent = VpnService.prepare(this)
-
-        if (permissionIntent != null) {
-            try {
-                startActivityForResult(permissionIntent, vpnPermissionRequestCode)
-                result.success("vpn_permission_screen_requested")
-            } catch (_: Exception) {
-                openVpnSettings(result)
-            }
-            return
-        }
-
-        startVpnService()
-        result.success("started")
+        // Phase 3 is intentionally paused.
+        // This prevents VPN route capture from starting and breaking internet again.
+        result.success("phase3_paused_vpn_route_capture_disabled")
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == vpnPermissionRequestCode && resultCode == Activity.RESULT_OK) {
-            startVpnService()
+            // Phase 3 paused: do not start VPN automatically after permission.
         }
     }
 
@@ -65,7 +54,6 @@ class MainActivity : FlutterActivity() {
         val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
             action = FocusShieldVpnService.ACTION_START
         }
-
         startService(serviceIntent)
     }
 
@@ -73,7 +61,6 @@ class MainActivity : FlutterActivity() {
         val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
             action = FocusShieldVpnService.ACTION_STOP
         }
-
         startService(serviceIntent)
         result.success("stopped")
     }
@@ -81,7 +68,6 @@ class MainActivity : FlutterActivity() {
     private fun protectionStatus(result: MethodChannel.Result) {
         val blocklistStatus = blocklistStore.status()
         val nativeStatus = FocusShieldProtectionStatus.build(blocklistStatus)
-
         result.success(nativeStatus.toMap())
     }
 
@@ -89,7 +75,6 @@ class MainActivity : FlutterActivity() {
         Thread {
             val response = try {
                 val success = FocusShieldDnsProxy.runForwarderDiagnostic()
-
                 if (success) {
                     "dns_forwarder_diagnostic_success"
                 } else {
@@ -109,7 +94,6 @@ class MainActivity : FlutterActivity() {
         val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
             action = FocusShieldVpnService.ACTION_PREPARE_LIVE_OBSERVATION
         }
-
         startService(serviceIntent)
         result.success("observation_prepared_locked")
     }
@@ -118,7 +102,6 @@ class MainActivity : FlutterActivity() {
         val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
             action = FocusShieldVpnService.ACTION_DISABLE_LIVE_OBSERVATION
         }
-
         startService(serviceIntent)
         result.success("observation_disabled")
     }
