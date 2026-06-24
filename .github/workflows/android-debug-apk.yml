@@ -5,15 +5,15 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "focus_shield_android/**"
-      - ".github/workflows/android-debug-apk.yml"
+
+permissions:
+  contents: write
+  actions: read
 
 jobs:
-  build-debug-apk:
+  build:
     name: Build Focus Shield Debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 60
 
     env:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
@@ -37,60 +37,34 @@ jobs:
 
       - name: Show tool versions
         run: |
-          java -version
           flutter --version
           dart --version
+          java -version
 
       - name: Configure Gradle memory for CI
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("focus_shield_android/android/gradle.properties")
-          text = path.read_text() if path.exists() else ""
-
-          settings = {
-              "org.gradle.daemon": "false",
-              "org.gradle.parallel": "false",
-              "org.gradle.configureondemand": "false",
-              "org.gradle.caching": "false",
-              "org.gradle.workers.max": "2",
-              "org.gradle.jvmargs": "-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8",
-              "kotlin.compiler.execution.strategy": "in-process",
-              "android.useAndroidX": "true",
-              "android.enableJetifier": "true",
-          }
-
-          lines = []
-          seen = set()
-
-          for line in text.splitlines():
-              key = line.split("=", 1)[0].strip() if "=" in line else ""
-              if key in settings:
-                  lines.append(f"{key}={settings[key]}")
-                  seen.add(key)
-              else:
-                  lines.append(line)
-
-          for key, value in settings.items():
-              if key not in seen:
-                  lines.append(f"{key}={value}")
-
-          path.write_text("\n".join(lines).strip() + "\n")
-          print(path.read_text())
-          PY
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/gradle.properties <<'EOF'
+          org.gradle.daemon=false
+          org.gradle.parallel=false
+          org.gradle.configureondemand=false
+          org.gradle.caching=false
+          org.gradle.workers.max=2
+          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+          kotlin.compiler.execution.strategy=in-process
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
 
       - name: Get Flutter packages
         working-directory: focus_shield_android
         run: flutter pub get
 
-      - name: Analyze
+      - name: Run safe checks
         working-directory: focus_shield_android
-        run: flutter analyze
-
-      - name: Run tests
-        working-directory: focus_shield_android
-        run: flutter test
+        run: |
+          flutter analyze
+          flutter test
 
       - name: Build debug APK
         working-directory: focus_shield_android
