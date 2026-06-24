@@ -23,7 +23,7 @@ class FocusShieldState {
     return FocusShieldState(
       listeningWinsToday: 0,
       missionTarget: 3,
-      xp: 45,
+      xp: 0,
       blockedAttempts: 0,
       recoveredAttempts: 0,
       focusSessionsToday: 0,
@@ -39,11 +39,11 @@ class FocusShieldState {
     );
   }
 
-  factory FocusShieldState.fromMap(Map<String, Object?> map) {
-    return FocusShieldState(
+  factory FocusShieldState.fromMap(Map map) {
+    final state = FocusShieldState(
       listeningWinsToday: (map['listeningWinsToday'] as int?) ?? 0,
       missionTarget: (map['missionTarget'] as int?) ?? 3,
-      xp: (map['xp'] as int?) ?? 45,
+      xp: (map['xp'] as int?) ?? 0,
       blockedAttempts: (map['blockedAttempts'] as int?) ?? 0,
       recoveredAttempts: (map['recoveredAttempts'] as int?) ?? 0,
       focusSessionsToday: (map['focusSessionsToday'] as int?) ?? 0,
@@ -57,6 +57,9 @@ class FocusShieldState {
       longestStreak: (map['longestStreak'] as int?) ?? 0,
       completedDays: (map['completedDays'] as int?) ?? 0,
     );
+
+    state.normalizeLegacyStarterXp();
+    return state;
   }
 
   int listeningWinsToday;
@@ -75,7 +78,52 @@ class FocusShieldState {
   int longestStreak;
   int completedDays;
 
-  int get level => (xp ~/ 100) + 1;
+  int get xpForNextLevel => 100;
+
+  int get level => (xp ~/ xpForNextLevel) + 1;
+
+  int get xpInCurrentLevel => xp % xpForNextLevel;
+
+  double get levelProgress {
+    if (xpForNextLevel == 0) return 0;
+    return xpInCurrentLevel / xpForNextLevel;
+  }
+
+  bool get focusSessionCompletedToday => focusSessionsToday > 0;
+
+  bool get reflectionCompletedToday => reflectionsToday > 0;
+
+  bool get concentrationCompletedToday => concentrationWinsToday > 0;
+
+  bool get dailyCoreTasksComplete {
+    return focusSessionCompletedToday &&
+        reflectionCompletedToday &&
+        concentrationCompletedToday;
+  }
+
+  bool get hasTrackedActivity {
+    return listeningWinsToday > 0 ||
+        blockedAttempts > 0 ||
+        recoveredAttempts > 0 ||
+        focusSessionsToday > 0 ||
+        reflectionsToday > 0 ||
+        concentrationWinsToday > 0 ||
+        morningCommandSet ||
+        endReviewsToday > 0 ||
+        currentStreak > 0 ||
+        longestStreak > 0 ||
+        completedDays > 0;
+  }
+
+  void normalizeLegacyStarterXp() {
+    if (xp == 45 && !hasTrackedActivity) {
+      xp = 0;
+    }
+
+    if (xp < 0) {
+      xp = 0;
+    }
+  }
 
   int get recoveryRate {
     if (blockedAttempts == 0) return 100;
@@ -98,7 +146,9 @@ class FocusShieldState {
     final recoveryPart = (recoveryRate * 0.25).round();
     final activityPart =
         ((focusSessionsToday + reflectionsToday + concentrationWinsToday) * 10)
-            .clamp(0, 15);
+            .clamp(0, 15)
+            .toInt();
+
     return (morningScore + missionPart + recoveryPart + activityPart).clamp(
       0,
       100,
@@ -135,7 +185,6 @@ class FocusShieldState {
     morningCommandSet = false;
     endReviewsToday = 0;
     lastActiveDate = todayKey;
-
     return true;
   }
 
@@ -159,7 +208,7 @@ class FocusShieldState {
     );
   }
 
-  Map<String, Object?> toMap() {
+  Map toMap() {
     return {
       'listeningWinsToday': listeningWinsToday,
       'missionTarget': missionTarget,
@@ -177,9 +226,13 @@ class FocusShieldState {
       'longestStreak': longestStreak,
       'completedDays': completedDays,
       'level': level,
+      'xpInCurrentLevel': xpInCurrentLevel,
+      'xpForNextLevel': xpForNextLevel,
+      'levelProgress': levelProgress,
       'recoveryRate': recoveryRate,
       'coachScore': coachScore,
       'missionComplete': missionComplete,
+      'dailyCoreTasksComplete': dailyCoreTasksComplete,
     };
   }
 }
