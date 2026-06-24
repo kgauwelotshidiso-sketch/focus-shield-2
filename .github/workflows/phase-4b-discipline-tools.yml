@@ -15,7 +15,7 @@ jobs:
 
     env:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
-      JAVA_TOOL_OPTIONS: "-Xmx409m"
+      JAVA_TOOL_OPTIONS: "-Xmx4096m"
 
     steps:
       - name: Checkout repository
