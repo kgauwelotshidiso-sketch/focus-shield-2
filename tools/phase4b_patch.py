@@ -2790,3 +2790,9 @@ if "FocusShieldAccessibilityService" not in manifest_text:
     print("patched AndroidManifest.xml accessibility service")
 
 print("Phase 4B patch script completed successfully.")
+write("android/app/src/main/res/values/strings.xml", r'''
+<resources>
+    <string name="app_name">Focus Shield</string>
+</resources>
+''')
+
