@@ -15,6 +15,7 @@ import 'domain/repositories/app_state_repository.dart';
 import 'domain/services/protection_engine.dart';
 import 'platform/protection_channel.dart';
 import 'presentation/screens/coach_screen.dart';
+import 'presentation/screens/cloud_sync_screen.dart';
 import 'presentation/screens/concentration_screen.dart';
 import 'presentation/screens/daily_history_screen.dart';
 import 'presentation/screens/debug_center_screen.dart';
@@ -68,6 +69,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
   bool _showFocusTimer = false;
   bool _showConcentration = false;
   bool _showReflection = false;
+  bool _showCloudSync = false;
 
   bool _loading = true;
 
@@ -322,6 +324,20 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     setState(() {
       _hideOverlays();
       _showReflection = true;
+    });
+  }
+
+  void _openCloudSync() {
+    setState(() {
+      _hideOverlays();
+      _showCloudSync = true;
+    });
+  }
+
+  void _closeCloudSync() {
+    setState(() {
+      _showCloudSync = false;
+      _selectedIndex = 5;
     });
   }
 
@@ -679,6 +695,14 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
         onSaved: _completeReflection,
         lastReflectionText: _state.lastReflectionText,
       );
+    } else if (_showCloudSync) {
+      overlay = CloudSyncScreen(
+        state: _state,
+        goals: _goals,
+        affirmations: _affirmations,
+        blockedDomains: _blockedDomains,
+        onBack: _closeCloudSync,
+      );
     }
 
     if (overlay != null) {
@@ -737,6 +761,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
         onOpenDebugCenter: _openDebugCenter,
         onOpenProductionReadiness: _openProductionReadiness,
         onResetAppData: _resetAppData,
+        onOpenCloudSync: _openCloudSync,
       ),
     ];
 

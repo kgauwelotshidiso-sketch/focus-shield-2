@@ -18,6 +18,7 @@ class SettingsScreen extends StatelessWidget {
     required this.onOpenDebugCenter,
     required this.onOpenProductionReadiness,
     required this.onResetAppData,
+    this.onOpenCloudSync,
   });
 
   final FocusShieldState state;
@@ -29,6 +30,7 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback onOpenDebugCenter;
   final VoidCallback onOpenProductionReadiness;
   final VoidCallback onResetAppData;
+  final VoidCallback? onOpenCloudSync;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +121,12 @@ class SettingsScreen extends StatelessWidget {
                     ? 'Locked until commitment ends'
                     : 'Uses in-app scanner protection',
                 onPressed: onToggleProtection,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Cloud Sync',
+                subtitle: 'Backup, restore, and sync foundation',
+                onPressed: onOpenCloudSync ?? () {},
               ),
               const SizedBox(height: 10),
               ActionButton(
