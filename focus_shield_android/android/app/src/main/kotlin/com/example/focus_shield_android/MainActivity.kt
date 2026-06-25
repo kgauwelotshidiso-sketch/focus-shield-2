@@ -58,7 +58,7 @@ class MainActivity : FlutterActivity() {
     private fun reloadBlocklist(result: MethodChannel.Result) {
     blocklistStore.status()
     result.success("blocklist_loaded")
-    }
+}
 
     private fun prepareLiveObservation(result: MethodChannel.Result) {
         val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
