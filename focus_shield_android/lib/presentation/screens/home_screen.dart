@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
@@ -39,6 +38,38 @@ class HomeScreen extends StatelessWidget {
         const Text('Discipline + protection dashboard'),
         Text('Active day: ${state.lastActiveDate}'),
         const SizedBox(height: 18),
+        if (!state.commitmentSet)
+          ShieldCard(
+            borderColor: AppTheme.warning,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Commitment required'),
+                const SizedBox(height: 8),
+                const Text(
+                  'Choose 7, 14, 30, 90, or 365 days before protection can activate.',
+                ),
+                const SizedBox(height: 12),
+                ActionButton(
+                  label: 'Set Commitment',
+                  subtitle: 'Go to Settings',
+                  onPressed: () => onNavigate(5),
+                ),
+              ],
+            ),
+          )
+        else
+          ShieldCard(
+            borderColor: AppTheme.primary,
+            child: StatGrid(
+              items: {
+                'Commitment': '${state.commitmentDays} days',
+                'Days Left': '${state.commitmentDaysRemaining}',
+                'Scanned Today': '${state.websitesScannedToday}',
+                'New Sites': '${state.newWebsitesScannedToday}',
+              },
+            ),
+          ),
         ShieldCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

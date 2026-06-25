@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
@@ -11,17 +10,17 @@ class ProgressScreen extends StatelessWidget {
     super.key,
     required this.state,
     required this.onListeningWin,
-    required this.onFocusSession,
-    required this.onReflection,
-    required this.onConcentration,
+    required this.onOpenFocusTimer,
+    required this.onOpenReflection,
+    required this.onOpenConcentration,
     required this.onOpenDailyHistory,
   });
 
   final FocusShieldState state;
   final VoidCallback onListeningWin;
-  final VoidCallback onFocusSession;
-  final VoidCallback onReflection;
-  final VoidCallback onConcentration;
+  final VoidCallback onOpenFocusTimer;
+  final VoidCallback onOpenReflection;
+  final VoidCallback onOpenConcentration;
   final VoidCallback onOpenDailyHistory;
 
   @override
@@ -56,11 +55,24 @@ class ProgressScreen extends StatelessWidget {
           child: StatGrid(
             items: {
               'Listening Wins': '${state.listeningWinsToday}',
-              'Focus Task': focusDone ? 'Done' : 'Pending',
-              'Reflection Task': reflectionDone ? 'Done' : 'Pending',
-              'Concentration Task': concentrationDone ? 'Done' : 'Pending',
+              'Focus Task': focusDone ? 'Done' : 'Open',
+              'Reflection Task': reflectionDone ? 'Done' : 'Open',
+              'Concentration Task': concentrationDone ? 'Done' : 'Open',
               'Daily Core': state.dailyCoreTasksComplete ? 'Complete' : 'Open',
               'Streak': '${state.currentStreak}',
+            },
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: StatGrid(
+            items: {
+              'Scanned Today': '${state.websitesScannedToday}',
+              'New Today': '${state.newWebsitesScannedToday}',
+              'Total Scanned': '${state.totalWebsitesScanned}',
+              'Commitment': state.commitmentSet
+                  ? '${state.commitmentDaysRemaining} days left'
+                  : 'Not set',
             },
           ),
         ),
@@ -75,30 +87,37 @@ class ProgressScreen extends StatelessWidget {
               const SizedBox(height: 10),
               ActionButton(
                 label: focusDone
-                    ? 'Focus Session Completed'
+                    ? 'Open Focus Timer Again'
                     : 'Complete Focus Session',
-                subtitle: focusDone ? 'Completed today' : '+20 XP',
-                onPressed: focusDone ? null : onFocusSession,
+                subtitle: focusDone
+                    ? 'Already completed today'
+                    : 'Opens countdown screen',
+                onPressed: onOpenFocusTimer,
               ),
               const SizedBox(height: 10),
               ActionButton(
                 label: reflectionDone
-                    ? 'Reflection Completed'
+                    ? 'Open Reflection Again'
                     : 'Complete Reflection',
-                subtitle: reflectionDone ? 'Completed today' : '+15 XP',
-                onPressed: reflectionDone ? null : onReflection,
+                subtitle: reflectionDone
+                    ? 'Already saved today'
+                    : 'Opens guided prompts',
+                onPressed: onOpenReflection,
               ),
               const SizedBox(height: 10),
               ActionButton(
                 label: concentrationDone
-                    ? 'Concentration Completed'
+                    ? 'Open Concentration Again'
                     : 'Complete Concentration',
-                subtitle: concentrationDone ? 'Completed today' : '+15 XP',
-                onPressed: concentrationDone ? null : onConcentration,
+                subtitle: concentrationDone
+                    ? 'Already completed today'
+                    : 'Choose goal, affirmation, or thought',
+                onPressed: onOpenConcentration,
               ),
               const SizedBox(height: 10),
               ActionButton(
                 label: 'Open Daily History',
+                subtitle: 'Review previous days',
                 onPressed: onOpenDailyHistory,
               ),
             ],

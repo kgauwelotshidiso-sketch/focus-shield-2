@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
@@ -12,12 +11,16 @@ class RecoveryScreen extends StatelessWidget {
     super.key,
     required this.state,
     required this.onRecovered,
-    required this.onFocusSession,
+    required this.onOpenFocusTimer,
+    required this.onOpenConcentration,
+    required this.onOpenReflection,
   });
 
   final FocusShieldState state;
   final VoidCallback onRecovered;
-  final VoidCallback onFocusSession;
+  final VoidCallback onOpenFocusTimer;
+  final VoidCallback onOpenConcentration;
+  final VoidCallback onOpenReflection;
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +47,29 @@ class RecoveryScreen extends StatelessWidget {
                 subtitle: '+10 XP',
                 onPressed: onRecovered,
               ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            children: [
+              ActionButton(
+                label: 'Open Focus Timer',
+                subtitle: 'Countdown screen',
+                onPressed: onOpenFocusTimer,
+              ),
               const SizedBox(height: 10),
               ActionButton(
-                label: 'Complete Focus Session',
-                subtitle: '+20 XP',
-                onPressed: onFocusSession,
+                label: 'Open Concentration',
+                subtitle: 'Goals, affirmations, or thought',
+                onPressed: onOpenConcentration,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Open Reflection',
+                subtitle: 'Guided prompts and save',
+                onPressed: onOpenReflection,
               ),
             ],
           ),

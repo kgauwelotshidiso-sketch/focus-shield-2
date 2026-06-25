@@ -169,10 +169,10 @@ class ProtectionStatus {
       ipv6UdpPacketsObserved: _readInt(raw['ipv6UdpPacketsObserved']),
       tcpPacketsObserved: _readInt(raw['tcpPacketsObserved']),
       ipv6TcpPacketsObserved: _readInt(raw['ipv6TcpPacketsObserved']),
-      dnsCandidatePacketsObserved:
-          _readInt(raw['dnsCandidatePacketsObserved']),
-      ipv6DnsCandidatePacketsObserved:
-          _readInt(raw['ipv6DnsCandidatePacketsObserved']),
+      dnsCandidatePacketsObserved: _readInt(raw['dnsCandidatePacketsObserved']),
+      ipv6DnsCandidatePacketsObserved: _readInt(
+        raw['ipv6DnsCandidatePacketsObserved'],
+      ),
       dnsParseAttempts: _readInt(raw['dnsParseAttempts']),
       dnsParseFailures: _readInt(raw['dnsParseFailures']),
       lastPacketProtocol: _readString(raw['lastPacketProtocol']),
@@ -206,17 +206,21 @@ class ProtectionStatus {
       lastForwarderError: _readString(raw['lastForwarderError']),
       liveTrafficReadEnabled: _readBool(raw['liveTrafficReadEnabled']),
       blockingEnabled: _readBool(raw['blockingEnabled']),
-      liveObservationToggleAvailable:
-          _readBool(raw['liveObservationToggleAvailable']),
+      liveObservationToggleAvailable: _readBool(
+        raw['liveObservationToggleAvailable'],
+      ),
       liveObservationRequested: _readBool(raw['liveObservationRequested']),
       liveObservationGateVersion: _readInt(raw['liveObservationGateVersion']),
-      liveObservationCodeGateReady:
-          _readBool(raw['liveObservationCodeGateReady']),
-      liveObservationCodeGateUnlocked:
-          _readBool(raw['liveObservationCodeGateUnlocked']),
+      liveObservationCodeGateReady: _readBool(
+        raw['liveObservationCodeGateReady'],
+      ),
+      liveObservationCodeGateUnlocked: _readBool(
+        raw['liveObservationCodeGateUnlocked'],
+      ),
       liveObservationSafetyGate: _readString(raw['liveObservationSafetyGate']),
-      liveObservationUnlockAttempts:
-          _readInt(raw['liveObservationUnlockAttempts']),
+      liveObservationUnlockAttempts: _readInt(
+        raw['liveObservationUnlockAttempts'],
+      ),
       statusMessage: _readString(raw['statusMessage']),
       blocklistError: _readString(raw['blocklistError']),
     );
@@ -321,7 +325,9 @@ class ProtectionStatus {
 }
 
 class ProtectionChannel {
-  static const MethodChannel _channel = MethodChannel('focus_shield/protection');
+  static const MethodChannel _channel = MethodChannel(
+    'focus_shield/protection',
+  );
 
   Future<String> startProtection() async {
     return _invokeString('startProtection');
@@ -363,5 +369,9 @@ class ProtectionChannel {
   Future<String> _invokeString(String method) async {
     final result = await _channel.invokeMethod<Object?>(method);
     return result?.toString() ?? '';
+  }
+
+  Future<String> openAccessibilitySettings() async {
+    return _invokeString('openAccessibilitySettings');
   }
 }

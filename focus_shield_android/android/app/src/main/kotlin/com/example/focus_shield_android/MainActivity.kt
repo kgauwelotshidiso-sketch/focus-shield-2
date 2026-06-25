@@ -1,8 +1,6 @@
 package com.example.focus_shield_android
 
-import android.app.Activity
 import android.content.Intent
-import android.net.VpnService
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -10,7 +8,6 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val protectionChannelName = "focus_shield/protection"
-    private val vpnPermissionRequestCode = 4207
 
     private val blocklistStore: FocusShieldBlocklistStore by lazy {
         FocusShieldBlocklistStore(applicationContext)
@@ -31,30 +28,17 @@ class MainActivity : FlutterActivity() {
                 "prepareLiveObservation" -> prepareLiveObservation(result)
                 "disableLiveObservation" -> disableLiveObservation(result)
                 "openVpnSettings" -> openVpnSettings(result)
+                "openAccessibilitySettings" -> openAccessibilitySettings(result)
+                "requestLiveObservationUnlock" -> requestLiveObservationUnlock(result)
+                "testDnsForwarder" -> testDnsForwarder(result)
                 else -> result.notImplemented()
             }
         }
     }
 
     private fun startProtection(result: MethodChannel.Result) {
-        // Phase 3 is intentionally paused.
-        // This prevents VPN route capture from starting and breaking internet again.
+        // Phase 3 VPN route capture stays paused so internet does not break.
         result.success("phase3_paused_vpn_route_capture_disabled")
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == vpnPermissionRequestCode && resultCode == Activity.RESULT_OK) {
-            // Phase 3 paused: do not start VPN automatically after permission.
-        }
-    }
-
-    private fun startVpnService() {
-        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
-            action = FocusShieldVpnService.ACTION_START
-        }
-        startService(serviceIntent)
     }
 
     private fun stopProtection(result: MethodChannel.Result) {
@@ -72,22 +56,8 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun reloadBlocklist(result: MethodChannel.Result) {
-        Thread {
-            val response = try {
-                val success = FocusShieldDnsProxy.runForwarderDiagnostic()
-                if (success) {
-                    "dns_forwarder_diagnostic_success"
-                } else {
-                    "dns_forwarder_diagnostic_failed"
-                }
-            } catch (error: Exception) {
-                "dns_forwarder_diagnostic_error:${error.javaClass.simpleName}"
-            }
-
-            runOnUiThread {
-                result.success(response)
-            }
-        }.start()
+        val blocklistStatus = blocklistStore.status()
+        result.success("blocklist_loaded:${blocklistStatus.totalDomains}")
     }
 
     private fun prepareLiveObservation(result: MethodChannel.Result) {
@@ -106,6 +76,29 @@ class MainActivity : FlutterActivity() {
         result.success("observation_disabled")
     }
 
+    private fun requestLiveObservationUnlock(result: MethodChannel.Result) {
+        result.success("phase3_paused_unlock_not_required")
+    }
+
+    private fun testDnsForwarder(result: MethodChannel.Result) {
+        Thread {
+            val response = try {
+                val success = FocusShieldDnsProxy.runForwarderDiagnostic()
+                if (success) {
+                    "dns_forwarder_diagnostic_success"
+                } else {
+                    "dns_forwarder_diagnostic_failed"
+                }
+            } catch (error: Exception) {
+                "dns_forwarder_diagnostic_error:${error.javaClass.simpleName}"
+            }
+
+            runOnUiThread {
+                result.success(response)
+            }
+        }.start()
+    }
+
     private fun openVpnSettings(result: MethodChannel.Result) {
         try {
             val intent = Intent(Settings.ACTION_VPN_SETTINGS)
@@ -113,6 +106,16 @@ class MainActivity : FlutterActivity() {
             result.success("vpn_settings_opened")
         } catch (_: Exception) {
             result.success("vpn_settings_unavailable")
+        }
+    }
+
+    private fun openAccessibilitySettings(result: MethodChannel.Result) {
+        try {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+            result.success("accessibility_settings_opened")
+        } catch (_: Exception) {
+            result.success("accessibility_settings_unavailable")
         }
     }
 }
