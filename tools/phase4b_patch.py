@@ -334,3 +334,2459 @@ class FocusShieldState {
   }
 }
 ''')
+write("lib/data/database/sqlite_schema.dart", r"""
+class SqliteSchema {
+  static const statements = [
+    '''
+    CREATE TABLE IF NOT EXISTS app_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      listening_wins_today INTEGER NOT NULL DEFAULT 0,
+      mission_target INTEGER NOT NULL DEFAULT 3,
+      xp INTEGER NOT NULL DEFAULT 0,
+      blocked_attempts INTEGER NOT NULL DEFAULT 0,
+      recovered_attempts INTEGER NOT NULL DEFAULT 0,
+      focus_sessions_today INTEGER NOT NULL DEFAULT 0,
+      reflections_today INTEGER NOT NULL DEFAULT 0,
+      concentration_wins_today INTEGER NOT NULL DEFAULT 0,
+      protection_enabled INTEGER NOT NULL DEFAULT 0,
+      morning_command_set INTEGER NOT NULL DEFAULT 0,
+      end_reviews_today INTEGER NOT NULL DEFAULT 0,
+      last_active_date TEXT NOT NULL,
+      current_streak INTEGER NOT NULL DEFAULT 0,
+      longest_streak INTEGER NOT NULL DEFAULT 0,
+      completed_days INTEGER NOT NULL DEFAULT 0,
+      commitment_days INTEGER NOT NULL DEFAULT 0,
+      commitment_start_date TEXT NOT NULL DEFAULT '',
+      total_websites_scanned INTEGER NOT NULL DEFAULT 0,
+      websites_scanned_today INTEGER NOT NULL DEFAULT 0,
+      new_websites_scanned_today INTEGER NOT NULL DEFAULT 0,
+      scanned_domains_today TEXT NOT NULL DEFAULT '',
+      last_reflection_text TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL
+    );
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS blocked_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      domain TEXT NOT NULL,
+      category TEXT NOT NULL,
+      confidence REAL NOT NULL,
+      recovered INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      protection_enabled INTEGER NOT NULL DEFAULT 0,
+      lock_enabled INTEGER NOT NULL DEFAULT 1,
+      delayed_disable_hours INTEGER NOT NULL DEFAULT 24,
+      updated_at TEXT NOT NULL
+    );
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS goals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS affirmations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
+      favorite INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS blocked_domains (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      domain TEXT UNIQUE NOT NULL,
+      category TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS daily_summaries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date_key TEXT UNIQUE NOT NULL,
+      listening_wins INTEGER NOT NULL DEFAULT 0,
+      mission_target INTEGER NOT NULL DEFAULT 3,
+      mission_complete INTEGER NOT NULL DEFAULT 0,
+      xp_total INTEGER NOT NULL DEFAULT 0,
+      focus_sessions INTEGER NOT NULL DEFAULT 0,
+      reflections INTEGER NOT NULL DEFAULT 0,
+      concentration_wins INTEGER NOT NULL DEFAULT 0,
+      blocked_attempts INTEGER NOT NULL DEFAULT 0,
+      recovered_attempts INTEGER NOT NULL DEFAULT 0,
+      recovery_rate INTEGER NOT NULL DEFAULT 100,
+      coach_score INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+    ''',
+  ];
+
+  static const schema = '''
+  Focus Shield SQLite schema version 4.
+  Version 4 adds commitment duration, scanner metrics, and saved reflection text.
+  ''';
+}
+""")
+
+write("lib/data/database/database_migrations.dart", r"""
+import 'sqlite_schema.dart';
+
+class DatabaseMigrations {
+  static const currentVersion = 4;
+
+  static List<String> creationScripts() {
+    return SqliteSchema.statements;
+  }
+
+  static List<String> upgradeScripts({
+    required int oldVersion,
+    required int newVersion,
+  }) {
+    final scripts = <String>[];
+
+    if (oldVersion < 2 && newVersion >= 2) {
+      scripts.add(
+        "ALTER TABLE app_state ADD COLUMN last_active_date TEXT NOT NULL DEFAULT '1970-01-01';",
+      );
+    }
+
+    if (oldVersion < 3 && newVersion >= 3) {
+      scripts.addAll([
+        'ALTER TABLE app_state ADD COLUMN current_streak INTEGER NOT NULL DEFAULT 0;',
+        'ALTER TABLE app_state ADD COLUMN longest_streak INTEGER NOT NULL DEFAULT 0;',
+        'ALTER TABLE app_state ADD COLUMN completed_days INTEGER NOT NULL DEFAULT 0;',
+        '''
+        CREATE TABLE IF NOT EXISTS daily_summaries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date_key TEXT UNIQUE NOT NULL,
+          listening_wins INTEGER NOT NULL DEFAULT 0,
+          mission_target INTEGER NOT NULL DEFAULT 3,
+          mission_complete INTEGER NOT NULL DEFAULT 0,
+          xp_total INTEGER NOT NULL DEFAULT 0,
+          focus_sessions INTEGER NOT NULL DEFAULT 0,
+          reflections INTEGER NOT NULL DEFAULT 0,
+          concentration_wins INTEGER NOT NULL DEFAULT 0,
+          blocked_attempts INTEGER NOT NULL DEFAULT 0,
+          recovered_attempts INTEGER NOT NULL DEFAULT 0,
+          recovery_rate INTEGER NOT NULL DEFAULT 100,
+          coach_score INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL
+        );
+        ''',
+      ]);
+    }
+
+    if (oldVersion < 4 && newVersion >= 4) {
+      scripts.addAll([
+        'ALTER TABLE app_state ADD COLUMN commitment_days INTEGER NOT NULL DEFAULT 0;',
+        "ALTER TABLE app_state ADD COLUMN commitment_start_date TEXT NOT NULL DEFAULT '';",
+        'ALTER TABLE app_state ADD COLUMN total_websites_scanned INTEGER NOT NULL DEFAULT 0;',
+        'ALTER TABLE app_state ADD COLUMN websites_scanned_today INTEGER NOT NULL DEFAULT 0;',
+        'ALTER TABLE app_state ADD COLUMN new_websites_scanned_today INTEGER NOT NULL DEFAULT 0;',
+        "ALTER TABLE app_state ADD COLUMN scanned_domains_today TEXT NOT NULL DEFAULT '';",
+        "ALTER TABLE app_state ADD COLUMN last_reflection_text TEXT NOT NULL DEFAULT '';",
+      ]);
+    }
+
+    return scripts;
+  }
+
+  static List<String> migrationScriptsForVersion(int version) {
+    return creationScripts();
+  }
+}
+""")
+write("lib/presentation/screens/focus_timer_screen.dart", r'''
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../widgets/action_button.dart';
+import '../widgets/shield_card.dart';
+
+class FocusTimerScreen extends StatefulWidget {
+  const FocusTimerScreen({
+    super.key,
+    required this.onBack,
+    required this.onCompleted,
+  });
+
+  final VoidCallback onBack;
+  final ValueChanged<int> onCompleted;
+
+  @override
+  State<FocusTimerScreen> createState() => _FocusTimerScreenState();
+}
+
+class _FocusTimerScreenState extends State<FocusTimerScreen> {
+  final _minutesController = TextEditingController(text: '10');
+  Timer? _timer;
+  int _remainingSeconds = 0;
+  int _selectedMinutes = 10;
+  bool _running = false;
+  bool _completed = false;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _minutesController.dispose();
+    super.dispose();
+  }
+
+  String get _countdownText {
+    final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  void _start() {
+    final parsed = int.tryParse(_minutesController.text.trim()) ?? 10;
+    final minutes = parsed < 1 ? 1 : parsed > 180 ? 180 : parsed;
+
+    _timer?.cancel();
+
+    setState(() {
+      _selectedMinutes = minutes;
+      _remainingSeconds = minutes * 60;
+      _running = true;
+      _completed = false;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds <= 1) {
+        timer.cancel();
+        _finish();
+        return;
+      }
+
+      setState(() {
+        _remainingSeconds -= 1;
+      });
+    });
+  }
+
+  void _pause() {
+    _timer?.cancel();
+    setState(() {
+      _running = false;
+    });
+  }
+
+  void _reset() {
+    _timer?.cancel();
+    setState(() {
+      _running = false;
+      _remainingSeconds = 0;
+      _completed = false;
+    });
+  }
+
+  void _finish() {
+    if (_completed) return;
+
+    _timer?.cancel();
+
+    setState(() {
+      _running = false;
+      _remainingSeconds = 0;
+      _completed = true;
+    });
+
+    widget.onCompleted(_selectedMinutes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Row(
+          children: [
+            IconButton(
+              onPressed: widget.onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            Expanded(
+              child: Text(
+                'Focus Timer',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+            ),
+          ],
+        ),
+        const Text('Set your own time, then complete a real focus session.'),
+        const SizedBox(height: 18),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Custom focus duration'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _minutesController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Minutes',
+                  hintText: '10',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: Text(
+                  _remainingSeconds == 0 ? 'Ready' : _countdownText,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineLarge
+                      ?.copyWith(fontSize: 54),
+                ),
+              ),
+              const SizedBox(height: 18),
+              ActionButton(
+                label: _running ? 'Pause Timer' : 'Start Timer',
+                subtitle: _running ? 'Keep control' : 'Begin countdown',
+                onPressed: _running ? _pause : _start,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Reset Timer',
+                subtitle: 'Clear current countdown',
+                onPressed: _reset,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Complete Focus Session',
+                subtitle: '+20 XP',
+                onPressed: _finish,
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: const Text(
+            'Focus rule: one session, one task, no switching until the countdown ends.',
+          ),
+        ),
+      ],
+    );
+  }
+}
+''')
+
+write("lib/presentation/screens/concentration_screen.dart", r'''
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
+import '../../domain/models/affirmation.dart';
+import '../../domain/models/goal.dart';
+import '../widgets/action_button.dart';
+import '../widgets/shield_card.dart';
+
+class ConcentrationScreen extends StatefulWidget {
+  const ConcentrationScreen({
+    super.key,
+    required this.goals,
+    required this.affirmations,
+    required this.primaryAffirmation,
+    required this.onBack,
+    required this.onCompleted,
+  });
+
+  final List<Goal> goals;
+  final List<Affirmation> affirmations;
+  final String primaryAffirmation;
+  final VoidCallback onBack;
+  final ValueChanged<String> onCompleted;
+
+  @override
+  State<ConcentrationScreen> createState() => _ConcentrationScreenState();
+}
+
+class _ConcentrationScreenState extends State<ConcentrationScreen> {
+  final _customThoughtController = TextEditingController();
+  Timer? _timer;
+  String _source = 'affirmation';
+  int _remainingSeconds = 0;
+  bool _running = false;
+  bool _completed = false;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _customThoughtController.dispose();
+    super.dispose();
+  }
+
+  String get _selectedThought {
+    if (_source == 'goal') {
+      if (widget.goals.isEmpty) {
+        return 'Create a goal first, then concentrate on it.';
+      }
+      return widget.goals.first.title;
+    }
+
+    if (_source == 'custom') {
+      final custom = _customThoughtController.text.trim();
+      return custom.isEmpty
+          ? 'Type one clear thought to concentrate on.'
+          : custom;
+    }
+
+    if (widget.affirmations.isNotEmpty) {
+      for (final affirmation in widget.affirmations) {
+        if (affirmation.favorite) {
+          return affirmation.text;
+        }
+      }
+      return widget.affirmations.first.text;
+    }
+
+    if (widget.primaryAffirmation.trim().isNotEmpty) {
+      return widget.primaryAffirmation;
+    }
+
+    return AppConstants.affirmation;
+  }
+
+  String get _countdownText {
+    final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  void _start() {
+    _timer?.cancel();
+
+    setState(() {
+      _remainingSeconds = 5 * 60;
+      _running = true;
+      _completed = false;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds <= 1) {
+        timer.cancel();
+        _finish();
+        return;
+      }
+
+      setState(() {
+        _remainingSeconds -= 1;
+      });
+    });
+  }
+
+  void _pause() {
+    _timer?.cancel();
+    setState(() {
+      _running = false;
+    });
+  }
+
+  void _finish() {
+    if (_completed) return;
+
+    _timer?.cancel();
+
+    setState(() {
+      _running = false;
+      _remainingSeconds = 0;
+      _completed = true;
+    });
+
+    widget.onCompleted(_selectedThought);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Row(
+          children: [
+            IconButton(
+              onPressed: widget.onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            Expanded(
+              child: Text(
+                'Concentration',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+            ),
+          ],
+        ),
+        const Text('Choose what to concentrate on, then hold attention.'),
+        const SizedBox(height: 18),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Choose concentration source'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Affirmation'),
+                    selected: _source == 'affirmation',
+                    onSelected: (_) => setState(() => _source = 'affirmation'),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Goal'),
+                    selected: _source == 'goal',
+                    onSelected: (_) => setState(() => _source = 'goal'),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Custom thought'),
+                    selected: _source == 'custom',
+                    onSelected: (_) => setState(() => _source = 'custom'),
+                  ),
+                ],
+              ),
+              if (_source == 'custom') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _customThoughtController,
+                  minLines: 2,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Custom thought',
+                    hintText: 'I pause, I listen, and I follow my dreams.',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Concentrate on this'),
+              const SizedBox(height: 12),
+              Text(
+                _selectedThought,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium
+                    ?.copyWith(color: Colors.lightBlueAccent),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: Text(
+                  _remainingSeconds == 0 ? '05:00' : _countdownText,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineLarge
+                      ?.copyWith(fontSize: 48),
+                ),
+              ),
+              const SizedBox(height: 18),
+              ActionButton(
+                label: _running ? 'Pause Session' : 'Start 5 Minute Session',
+                subtitle: _running ? 'Keep attention steady' : 'Begin concentration',
+                onPressed: _running ? _pause : _start,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Complete Concentration',
+                subtitle: '+15 XP',
+                onPressed: _finish,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+''')
+
+write("lib/presentation/screens/reflection_screen.dart", r'''
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../widgets/action_button.dart';
+import '../widgets/shield_card.dart';
+
+class ReflectionScreen extends StatefulWidget {
+  const ReflectionScreen({
+    super.key,
+    required this.onBack,
+    required this.onSaved,
+    required this.lastReflectionText,
+  });
+
+  final VoidCallback onBack;
+  final ValueChanged<String> onSaved;
+  final String lastReflectionText;
+
+  @override
+  State<ReflectionScreen> createState() => _ReflectionScreenState();
+}
+
+class _ReflectionScreenState extends State<ReflectionScreen> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    widget.onSaved(text);
+    _controller.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Row(
+          children: [
+            IconButton(
+              onPressed: widget.onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            Expanded(
+              child: Text(
+                'Daily Reflection',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+            ),
+          ],
+        ),
+        const Text('Guided prompts, then save your reflection.'),
+        const SizedBox(height: 18),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Reflection prompts'),
+              SizedBox(height: 12),
+              Text('1. What tested my discipline today?'),
+              Text('2. What did I do well?'),
+              Text('3. What must I improve tomorrow?'),
+              Text('4. Which goal am I returning to now?'),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Write reflection'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _controller,
+                minLines: 6,
+                maxLines: 10,
+                decoration: const InputDecoration(
+                  hintText: 'Today I learned...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Save Reflection',
+                subtitle: '+15 XP',
+                onPressed: _save,
+              ),
+            ],
+          ),
+        ),
+        if (widget.lastReflectionText.trim().isNotEmpty)
+          ShieldCard(
+            borderColor: AppTheme.warning,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Last saved reflection'),
+                const SizedBox(height: 8),
+                Text(widget.lastReflectionText),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+''')
+write("lib/presentation/screens/scanner_screen.dart", r'''
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../domain/models/blocked_domain.dart';
+import '../../domain/models/focus_shield_state.dart';
+import '../../domain/services/protection_engine.dart';
+import '../widgets/action_button.dart';
+import '../widgets/shield_card.dart';
+import '../widgets/stat_grid.dart';
+
+class ScannerScreen extends StatefulWidget {
+  const ScannerScreen({
+    super.key,
+    required this.protectionEnabled,
+    required this.blockedDomains,
+    required this.state,
+    required this.onDecision,
+  });
+
+  final bool protectionEnabled;
+  final List<BlockedDomain> blockedDomains;
+  final FocusShieldState state;
+  final ValueChanged<ProtectionDecision> onDecision;
+
+  @override
+  State<ScannerScreen> createState() => _ScannerScreenState();
+}
+
+class _ScannerScreenState extends State<ScannerScreen> {
+  final _controller = TextEditingController();
+  ProtectionDecision? _decision;
+
+  void _scan(String value) {
+    final engine = ProtectionEngine(
+      blockedDomains: widget.blockedDomains.map((item) => item.domain).toList(),
+    );
+
+    final decision = engine.analyze(value);
+
+    setState(() {
+      _decision = decision;
+    });
+
+    widget.onDecision(decision);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final decision = _decision;
+
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Text(
+          'Scanner',
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        Text(
+          widget.protectionEnabled
+              ? 'Protection scanner is active'
+              : 'Protection is off until commitment is active',
+        ),
+        const SizedBox(height: 18),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: StatGrid(
+            items: {
+              'Scanned Today': '${widget.state.websitesScannedToday}',
+              'New Today': '${widget.state.newWebsitesScannedToday}',
+              'Total Scanned': '${widget.state.totalWebsitesScanned}',
+              'DB Domains': '${widget.blockedDomains.length}',
+            },
+          ),
+        ),
+        ShieldCard(
+          borderColor:
+              widget.protectionEnabled ? AppTheme.secondary : AppTheme.warning,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Live Website Scanner'),
+              const SizedBox(height: 8),
+              Text('Database domains loaded: ${widget.blockedDomains.length}'),
+              const SizedBox(height: 12),
+              TextField(
+                key: const Key('scannerDomainInput'),
+                controller: _controller,
+                decoration: const InputDecoration(
+                  hintText: 'example.com or blocked-example.com',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Scan Website',
+                subtitle: 'Updates scanned counters',
+                onPressed: () => _scan(_controller.text),
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          child: Column(
+            children: [
+              ActionButton(
+                label: 'Test Safe Domain',
+                subtitle: 'example.com',
+                onPressed: () => _scan('example.com'),
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Test Blocked Domain',
+                subtitle: 'blocked-example.com',
+                onPressed: () => _scan('blocked-example.com'),
+              ),
+            ],
+          ),
+        ),
+        if (decision != null)
+          ShieldCard(
+            borderColor: decision.blocked ? AppTheme.danger : AppTheme.primary,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  decision.blocked
+                      ? 'Domain matched block rules'
+                      : 'Domain allowed',
+                ),
+                const SizedBox(height: 8),
+                Text('Domain: ${decision.domain}'),
+                Text('Category: ${decision.category}'),
+                Text('Confidence: ${(decision.confidence * 100).round()}%'),
+                Text(decision.reason),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+''')
+
+write("lib/presentation/screens/home_screen.dart", r'''
+import 'package:flutter/material.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
+import '../../domain/models/goal.dart';
+import '../widgets/action_button.dart';
+import '../widgets/shield_card.dart';
+import '../widgets/stat_grid.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({
+    super.key,
+    required this.state,
+    required this.goals,
+    required this.primaryAffirmation,
+    required this.onNavigate,
+    required this.onListeningWin,
+  });
+
+  final FocusShieldState state;
+  final List<Goal> goals;
+  final String primaryAffirmation;
+  final ValueChanged<int> onNavigate;
+  final VoidCallback onListeningWin;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleGoals = goals.take(3).toList();
+
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Text(
+          AppConstants.appName,
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        const SizedBox(height: 4),
+        const Text('Discipline + protection dashboard'),
+        Text('Active day: ${state.lastActiveDate}'),
+        const SizedBox(height: 18),
+        if (!state.commitmentSet)
+          ShieldCard(
+            borderColor: AppTheme.warning,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Commitment required'),
+                const SizedBox(height: 8),
+                const Text(
+                  'Choose 7, 14, 30, 90, or 365 days before protection can activate.',
+                ),
+                const SizedBox(height: 12),
+                ActionButton(
+                  label: 'Set Commitment',
+                  subtitle: 'Go to Settings',
+                  onPressed: () => onNavigate(5),
+                ),
+              ],
+            ),
+          )
+        else
+          ShieldCard(
+            borderColor: AppTheme.primary,
+            child: StatGrid(
+              items: {
+                'Commitment': '${state.commitmentDays} days',
+                'Days Left': '${state.commitmentDaysRemaining}',
+                'Scanned Today': '${state.websitesScannedToday}',
+                'New Sites': '${state.newWebsitesScannedToday}',
+              },
+            ),
+          ),
+        ShieldCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Today’s Mission'),
+              Text(
+                '${state.listeningWinsToday} / ${state.missionTarget}',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: state.missionComplete
+                          ? AppTheme.primary
+                          : AppTheme.warning,
+                    ),
+              ),
+              const Text(
+                'Pause and fully listen before speaking at least 3 times today.',
+              ),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Log Listening Win',
+                subtitle: '+10 XP',
+                onPressed: onListeningWin,
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: StatGrid(
+            items: {
+              'Shield': state.protectionEnabled ? 'Active' : 'Off',
+              'Recovery': '${state.recoveryRate}%',
+              'Level': '${state.level}',
+              'XP': '${state.xpInCurrentLevel}/${state.xpForNextLevel}',
+              'Streak': '${state.currentStreak}',
+              'Best': '${state.longestStreak}',
+            },
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('My Goals'),
+              const SizedBox(height: 8),
+              if (visibleGoals.isEmpty)
+                const Text('No goals saved yet.')
+              else
+                ...visibleGoals.map(
+                  (goal) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text('• ${goal.title}'),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Edit Goals & Affirmations',
+                subtitle: 'Go to Settings manager',
+                onPressed: () => onNavigate(5),
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Quick Actions'),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Scanner',
+                onPressed: () => onNavigate(1),
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Recovery',
+                onPressed: () => onNavigate(2),
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Progress',
+                onPressed: () => onNavigate(3),
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Coach',
+                onPressed: () => onNavigate(4),
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Settings',
+                onPressed: () => onNavigate(5),
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Text(
+            '“$primaryAffirmation”',
+            style: Theme.of(context)
+                .textTheme
+                .headlineMedium
+                ?.copyWith(color: Colors.lightBlueAccent),
+          ),
+        ),
+      ],
+    );
+  }
+}
+''')
+write("lib/presentation/screens/progress_screen.dart", r'''
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
+import '../widgets/action_button.dart';
+import '../widgets/shield_card.dart';
+import '../widgets/stat_grid.dart';
+
+class ProgressScreen extends StatelessWidget {
+  const ProgressScreen({
+    super.key,
+    required this.state,
+    required this.onListeningWin,
+    required this.onOpenFocusTimer,
+    required this.onOpenReflection,
+    required this.onOpenConcentration,
+    required this.onOpenDailyHistory,
+  });
+
+  final FocusShieldState state;
+  final VoidCallback onListeningWin;
+  final VoidCallback onOpenFocusTimer;
+  final VoidCallback onOpenReflection;
+  final VoidCallback onOpenConcentration;
+  final VoidCallback onOpenDailyHistory;
+
+  @override
+  Widget build(BuildContext context) {
+    final focusDone = state.focusSessionCompletedToday;
+    final reflectionDone = state.reflectionCompletedToday;
+    final concentrationDone = state.concentrationCompletedToday;
+
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Text(
+          'Progress',
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        const Text('XP, streaks, badges, wins'),
+        const SizedBox(height: 18),
+        ShieldCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Level ${state.level}',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              Text('${state.xpInCurrentLevel} / ${state.xpForNextLevel} XP'),
+              Text('${state.xp} total XP'),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(value: state.levelProgress),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: StatGrid(
+            items: {
+              'Listening Wins': '${state.listeningWinsToday}',
+              'Focus Task': focusDone ? 'Done' : 'Open',
+              'Reflection Task': reflectionDone ? 'Done' : 'Open',
+              'Concentration Task': concentrationDone ? 'Done' : 'Open',
+              'Daily Core': state.dailyCoreTasksComplete ? 'Complete' : 'Open',
+              'Streak': '${state.currentStreak}',
+            },
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: StatGrid(
+            items: {
+              'Scanned Today': '${state.websitesScannedToday}',
+              'New Today': '${state.newWebsitesScannedToday}',
+              'Total Scanned': '${state.totalWebsitesScanned}',
+              'Commitment': state.commitmentSet
+                  ? '${state.commitmentDaysRemaining} days left'
+                  : 'Not set',
+            },
+          ),
+        ),
+        ShieldCard(
+          child: Column(
+            children: [
+              ActionButton(
+                label: 'Log Listening Win',
+                subtitle: '+10 XP',
+                onPressed: onListeningWin,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: focusDone
+                    ? 'Open Focus Timer Again'
+                    : 'Complete Focus Session',
+                subtitle: focusDone
+                    ? 'Already completed today'
+                    : 'Opens countdown screen',
+                onPressed: onOpenFocusTimer,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label:
+                    reflectionDone ? 'Open Reflection Again' : 'Complete Reflection',
+                subtitle:
+                    reflectionDone ? 'Already saved today' : 'Opens guided prompts',
+                onPressed: onOpenReflection,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: concentrationDone
+                    ? 'Open Concentration Again'
+                    : 'Complete Concentration',
+                subtitle: concentrationDone
+                    ? 'Already completed today'
+                    : 'Choose goal, affirmation, or thought',
+                onPressed: onOpenConcentration,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Open Daily History',
+                subtitle: 'Review previous days',
+                onPressed: onOpenDailyHistory,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+''')
+
+write("lib/presentation/screens/recovery_screen.dart", r'''
+import 'package:flutter/material.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
+import '../widgets/action_button.dart';
+import '../widgets/shield_card.dart';
+import '../widgets/stat_grid.dart';
+
+class RecoveryScreen extends StatelessWidget {
+  const RecoveryScreen({
+    super.key,
+    required this.state,
+    required this.onRecovered,
+    required this.onOpenFocusTimer,
+    required this.onOpenConcentration,
+    required this.onOpenReflection,
+  });
+
+  final FocusShieldState state;
+  final VoidCallback onRecovered;
+  final VoidCallback onOpenFocusTimer;
+  final VoidCallback onOpenConcentration;
+  final VoidCallback onOpenReflection;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Text(
+          'Recovery',
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        const Text('Reset and return'),
+        const SizedBox(height: 18),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            children: [
+              const Icon(
+                Icons.spa_rounded,
+                size: 82,
+                color: AppTheme.primary,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Breathe',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const Text('Pause, breathe, and return to your goals.'),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Mark Latest As Recovered',
+                subtitle: '+10 XP',
+                onPressed: onRecovered,
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            children: [
+              ActionButton(
+                label: 'Open Focus Timer',
+                subtitle: 'Countdown screen',
+                onPressed: onOpenFocusTimer,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Open Concentration',
+                subtitle: 'Goals, affirmations, or thought',
+                onPressed: onOpenConcentration,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Open Reflection',
+                subtitle: 'Guided prompts and save',
+                onPressed: onOpenReflection,
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: StatGrid(
+            items: {
+              'Attempts': '${state.blockedAttempts}',
+              'Recovered': '${state.recoveredAttempts}',
+              'Pending': '${state.pendingRecoveries}',
+              'Recovery': '${state.recoveryRate}%',
+            },
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Text(
+            '“${AppConstants.affirmation}”',
+            style: Theme.of(context)
+                .textTheme
+                .headlineMedium
+                ?.copyWith(color: Colors.lightBlueAccent),
+          ),
+        ),
+      ],
+    );
+  }
+}
+''')
+
+write("lib/presentation/screens/settings_screen.dart", r'''
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../domain/models/focus_shield_state.dart';
+import '../widgets/action_button.dart';
+import '../widgets/protection_status_card.dart';
+import '../widgets/shield_card.dart';
+import '../widgets/stat_grid.dart';
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({
+    super.key,
+    required this.state,
+    required this.onToggleProtection,
+    required this.onSetCommitmentDays,
+    required this.onOpenAccessibilitySettings,
+    required this.onOpenProtectionDatabase,
+    required this.onOpenGoalsAffirmations,
+    required this.onOpenDebugCenter,
+    required this.onOpenProductionReadiness,
+    required this.onResetAppData,
+  });
+
+  final FocusShieldState state;
+  final VoidCallback onToggleProtection;
+  final ValueChanged<int> onSetCommitmentDays;
+  final VoidCallback onOpenAccessibilitySettings;
+  final VoidCallback onOpenProtectionDatabase;
+  final VoidCallback onOpenGoalsAffirmations;
+  final VoidCallback onOpenDebugCenter;
+  final VoidCallback onOpenProductionReadiness;
+  final VoidCallback onResetAppData;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const ProtectionStatusCard(),
+        const SizedBox(height: 16),
+        Text(
+          'Settings',
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        const Text('Protection control center'),
+        Text('Active day: ${state.lastActiveDate}'),
+        const SizedBox(height: 18),
+        ShieldCard(
+          borderColor: state.commitmentSet ? AppTheme.primary : AppTheme.warning,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Commitment Lock'),
+              const SizedBox(height: 8),
+              Text(
+                state.commitmentSet
+                    ? 'Commitment: ${state.commitmentDays} days. Days remaining: ${state.commitmentDaysRemaining}.'
+                    : 'Protection cannot activate until a commitment duration is set.',
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [7, 14, 30, 90, 365].map((days) {
+                  return ChoiceChip(
+                    label: Text('$days days'),
+                    selected: state.commitmentDays == days,
+                    onSelected: state.commitmentActive
+                        ? null
+                        : (_) => onSetCommitmentDays(days),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                state.commitmentActive
+                    ? 'In-app protection settings are locked during this commitment.'
+                    : 'Choose a duration to activate the commitment gate.',
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          child: StatGrid(
+            items: {
+              'Protection': state.protectionEnabled ? 'ON' : 'OFF',
+              'Attempts': '${state.blockedAttempts}',
+              'Recovery': '${state.recoveryRate}%',
+              'XP': '${state.xp}',
+            },
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: StatGrid(
+            items: {
+              'Scanned Today': '${state.websitesScannedToday}',
+              'New Today': '${state.newWebsitesScannedToday}',
+              'Total Scanned': '${state.totalWebsitesScanned}',
+              'Commitment': state.commitmentSet ? 'Set' : 'Required',
+            },
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.warning,
+          child: const Text(
+            'System-wide VPN filtering is paused while the DNS route issue is repaired. Accessibility setup must be enabled manually by the user.',
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            children: [
+              ActionButton(
+                label:
+                    state.protectionEnabled ? 'Turn Protection Off' : 'Turn Protection On',
+                subtitle: !state.commitmentSet
+                    ? 'Set commitment first'
+                    : state.commitmentActive && state.protectionEnabled
+                        ? 'Locked until commitment ends'
+                        : 'Uses in-app scanner protection',
+                onPressed: onToggleProtection,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Open Accessibility Settings',
+                subtitle: 'Enable Focus Shield manually',
+                onPressed: onOpenAccessibilitySettings,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Protection Database',
+                subtitle: 'Manage saved blocklist',
+                onPressed: onOpenProtectionDatabase,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Goals & Affirmations',
+                subtitle: 'Manage personal discipline system',
+                onPressed: onOpenGoalsAffirmations,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'URL Analysis Engine',
+                subtitle: 'Scanner and detection rules',
+                onPressed: () {},
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Lock Layer',
+                subtitle: 'Commitment gate active in-app',
+                onPressed: () {},
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Production Readiness',
+                subtitle: 'Android test and build checklist',
+                onPressed: onOpenProductionReadiness,
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Database Tools'),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Open Database Debug Center',
+                subtitle: 'Attempts, state, reset tools',
+                onPressed: onOpenDebugCenter,
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Reset App Data',
+                subtitle: 'Clear local saved state',
+                onPressed: onResetAppData,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+''')
+write("lib/app.dart", r'''
+import 'package:flutter/material.dart';
+
+import 'core/constants/app_constants.dart';
+import 'core/theme/app_theme.dart';
+import 'core/utils/date_key.dart';
+import 'data/repositories/sqlite_app_state_repository.dart';
+import 'domain/models/affirmation.dart';
+import 'domain/models/attempt_record.dart';
+import 'domain/models/blocked_domain.dart';
+import 'domain/models/daily_summary.dart';
+import 'domain/models/focus_shield_state.dart';
+import 'domain/models/goal.dart';
+import 'domain/models/settings_record.dart';
+import 'domain/repositories/app_state_repository.dart';
+import 'domain/services/protection_engine.dart';
+import 'platform/protection_channel.dart';
+import 'presentation/screens/coach_screen.dart';
+import 'presentation/screens/concentration_screen.dart';
+import 'presentation/screens/daily_history_screen.dart';
+import 'presentation/screens/debug_center_screen.dart';
+import 'presentation/screens/focus_timer_screen.dart';
+import 'presentation/screens/goals_affirmations_screen.dart';
+import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/intervention_screen.dart';
+import 'presentation/screens/progress_screen.dart';
+import 'presentation/screens/protection_database_screen.dart';
+import 'presentation/screens/production_readiness_screen.dart';
+import 'presentation/screens/recovery_screen.dart';
+import 'presentation/screens/reflection_screen.dart';
+import 'presentation/screens/scanner_screen.dart';
+import 'presentation/screens/settings_screen.dart';
+import 'presentation/widgets/focus_shield_bottom_nav.dart';
+
+class FocusShieldApp extends StatelessWidget {
+  const FocusShieldApp({super.key, this.repository});
+
+  final AppStateRepository? repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Focus Shield',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme,
+      home: FocusShieldShell(repository: repository),
+    );
+  }
+}
+
+class FocusShieldShell extends StatefulWidget {
+  const FocusShieldShell({super.key, this.repository});
+
+  final AppStateRepository? repository;
+
+  @override
+  State<FocusShieldShell> createState() => _FocusShieldShellState();
+}
+
+class _FocusShieldShellState extends State<FocusShieldShell> {
+  int _selectedIndex = 0;
+
+  bool _showIntervention = false;
+  bool _showDebugCenter = false;
+  bool _showProtectionDatabase = false;
+  bool _showDailyHistory = false;
+  bool _showGoalsAffirmations = false;
+  bool _showProductionReadiness = false;
+  bool _showFocusTimer = false;
+  bool _showConcentration = false;
+  bool _showReflection = false;
+
+  bool _loading = true;
+
+  ProtectionDecision? _lastBlockedDecision;
+  FocusShieldState _state = FocusShieldState.initial();
+
+  List<AttemptRecord> _attempts = <AttemptRecord>[];
+  List<BlockedDomain> _blockedDomains = <BlockedDomain>[];
+  List<DailySummary> _dailySummaries = <DailySummary>[];
+  List<Goal> _goals = <Goal>[];
+  List<Affirmation> _affirmations = <Affirmation>[];
+
+  late final AppStateRepository _repository;
+
+  String get _primaryAffirmation {
+    for (final affirmation in _affirmations) {
+      if (affirmation.favorite) {
+        return affirmation.text;
+      }
+    }
+
+    if (_affirmations.isNotEmpty) {
+      return _affirmations.first.text;
+    }
+
+    return AppConstants.affirmation;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? SqliteAppStateRepository();
+    _loadInitialState();
+  }
+
+  Future<void> _loadInitialState() async {
+    final snapshot = await _repository.loadSnapshot();
+    final settings = await _repository.loadSettings();
+    final attempts = await _repository.loadAttempts();
+    final blockedDomains = await _repository.loadBlockedDomains();
+    final goals = await _repository.loadGoals();
+    final affirmations = await _repository.loadAffirmations();
+
+    final loadedState = snapshot.state;
+    loadedState.protectionEnabled =
+        settings.protectionEnabled && loadedState.commitmentActive;
+
+    final needsDailyReset = loadedState.lastActiveDate != DateKey.today();
+
+    if (needsDailyReset) {
+      final summary = DailySummary.fromState(loadedState);
+      await _repository.saveDailySummary(summary);
+
+      loadedState.recordCompletedDay(
+        missionWasComplete: summary.missionComplete,
+      );
+
+      loadedState.applyDailyResetIfNeeded();
+      await _repository.saveState(loadedState.copy());
+    }
+
+    final dailySummaries = await _repository.loadDailySummaries();
+
+    if (!mounted) return;
+
+    setState(() {
+      _state = loadedState;
+      _attempts = attempts;
+      _blockedDomains = blockedDomains;
+      _dailySummaries = dailySummaries;
+      _goals = goals;
+      _affirmations = affirmations;
+      _loading = false;
+    });
+  }
+
+  Future<void> _refreshAttempts() async {
+    final attempts = await _repository.loadAttempts();
+
+    if (!mounted) return;
+
+    setState(() {
+      _attempts = attempts;
+      _state.blockedAttempts = attempts.length;
+      _state.recoveredAttempts =
+          attempts.where((attempt) => attempt.recovered).length;
+    });
+
+    _persistState();
+  }
+
+  Future<void> _refreshDailySummaries() async {
+    final summaries = await _repository.loadDailySummaries();
+
+    if (!mounted) return;
+
+    setState(() {
+      _dailySummaries = summaries;
+    });
+  }
+
+  Future<void> _refreshBlockedDomains() async {
+    final blockedDomains = await _repository.loadBlockedDomains();
+
+    if (!mounted) return;
+
+    setState(() {
+      _blockedDomains = blockedDomains;
+    });
+  }
+
+  Future<void> _refreshGoalsAffirmations() async {
+    final goals = await _repository.loadGoals();
+    final affirmations = await _repository.loadAffirmations();
+
+    if (!mounted) return;
+
+    setState(() {
+      _goals = goals;
+      _affirmations = affirmations;
+    });
+  }
+
+  void _persistState() {
+    _repository.saveState(_state.copy());
+  }
+
+  void _persistSettings() {
+    _repository.saveSettings(
+      SettingsRecord(
+        protectionEnabled: _state.protectionEnabled,
+        lockEnabled: true,
+        delayedDisableHours: 24,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  void _hideOverlays() {
+    _showIntervention = false;
+    _showDebugCenter = false;
+    _showProtectionDatabase = false;
+    _showDailyHistory = false;
+    _showGoalsAffirmations = false;
+    _showProductionReadiness = false;
+    _showFocusTimer = false;
+    _showConcentration = false;
+    _showReflection = false;
+  }
+
+  void _goTo(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _hideOverlays();
+    });
+  }
+
+  void _openDailyHistory() {
+    setState(() {
+      _hideOverlays();
+      _showDailyHistory = true;
+    });
+
+    _refreshDailySummaries();
+  }
+
+  void _closeDailyHistory() {
+    setState(() {
+      _showDailyHistory = false;
+      _selectedIndex = 3;
+    });
+  }
+
+  void _openDebugCenter() {
+    setState(() {
+      _hideOverlays();
+      _showDebugCenter = true;
+    });
+
+    _refreshAttempts();
+  }
+
+  void _closeDebugCenter() {
+    setState(() {
+      _showDebugCenter = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  void _openProtectionDatabase() {
+    setState(() {
+      _hideOverlays();
+      _showProtectionDatabase = true;
+    });
+
+    _refreshBlockedDomains();
+  }
+
+  void _closeProtectionDatabase() {
+    setState(() {
+      _showProtectionDatabase = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  void _openProductionReadiness() {
+    setState(() {
+      _hideOverlays();
+      _showProductionReadiness = true;
+    });
+  }
+
+  void _closeProductionReadiness() {
+    setState(() {
+      _showProductionReadiness = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  void _openGoalsAffirmations() {
+    setState(() {
+      _hideOverlays();
+      _showGoalsAffirmations = true;
+    });
+
+    _refreshGoalsAffirmations();
+  }
+
+  void _closeGoalsAffirmations() {
+    setState(() {
+      _showGoalsAffirmations = false;
+      _selectedIndex = 5;
+    });
+  }
+
+  void _openFocusTimer() {
+    setState(() {
+      _hideOverlays();
+      _showFocusTimer = true;
+    });
+  }
+
+  void _openConcentration() {
+    setState(() {
+      _hideOverlays();
+      _showConcentration = true;
+    });
+  }
+
+  void _openReflection() {
+    setState(() {
+      _hideOverlays();
+      _showReflection = true;
+    });
+  }
+
+  void _closeDisciplineTool() {
+    setState(() {
+      _showFocusTimer = false;
+      _showConcentration = false;
+      _showReflection = false;
+      _selectedIndex = 3;
+    });
+  }
+  String _normalizeDomain(String input) {
+    var value = input.trim().toLowerCase();
+    value = value.replaceFirst(RegExp(r'^https?://'), '');
+    value = value.replaceFirst(RegExp(r'^www\.'), '');
+    value = value.split('/').first;
+    value = value.split('?').first;
+    value = value.split('#').first;
+    return value;
+  }
+
+  void _addBlockedDomain(String domain, String category) {
+    final normalizedDomain = _normalizeDomain(domain);
+
+    if (normalizedDomain.isEmpty) return;
+
+    _repository
+        .saveBlockedDomain(
+          BlockedDomain(
+            id: 0,
+            domain: normalizedDomain,
+            category: category.trim().isEmpty
+                ? 'custom-blocklist'
+                : category.trim(),
+            updatedAt: DateTime.now(),
+          ),
+        )
+        .then((_) => _refreshBlockedDomains());
+  }
+
+  void _deleteBlockedDomain(int id) {
+    _repository.deleteBlockedDomain(id).then((_) => _refreshBlockedDomains());
+  }
+
+  void _addGoal(String title, String description) {
+    final cleanTitle = title.trim();
+
+    if (cleanTitle.isEmpty) return;
+
+    _repository
+        .saveGoal(
+          Goal(
+            id: 0,
+            title: cleanTitle,
+            description: description.trim(),
+          ),
+        )
+        .then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _deleteGoal(int id) {
+    _repository.deleteGoal(id).then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _addAffirmation(String text, bool favorite) {
+    final cleanText = text.trim();
+
+    if (cleanText.isEmpty) return;
+
+    _repository
+        .saveAffirmation(
+          Affirmation(
+            id: 0,
+            text: cleanText,
+            favorite: favorite,
+          ),
+        )
+        .then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _deleteAffirmation(int id) {
+    _repository.deleteAffirmation(id).then((_) => _refreshGoalsAffirmations());
+  }
+
+  void _setFavoriteAffirmation(Affirmation affirmation) {
+    _repository
+        .saveAffirmation(
+          affirmation.copyWith(
+            favorite: true,
+            updatedAt: DateTime.now(),
+          ),
+        )
+        .then((_) => _refreshGoalsAffirmations());
+  }
+
+  Future<void> _resetAppData() async {
+    await _repository.clearAll();
+
+    final snapshot = await _repository.loadSnapshot();
+    final settings = await _repository.loadSettings();
+    final attempts = await _repository.loadAttempts();
+    final blockedDomains = await _repository.loadBlockedDomains();
+    final dailySummaries = await _repository.loadDailySummaries();
+    final goals = await _repository.loadGoals();
+    final affirmations = await _repository.loadAffirmations();
+
+    if (!mounted) return;
+
+    setState(() {
+      _state = snapshot.state;
+      _state.protectionEnabled =
+          settings.protectionEnabled && _state.commitmentActive;
+      _attempts = attempts;
+      _blockedDomains = blockedDomains;
+      _dailySummaries = dailySummaries;
+      _goals = goals;
+      _affirmations = affirmations;
+      _selectedIndex = 0;
+      _hideOverlays();
+      _lastBlockedDecision = null;
+    });
+  }
+
+  void _openIntervention(ProtectionDecision decision) {
+    setState(() {
+      _lastBlockedDecision = decision;
+      _state.blockedAttempts += 1;
+      _selectedIndex = 1;
+      _hideOverlays();
+      _showIntervention = true;
+    });
+
+    _repository
+        .saveAttempt(
+          AttemptRecord(
+            id: 0,
+            domain: decision.domain,
+            category: decision.category,
+            confidence: decision.confidence,
+            recovered: false,
+            createdAt: DateTime.now(),
+          ),
+        )
+        .then((_) => _refreshAttempts());
+
+    _persistState();
+  }
+
+  void _returnToScanner() {
+    setState(() {
+      _selectedIndex = 1;
+      _hideOverlays();
+    });
+  }
+
+  void _handleScannerDecision(ProtectionDecision decision) {
+    setState(() {
+      _state.recordWebsiteScan(decision.domain);
+    });
+
+    _persistState();
+
+    if (decision.blocked && _state.protectionEnabled) {
+      _openIntervention(decision);
+    }
+  }
+
+  void _logListeningWin() {
+    setState(() {
+      _state.listeningWinsToday += 1;
+      _state.xp += 10;
+    });
+
+    _persistState();
+  }
+
+  void _completeFocusSession(int minutes) {
+    setState(() {
+      _state.focusSessionsToday += 1;
+      _state.xp += 20;
+      _showFocusTimer = false;
+      _selectedIndex = 3;
+    });
+
+    _persistState();
+  }
+
+  void _completeReflection(String reflectionText) {
+    setState(() {
+      _state.reflectionsToday += 1;
+      _state.lastReflectionText = reflectionText;
+      _state.xp += 15;
+      _showReflection = false;
+      _selectedIndex = 3;
+    });
+
+    _persistState();
+  }
+
+  void _completeConcentration(String thought) {
+    setState(() {
+      _state.concentrationWinsToday += 1;
+      _state.xp += 15;
+      _showConcentration = false;
+      _selectedIndex = 3;
+    });
+
+    _persistState();
+  }
+
+  void _markRecovered() {
+    setState(() {
+      if (_state.pendingRecoveries > 0) {
+        _state.recoveredAttempts += 1;
+        _state.xp += 10;
+      }
+
+      _hideOverlays();
+      _selectedIndex = 2;
+    });
+
+    _repository.markLatestAttemptRecovered().then((_) => _refreshAttempts());
+    _persistState();
+  }
+
+  void _markAttemptRecoveredById(int id) {
+    AttemptRecord? attempt;
+
+    for (final item in _attempts) {
+      if (item.id == id) {
+        attempt = item;
+        break;
+      }
+    }
+
+    final shouldReward = attempt != null && !attempt.recovered;
+
+    setState(() {
+      if (shouldReward) {
+        _state.xp += 10;
+      }
+    });
+
+    _repository.markAttemptRecovered(id).then((_) => _refreshAttempts());
+  }
+
+  void _setMorningCommand() {
+    setState(() {
+      if (!_state.morningCommandSet) {
+        _state.xp += 10;
+      }
+
+      _state.morningCommandSet = true;
+    });
+
+    _persistState();
+  }
+
+  void _saveEndReview() {
+    setState(() {
+      _state.endReviewsToday += 1;
+      _state.reflectionsToday += 1;
+      _state.xp += 15;
+    });
+
+    _persistState();
+  }
+
+  void _toggleProtection() {
+    if (!_state.commitmentSet) {
+      setState(() {
+        _selectedIndex = 5;
+      });
+      return;
+    }
+
+    if (_state.commitmentActive && _state.protectionEnabled) {
+      return;
+    }
+
+    setState(() {
+      _state.protectionEnabled = !_state.protectionEnabled;
+    });
+
+    _persistState();
+    _persistSettings();
+  }
+
+  void _setCommitmentDays(int days) {
+    setState(() {
+      _state.setCommitment(days);
+    });
+
+    _persistState();
+    _persistSettings();
+  }
+
+  Future<void> _openAccessibilitySettings() async {
+    await ProtectionChannel().openAccessibilitySettings();
+  }
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Text('Loading Focus Shield...'),
+          ),
+        ),
+      );
+    }
+
+    Widget? overlay;
+
+    if (_showProductionReadiness) {
+      overlay = ProductionReadinessScreen(
+        onBack: _closeProductionReadiness,
+      );
+    } else if (_showGoalsAffirmations) {
+      overlay = GoalsAffirmationsScreen(
+        goals: _goals,
+        affirmations: _affirmations,
+        onBack: _closeGoalsAffirmations,
+        onAddGoal: _addGoal,
+        onDeleteGoal: _deleteGoal,
+        onAddAffirmation: _addAffirmation,
+        onDeleteAffirmation: _deleteAffirmation,
+        onSetFavoriteAffirmation: _setFavoriteAffirmation,
+        onRefresh: _refreshGoalsAffirmations,
+      );
+    } else if (_showDailyHistory) {
+      overlay = DailyHistoryScreen(
+        state: _state,
+        summaries: _dailySummaries,
+        onBack: _closeDailyHistory,
+      );
+    } else if (_showProtectionDatabase) {
+      overlay = ProtectionDatabaseScreen(
+        blockedDomains: _blockedDomains,
+        onBack: _closeProtectionDatabase,
+        onAddDomain: _addBlockedDomain,
+        onDeleteDomain: _deleteBlockedDomain,
+        onRefresh: _refreshBlockedDomains,
+      );
+    } else if (_showDebugCenter) {
+      overlay = DebugCenterScreen(
+        state: _state,
+        attempts: _attempts,
+        onBack: _closeDebugCenter,
+        onResetAppData: _resetAppData,
+        onRefresh: _refreshAttempts,
+        onMarkAttemptRecovered: _markAttemptRecoveredById,
+      );
+    } else if (_showFocusTimer) {
+      overlay = FocusTimerScreen(
+        onBack: _closeDisciplineTool,
+        onCompleted: _completeFocusSession,
+      );
+    } else if (_showConcentration) {
+      overlay = ConcentrationScreen(
+        goals: _goals,
+        affirmations: _affirmations,
+        primaryAffirmation: _primaryAffirmation,
+        onBack: _closeDisciplineTool,
+        onCompleted: _completeConcentration,
+      );
+    } else if (_showReflection) {
+      overlay = ReflectionScreen(
+        onBack: _closeDisciplineTool,
+        onSaved: _completeReflection,
+        lastReflectionText: _state.lastReflectionText,
+      );
+    }
+
+    if (overlay != null) {
+      return Scaffold(
+        body: SafeArea(child: overlay),
+        bottomNavigationBar: FocusShieldBottomNav(
+          currentIndex: _selectedIndex,
+          onTap: _goTo,
+        ),
+      );
+    }
+
+    final screens = [
+      HomeScreen(
+        state: _state,
+        goals: _goals,
+        primaryAffirmation: _primaryAffirmation,
+        onNavigate: _goTo,
+        onListeningWin: _logListeningWin,
+      ),
+      ScannerScreen(
+        protectionEnabled: _state.protectionEnabled,
+        blockedDomains: _blockedDomains,
+        state: _state,
+        onDecision: _handleScannerDecision,
+      ),
+      RecoveryScreen(
+        state: _state,
+        onRecovered: _markRecovered,
+        onOpenFocusTimer: _openFocusTimer,
+        onOpenConcentration: _openConcentration,
+        onOpenReflection: _openReflection,
+      ),
+      ProgressScreen(
+        state: _state,
+        onListeningWin: _logListeningWin,
+        onOpenFocusTimer: _openFocusTimer,
+        onOpenReflection: _openReflection,
+        onOpenConcentration: _openConcentration,
+        onOpenDailyHistory: _openDailyHistory,
+      ),
+      CoachScreen(
+        state: _state,
+        attempts: _attempts,
+        onMorningCommand: _setMorningCommand,
+        onEndReview: _saveEndReview,
+        onNavigate: _goTo,
+      ),
+      SettingsScreen(
+        state: _state,
+        onToggleProtection: _toggleProtection,
+        onSetCommitmentDays: _setCommitmentDays,
+        onOpenAccessibilitySettings: _openAccessibilitySettings,
+        onOpenProtectionDatabase: _openProtectionDatabase,
+        onOpenGoalsAffirmations: _openGoalsAffirmations,
+        onOpenDebugCenter: _openDebugCenter,
+        onOpenProductionReadiness: _openProductionReadiness,
+        onResetAppData: _resetAppData,
+      ),
+    ];
+
+    return Scaffold(
+      body: SafeArea(
+        child: _showIntervention
+            ? InterventionScreen(
+                state: _state,
+                goals: _goals,
+                primaryAffirmation: _primaryAffirmation,
+                decision: _lastBlockedDecision,
+                onNavigate: _goTo,
+                onRecovered: _markRecovered,
+                onBackToScanner: _returnToScanner,
+              )
+            : IndexedStack(
+                index: _selectedIndex,
+                children: screens,
+              ),
+      ),
+      bottomNavigationBar: FocusShieldBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: _goTo,
+      ),
+    );
+  }
+}
+''')
+
+channel_path = ROOT / "lib/platform/protection_channel.dart"
+channel_text = channel_path.read_text(encoding="utf-8")
+
+if "openAccessibilitySettings" not in channel_text:
+    insert_method = """
+  Future<String> openAccessibilitySettings() async {
+    return _invokeString('openAccessibilitySettings');
+  }
+"""
+    last_brace = channel_text.rfind("}")
+    if last_brace != -1:
+        channel_text = (
+            channel_text[:last_brace]
+            + insert_method
+            + "\n"
+            + channel_text[last_brace:]
+        )
+        channel_path.write_text(channel_text, encoding="utf-8")
+        print("patched accessibility method into protection_channel.dart")
+
+write("android/app/src/main/kotlin/com/example/focus_shield_android/MainActivity.kt", r'''
+package com.example.focus_shield_android
+
+import android.content.Intent
+import android.provider.Settings
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+
+class MainActivity : FlutterActivity() {
+    private val protectionChannelName = "focus_shield/protection"
+
+    private val blocklistStore: FocusShieldBlocklistStore by lazy {
+        FocusShieldBlocklistStore(applicationContext)
+    }
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            protectionChannelName
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "startProtection" -> startProtection(result)
+                "stopProtection" -> stopProtection(result)
+                "protectionStatus" -> protectionStatus(result)
+                "reloadBlocklist" -> reloadBlocklist(result)
+                "prepareLiveObservation" -> prepareLiveObservation(result)
+                "disableLiveObservation" -> disableLiveObservation(result)
+                "openVpnSettings" -> openVpnSettings(result)
+                "openAccessibilitySettings" -> openAccessibilitySettings(result)
+                "requestLiveObservationUnlock" -> requestLiveObservationUnlock(result)
+                "testDnsForwarder" -> testDnsForwarder(result)
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun startProtection(result: MethodChannel.Result) {
+        // Phase 3 VPN route capture stays paused so internet does not break.
+        result.success("phase3_paused_vpn_route_capture_disabled")
+    }
+
+    private fun stopProtection(result: MethodChannel.Result) {
+        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
+            action = FocusShieldVpnService.ACTION_STOP
+        }
+        startService(serviceIntent)
+        result.success("stopped")
+    }
+
+    private fun protectionStatus(result: MethodChannel.Result) {
+        val blocklistStatus = blocklistStore.status()
+        val nativeStatus = FocusShieldProtectionStatus.build(blocklistStatus)
+        result.success(nativeStatus.toMap())
+    }
+
+    private fun reloadBlocklist(result: MethodChannel.Result) {
+        val blocklistStatus = blocklistStore.status()
+        result.success("blocklist_loaded:${blocklistStatus.totalDomains}")
+    }
+
+    private fun prepareLiveObservation(result: MethodChannel.Result) {
+        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
+            action = FocusShieldVpnService.ACTION_PREPARE_LIVE_OBSERVATION
+        }
+        startService(serviceIntent)
+        result.success("observation_prepared_locked")
+    }
+
+    private fun disableLiveObservation(result: MethodChannel.Result) {
+        val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
+            action = FocusShieldVpnService.ACTION_DISABLE_LIVE_OBSERVATION
+        }
+        startService(serviceIntent)
+        result.success("observation_disabled")
+    }
+
+    private fun requestLiveObservationUnlock(result: MethodChannel.Result) {
+        result.success("phase3_paused_unlock_not_required")
+    }
+
+    private fun testDnsForwarder(result: MethodChannel.Result) {
+        Thread {
+            val response = try {
+                val success = FocusShieldDnsProxy.runForwarderDiagnostic()
+                if (success) {
+                    "dns_forwarder_diagnostic_success"
+                } else {
+                    "dns_forwarder_diagnostic_failed"
+                }
+            } catch (error: Exception) {
+                "dns_forwarder_diagnostic_error:${error.javaClass.simpleName}"
+            }
+
+            runOnUiThread {
+                result.success(response)
+            }
+        }.start()
+    }
+
+    private fun openVpnSettings(result: MethodChannel.Result) {
+        try {
+            val intent = Intent(Settings.ACTION_VPN_SETTINGS)
+            startActivity(intent)
+            result.success("vpn_settings_opened")
+        } catch (_: Exception) {
+            result.success("vpn_settings_unavailable")
+        }
+    }
+
+    private fun openAccessibilitySettings(result: MethodChannel.Result) {
+        try {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+            result.success("accessibility_settings_opened")
+        } catch (_: Exception) {
+            result.success("accessibility_settings_unavailable")
+        }
+    }
+}
+''')
+
+write("android/app/src/main/kotlin/com/example/focus_shield_android/FocusShieldAccessibilityService.kt", r'''
+package com.example.focus_shield_android
+
+import android.accessibilityservice.AccessibilityService
+import android.view.accessibility.AccessibilityEvent
+
+class FocusShieldAccessibilityService : AccessibilityService() {
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        // Phase 4B scaffold.
+        // The user must enable this manually in Android Accessibility Settings.
+        // Website text detection will be connected after this service is confirmed visible and stable.
+    }
+
+    override fun onInterrupt() {
+        // No-op.
+    }
+}
+''')
+
+write("android/app/src/main/res/xml/focus_shield_accessibility_service.xml", r'''
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewTextChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/app_name"
+    android:notificationTimeout="100" />
+''')
+
+manifest_path = ROOT / "android/app/src/main/AndroidManifest.xml"
+manifest_text = manifest_path.read_text(encoding="utf-8")
+
+service_block = '''
+        <service
+            android:name=".FocusShieldAccessibilityService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/focus_shield_accessibility_service" />
+        </service>
+'''
+
+if "FocusShieldAccessibilityService" not in manifest_text:
+    manifest_text = manifest_text.replace(
+        "</application>",
+        service_block + "\n    </application>",
+    )
+    manifest_path.write_text(manifest_text, encoding="utf-8")
+    print("patched AndroidManifest.xml accessibility service")
+
+print("Phase 4B patch script completed successfully.")
