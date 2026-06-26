@@ -116,11 +116,11 @@ class AiLiteClassifier {
     ];
 
     for (final signal in highRiskSignals) {
-      if (domain.contains(signal)) {
-        score += 30;
-        signals.add('High-risk signal: $signal');
-      }
-    }
+  if (domain.contains(signal)) {
+    score += 75;
+    signals.add('High-risk signal: $signal');
+  }
+}
 
     for (final signal in mediumRiskSignals) {
       if (domain.contains(signal)) {
