@@ -7,6 +7,7 @@ import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 import '../widgets/native_protection_counters_card.dart';
+import '../widgets/protection_readiness_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -67,6 +68,9 @@ class HomeScreen extends StatelessWidget {
                 : 'Set commitment',
           ),
         const SizedBox(height: 16),
+        const ProtectionReadinessCard(),
+        const SizedBox(height: 16),
+
         ShieldCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

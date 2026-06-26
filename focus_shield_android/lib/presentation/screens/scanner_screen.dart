@@ -235,7 +235,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: const Text(
-            'Testing tools remain available below. Real scanned, new, total, and blocked counters now come from native Accessibility detection.',
+            'Testing tools remain available below. Real scanned, new, total, and blocked counters now come from native Accessibility detection. Phase 6H noise control is active with duplicate cooldown and unknown-site cooldown.',
           ),
         ),
       ],

@@ -5,6 +5,7 @@ import '../../platform/protection_channel.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
+import '../widgets/protection_readiness_card.dart';
 
 class AccessibilityDetectionScreen extends StatefulWidget {
   const AccessibilityDetectionScreen({
@@ -183,6 +184,8 @@ class _AccessibilityDetectionScreenState
             },
           ),
         ),
+        const ProtectionReadinessCard(),
+        const SizedBox(height: 16),
         ShieldCard(
           borderColor: _decisionColor(),
           child: Column(
@@ -300,13 +303,13 @@ class _AccessibilityDetectionScreenState
         ShieldCard(
           borderColor: AppTheme.primary,
           child: const Text(
-            'Phase 6D ignores Android System UI rescans, syncs the saved blocklist into native Accessibility detection, and opens a real intervention screen after blocked detection.',
+            'Phase 6H ignores Android System UI rescans, suppresses repeated visible-domain events, cools down repeated unknown-site detections, syncs the saved blocklist into native Accessibility detection, and keeps the intervention screen active.',
           ),
         ),
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: const Text(
-            'Main app counter sync is active. Home, Scanner, and Progress can now read native Accessibility scanned, new, blocked, unknown, and last blocked site data.',
+            'Main app counter sync is active. Home, Scanner, and Progress can now read native Accessibility counters, readiness health, noise-control stats, and latest blocked-site data.',
           ),
         ),
       ],

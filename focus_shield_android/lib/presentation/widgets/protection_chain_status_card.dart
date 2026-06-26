@@ -190,6 +190,14 @@ class _ProtectionChainStatusCardState extends State<ProtectionChainStatusCard> {
           Text('Latest blocked site: $_lastBlockedSite'),
           const SizedBox(height: 6),
           Text('Last protection action: $_stableAction'),
+          const SizedBox(height: 6),
+          Text(
+            'Noise control: ${_value('noiseControlMode', fallback: 'cooldown active')}',
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Suppressed duplicates: ${_value('suppressedDuplicates')} | Suppressed noise: ${_value('suppressedNoise')}',
+          ),
           if (!widget.compact) ...[
             const SizedBox(height: 6),
             Text(_stableMessage),

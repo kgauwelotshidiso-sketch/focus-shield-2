@@ -73,6 +73,12 @@ class ProgressScreen extends StatelessWidget {
           showControls: true,
         ),
         ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: const Text(
+            'Phase 6H protection activity is synced from native Accessibility detection with duplicate and unknown-site noise control.',
+          ),
+        ),
+        ShieldCard(
           child: Column(
             children: [
               ActionButton(
