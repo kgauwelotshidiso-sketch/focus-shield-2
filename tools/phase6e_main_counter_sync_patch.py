@@ -764,5 +764,15 @@ void main() {
 ''')
 
 print("Phase 6E widget test hotfix applied successfully.")
+def remove_unused_material_import_from_widget_test(text: str) -> str:
+    return text.replace("import 'package:flutter/material.dart';\n", "")
+
+
+patch_file(
+    "test/widget_test.dart",
+    remove_unused_material_import_from_widget_test,
+)
+
+print("Phase 6E unused widget test import removed successfully.")
 
 
