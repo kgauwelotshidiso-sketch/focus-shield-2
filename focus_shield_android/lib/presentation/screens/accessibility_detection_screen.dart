@@ -70,6 +70,12 @@ class _AccessibilityDetectionScreenState
     return value.toString();
   }
 
+  String _safeValue(String key, String fallback) {
+    final value = _value(key);
+    if (value.trim().isEmpty) return fallback;
+    return value;
+  }
+
   List<String> _signals() {
     final raw = _status['lastSignals'];
 
@@ -80,9 +86,34 @@ class _AccessibilityDetectionScreenState
     return <String>[];
   }
 
+  String _cleanMode() {
+    final mode = _value('mode').toLowerCase();
+
+    if (mode.contains('local')) {
+      return 'Local';
+    }
+
+    if (mode.isEmpty) {
+      return 'Local';
+    }
+
+    return 'Active';
+  }
+
+  Color _decisionColor() {
+    final decision = _value('lastDecision').toLowerCase();
+
+    if (decision == 'blocked') return AppTheme.danger;
+    if (decision == 'unknown') return AppTheme.warning;
+
+    return AppTheme.primary;
+  }
+
   @override
   Widget build(BuildContext context) {
     final signals = _signals();
+    final lastAction = _safeValue('lastAction', '-');
+    final lastMessage = _safeValue('lastMessage', 'No action recorded yet.');
 
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -107,27 +138,17 @@ class _AccessibilityDetectionScreenState
           borderColor: AppTheme.primary,
           child: StatGrid(
             items: {
-              'Mode': _value('mode').isEmpty
-                  ? 'Local'
-                  : _value('mode').replaceAll('_', ' '),
-              'Events': _value('events').isEmpty ? '0' : _value('events'),
-              'Scanned': _value('websitesScanned').isEmpty
-                  ? '0'
-                  : _value('websitesScanned'),
-              'New': _value('newWebsitesScanned').isEmpty
-                  ? '0'
-                  : _value('newWebsitesScanned'),
-              'Blocked': _value('blockedDetections').isEmpty
-                  ? '0'
-                  : _value('blockedDetections'),
-              'Unknown': _value('unknownDetections').isEmpty
-                  ? '0'
-                  : _value('unknownDetections'),
+              'Mode': _cleanMode(),
+              'Events': _safeValue('events', '0'),
+              'Scanned': _safeValue('websitesScanned', '0'),
+              'New': _safeValue('newWebsitesScanned', '0'),
+              'Blocked': _safeValue('blockedDetections', '0'),
+              'Unknown': _safeValue('unknownDetections', '0'),
             },
           ),
         ),
         ShieldCard(
-          borderColor: AppTheme.secondary,
+          borderColor: _decisionColor(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -136,24 +157,12 @@ class _AccessibilityDetectionScreenState
               if (_loading)
                 const Text('Loading...')
               else ...[
-                Text(
-                  'Domain: ${_value('lastDomain').isEmpty ? '-' : _value('lastDomain')}',
-                ),
-                Text(
-                  'Decision: ${_value('lastDecision').isEmpty ? '-' : _value('lastDecision')}',
-                ),
-                Text(
-                  'Category: ${_value('lastCategory').isEmpty ? '-' : _value('lastCategory')}',
-                ),
-                Text(
-                  'Score: ${_value('lastScore').isEmpty ? '0' : _value('lastScore')}/100',
-                ),
-                Text(
-                  'Confidence: ${_value('lastConfidence').isEmpty ? '0' : _value('lastConfidence')}%',
-                ),
-                Text(
-                  'Package: ${_value('lastPackage').isEmpty ? '-' : _value('lastPackage')}',
-                ),
+                Text('Domain: ${_safeValue('lastDomain', '-')}'),
+                Text('Decision: ${_safeValue('lastDecision', '-')}'),
+                Text('Category: ${_safeValue('lastCategory', '-')}'),
+                Text('Score: ${_safeValue('lastScore', '0')}/100'),
+                Text('Confidence: ${_safeValue('lastConfidence', '0')}%'),
+                Text('Package: ${_safeValue('lastPackage', '-')}'),
               ],
               const SizedBox(height: 12),
               const Text('Risk signals'),
@@ -167,6 +176,23 @@ class _AccessibilityDetectionScreenState
                     child: Text('• $signal'),
                   ),
                 ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Last protection action'),
+              const SizedBox(height: 8),
+              Text('Action: $lastAction'),
+              const SizedBox(height: 6),
+              Text(lastMessage),
+              const SizedBox(height: 12),
+              const Text(
+                'If Android blocks auto-open, Focus Shield will still use toast and notification fallback.',
+              ),
             ],
           ),
         ),
@@ -215,7 +241,7 @@ class _AccessibilityDetectionScreenState
         ShieldCard(
           borderColor: AppTheme.primary,
           child: const Text(
-            'Phase 6 reads visible website/search text only after the user manually enables Accessibility. Detection stays local on the device.',
+            'Phase 6C keeps detection local, fixes the overflow bug, and improves blocked-site feedback through app launch, toast, and notification fallback.',
           ),
         ),
       ],

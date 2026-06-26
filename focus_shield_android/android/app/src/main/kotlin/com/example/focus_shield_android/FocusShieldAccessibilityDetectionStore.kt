@@ -2,7 +2,6 @@ package com.example.focus_shield_android
 
 import android.content.Context
 import org.json.JSONArray
-import org.json.JSONObject
 import java.util.Locale
 import java.util.regex.Pattern
 
@@ -23,6 +22,8 @@ object FocusShieldAccessibilityDetectionStore {
     private const val KEY_LAST_SIGNALS = "last_signals"
     private const val KEY_LAST_DETECTED_AT = "last_detected_at"
     private const val KEY_LAST_PACKAGE = "last_package"
+    private const val KEY_LAST_ACTION = "last_action"
+    private const val KEY_LAST_MESSAGE = "last_message"
 
     private val domainPattern: Pattern = Pattern.compile(
         "\\b((?:https?://)?(?:www\\.)?[a-zA-Z0-9][a-zA-Z0-9-]{1,63}(?:\\.[a-zA-Z]{2,})+(?:/[^\\s]*)?)\\b"
@@ -77,9 +78,18 @@ object FocusShieldAccessibilityDetectionStore {
             .putString(KEY_LAST_SIGNALS, JSONArray(classification.signals).toString())
             .putLong(KEY_LAST_DETECTED_AT, System.currentTimeMillis())
             .putString(KEY_LAST_PACKAGE, sourcePackage)
+            .putString(KEY_LAST_MESSAGE, "Detected ${classification.decision}: $domain")
             .apply()
 
         return classification
+    }
+
+    fun recordAction(context: Context, action: String, message: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_LAST_ACTION, action)
+            .putString(KEY_LAST_MESSAGE, message)
+            .apply()
     }
 
     fun status(context: Context): Map<String, Any> {
@@ -110,7 +120,9 @@ object FocusShieldAccessibilityDetectionStore {
             "lastSignals" to signals,
             "lastDetectedAt" to prefs.getLong(KEY_LAST_DETECTED_AT, 0L),
             "lastPackage" to (prefs.getString(KEY_LAST_PACKAGE, "") ?: ""),
-            "mode" to "accessibility_local_detection"
+            "lastAction" to (prefs.getString(KEY_LAST_ACTION, "") ?: ""),
+            "lastMessage" to (prefs.getString(KEY_LAST_MESSAGE, "") ?: ""),
+            "mode" to "local_detection"
         )
     }
 
