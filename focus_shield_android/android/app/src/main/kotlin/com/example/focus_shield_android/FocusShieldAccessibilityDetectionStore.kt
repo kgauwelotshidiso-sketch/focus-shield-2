@@ -26,6 +26,9 @@ object FocusShieldAccessibilityDetectionStore {
     private const val KEY_LAST_PACKAGE = "last_package"
     private const val KEY_LAST_ACTION = "last_action"
     private const val KEY_LAST_MESSAGE = "last_message"
+    private const val KEY_LAST_SYNC_ACTION = "last_sync_action"
+    private const val KEY_LAST_SYNC_MESSAGE = "last_sync_message"
+    private const val KEY_LAST_SYNC_AT = "last_sync_at"
 
     private val domainPattern: Pattern = Pattern.compile(
         "\\b((?:https?://)?(?:www\\.)?[a-zA-Z0-9][a-zA-Z0-9-]{1,63}(?:\\.[a-zA-Z]{2,})+(?:/[^\\s]*)?)\\b"
@@ -51,10 +54,11 @@ object FocusShieldAccessibilityDetectionStore {
             .edit()
             .putStringSet(KEY_CUSTOM_BLOCKLIST, cleanedDomains)
             .putString(
-                KEY_LAST_MESSAGE,
+                KEY_LAST_SYNC_MESSAGE,
                 "Native Accessibility blocklist synced: ${cleanedDomains.size} domain(s)"
             )
-            .putString(KEY_LAST_ACTION, "blocklist_synced")
+            .putString(KEY_LAST_SYNC_ACTION, "blocklist_synced")
+            .putLong(KEY_LAST_SYNC_AT, System.currentTimeMillis())
             .apply()
     }
 
@@ -130,6 +134,28 @@ object FocusShieldAccessibilityDetectionStore {
         val customBlocklist =
             prefs.getStringSet(KEY_CUSTOM_BLOCKLIST, emptySet()) ?: emptySet()
 
+        val rawLastAction = prefs.getString(KEY_LAST_ACTION, "") ?: ""
+        val rawLastMessage = prefs.getString(KEY_LAST_MESSAGE, "") ?: ""
+        val lastDecision = prefs.getString(KEY_LAST_DECISION, "") ?: ""
+        val lastDomain = prefs.getString(KEY_LAST_DOMAIN, "") ?: ""
+
+        val stableLastAction =
+            if (rawLastAction == "blocklist_synced" && lastDecision == "blocked") {
+                "opened_intervention"
+            } else {
+                rawLastAction
+            }
+
+        val stableLastMessage =
+            if (rawLastAction == "blocklist_synced" &&
+                lastDecision == "blocked" &&
+                lastDomain.isNotBlank()
+            ) {
+                "Blocked detection preserved after native blocklist sync: $lastDomain"
+            } else {
+                rawLastMessage
+            }
+
         return mapOf(
             "events" to prefs.getInt(KEY_EVENTS, 0),
             "websitesScanned" to prefs.getInt(KEY_WEBSITES_SCANNED, 0),
@@ -145,8 +171,11 @@ object FocusShieldAccessibilityDetectionStore {
             "lastSignals" to signals,
             "lastDetectedAt" to prefs.getLong(KEY_LAST_DETECTED_AT, 0L),
             "lastPackage" to (prefs.getString(KEY_LAST_PACKAGE, "") ?: ""),
-            "lastAction" to (prefs.getString(KEY_LAST_ACTION, "") ?: ""),
-            "lastMessage" to (prefs.getString(KEY_LAST_MESSAGE, "") ?: ""),
+            "lastAction" to stableLastAction,
+            "lastMessage" to stableLastMessage,
+            "lastSyncAction" to (prefs.getString(KEY_LAST_SYNC_ACTION, "") ?: ""),
+            "lastSyncMessage" to (prefs.getString(KEY_LAST_SYNC_MESSAGE, "") ?: ""),
+            "lastSyncAt" to prefs.getLong(KEY_LAST_SYNC_AT, 0L),
             "mode" to "local_detection"
         )
     }

@@ -28,14 +28,15 @@ class _ProtectionChainStatusCardState extends State<ProtectionChainStatusCard> {
 
   Map<String, dynamic> _status = <String, dynamic>{};
   bool _loading = true;
-  String _message = 'Reading native protection chain...';
+  String _message = 'Reading protection status...';
 
   @override
   void initState() {
     super.initState();
     _refreshStatus();
+
     if (widget.blockedDomains.isNotEmpty) {
-      _syncNativeBlocklist();
+      _syncNativeBlocklistSilently();
     }
   }
 
@@ -47,7 +48,26 @@ class _ProtectionChainStatusCardState extends State<ProtectionChainStatusCard> {
     setState(() {
       _status = status;
       _loading = false;
-      _message = 'Protection chain status refreshed.';
+      _message = 'Protection status refreshed.';
+    });
+  }
+
+  Future<void> _syncNativeBlocklistSilently() async {
+    final domains = widget.blockedDomains
+        .map((domain) => domain.trim().toLowerCase())
+        .where((domain) => domain.isNotEmpty)
+        .toSet()
+        .toList();
+
+    await _channel.syncAccessibilityBlocklist(domains);
+    final status = await _channel.accessibilityDetectionStatus();
+
+    if (!mounted) return;
+
+    setState(() {
+      _status = status;
+      _loading = false;
+      _message = 'Native blocklist synced without replacing protection action.';
     });
   }
 
@@ -107,14 +127,9 @@ class _ProtectionChainStatusCardState extends State<ProtectionChainStatusCard> {
   }
 
   String get _chainStatus {
-    if (_hasBlockedSite) {
-      return 'Blocking';
-    }
-
-    if (_hasNativeActivity) {
-      return 'Active';
-    }
-
+    if (_loading) return 'Loading';
+    if (_hasBlockedSite) return 'Blocking';
+    if (_hasNativeActivity) return 'Active';
     return 'Ready';
   }
 
@@ -126,8 +141,29 @@ class _ProtectionChainStatusCardState extends State<ProtectionChainStatusCard> {
 
   String get _lastBlockedSite {
     if (!_hasBlockedSite) return 'None';
-
     return _value('lastDomain', fallback: 'None');
+  }
+
+  String get _stableAction {
+    final action = _value('lastAction', fallback: 'No protection action yet');
+
+    if (action == 'blocklist_synced' && _hasBlockedSite) {
+      return 'opened_intervention';
+    }
+
+    return action;
+  }
+
+  String get _stableMessage {
+    final message = _value('lastMessage', fallback: '');
+
+    if (_stableAction == 'opened_intervention' && _hasBlockedSite) {
+      return 'Focus Shield opened intervention after blocking $_lastBlockedSite.';
+    }
+
+    if (message.isNotEmpty) return message;
+
+    return _message;
   }
 
   @override
@@ -137,11 +173,11 @@ class _ProtectionChainStatusCardState extends State<ProtectionChainStatusCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.compact ? 'Protection Sync' : 'Protection Chain Status'),
+          Text(widget.compact ? 'Protection Active' : 'Protection Chain'),
           const SizedBox(height: 12),
           StatGrid(
             items: {
-              'Chain': _loading ? 'Loading' : _chainStatus,
+              'Status': _chainStatus,
               'Scanned': _value('websitesScanned'),
               'New': _value('newWebsitesScanned'),
               'Blocked': _value('blockedDetections'),
@@ -151,20 +187,22 @@ class _ProtectionChainStatusCardState extends State<ProtectionChainStatusCard> {
             },
           ),
           const SizedBox(height: 12),
-          Text('Last blocked site: $_lastBlockedSite'),
+          Text('Latest blocked site: $_lastBlockedSite'),
           const SizedBox(height: 6),
-          Text(
-            'Last action: ${_value('lastAction', fallback: 'No action yet')}',
-          ),
+          Text('Last protection action: $_stableAction'),
           if (!widget.compact) ...[
             const SizedBox(height: 6),
-            Text(_value('lastMessage', fallback: _message)),
+            Text(_stableMessage),
+            const SizedBox(height: 8),
+            Text(
+              'Last sync: ${_value('lastSyncMessage', fallback: 'No sync message yet')}',
+            ),
           ],
           if (widget.showControls) ...[
             const SizedBox(height: 12),
             ActionButton(
               label: 'Refresh Protection Status',
-              subtitle: 'Sync native Accessibility counters',
+              subtitle: 'Read native Accessibility counters',
               onPressed: _refreshStatus,
             ),
             if (widget.blockedDomains.isNotEmpty) ...[

@@ -136,8 +136,19 @@ class _AccessibilityDetectionScreenState
   @override
   Widget build(BuildContext context) {
     final signals = _signals();
-    final lastAction = _safeValue('lastAction', '-');
-    final lastMessage = _safeValue('lastMessage', 'No action recorded yet.');
+    final rawLastAction = _safeValue('lastAction', '-');
+    final lastDecision = _safeValue('lastDecision', '-');
+    final lastDomain = _safeValue('lastDomain', '-');
+
+    final lastAction =
+        rawLastAction == 'blocklist_synced' && lastDecision == 'blocked'
+        ? 'opened_intervention'
+        : rawLastAction;
+
+    final lastMessage =
+        rawLastAction == 'blocklist_synced' && lastDecision == 'blocked'
+        ? 'Focus Shield opened intervention after blocking $lastDomain.'
+        : _safeValue('lastMessage', 'No action recorded yet.');
 
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -209,14 +220,14 @@ class _AccessibilityDetectionScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Last protection action'),
+              const Text('Stable protection action'),
               const SizedBox(height: 8),
               Text('Action: $lastAction'),
               const SizedBox(height: 6),
               Text(lastMessage),
               const SizedBox(height: 12),
               const Text(
-                'Blocked detections now open the native intervention screen. If Android blocks auto-open, Focus Shield still uses toast and notification fallback.',
+                'Blocked detections open the native intervention screen. Blocklist sync is now tracked separately so it does not overwrite the protection action.',
               ),
             ],
           ),

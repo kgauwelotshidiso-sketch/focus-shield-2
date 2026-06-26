@@ -71,6 +71,16 @@ class _NativeProtectionCountersCardState
     return AppTheme.primary;
   }
 
+  String get _stableAction {
+    final action = _value('lastAction', fallback: 'No action yet');
+
+    if (action == 'blocklist_synced' && _hasBlocked) {
+      return 'opened_intervention';
+    }
+
+    return action;
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = <String, String>{
@@ -97,15 +107,15 @@ class _NativeProtectionCountersCardState
           const SizedBox(height: 12),
           StatGrid(items: items),
           const SizedBox(height: 12),
-          Text('Last blocked site: ${_value('lastDomain', fallback: 'None')}'),
-          const SizedBox(height: 6),
           Text(
-            'Last action: ${_value('lastAction', fallback: 'No action yet')}',
+            'Latest blocked site: ${_value('lastDomain', fallback: 'None')}',
           ),
+          const SizedBox(height: 6),
+          Text('Stable protection action: $_stableAction'),
           if (widget.showControls) ...[
             const SizedBox(height: 12),
             ActionButton(
-              label: 'Refresh Native Counters',
+              label: 'Refresh Protection Counters',
               subtitle: 'Read Accessibility protection stats',
               onPressed: _refresh,
             ),
@@ -178,6 +188,8 @@ class _NativeHomeProtectionSummaryCardState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text('Protection Active'),
+          const SizedBox(height: 12),
           StatGrid(
             items: {
               'Commitment': widget.commitmentLabel,
@@ -191,7 +203,9 @@ class _NativeHomeProtectionSummaryCardState
             },
           ),
           const SizedBox(height: 12),
-          Text('Last blocked site: ${_value('lastDomain', fallback: 'None')}'),
+          Text(
+            'Latest blocked site: ${_value('lastDomain', fallback: 'None')}',
+          ),
         ],
       ),
     );

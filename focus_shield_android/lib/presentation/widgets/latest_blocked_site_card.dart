@@ -54,6 +54,16 @@ class _LatestBlockedSiteCardState extends State<LatestBlockedSiteCard> {
         _value('lastDomain').isNotEmpty;
   }
 
+  String get _stableAction {
+    final action = _value('lastAction', fallback: '-');
+
+    if (action == 'blocklist_synced' && _hasBlockedSite) {
+      return 'opened_intervention';
+    }
+
+    return action;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -69,7 +79,7 @@ class _LatestBlockedSiteCardState extends State<LatestBlockedSiteCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Last blocked site'),
+            const Text('Latest blocked site'),
             const SizedBox(height: 8),
             const Text('No blocked site recorded yet.'),
             if (widget.showControls) ...[
@@ -89,23 +99,22 @@ class _LatestBlockedSiteCardState extends State<LatestBlockedSiteCard> {
     final category = _value('lastCategory', fallback: 'unknown');
     final score = _value('lastScore', fallback: '0');
     final packageName = _value('lastPackage', fallback: '-');
-    final action = _value('lastAction', fallback: '-');
 
     return ShieldCard(
       borderColor: AppTheme.danger,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Last blocked site'),
+          const Text('Latest blocked site'),
           const SizedBox(height: 8),
           Text('Domain: $domain'),
           Text('Category: $category'),
           Text('Risk score: $score/100'),
           Text('Source: $packageName'),
-          Text('Last action: $action'),
+          Text('Stable protection action: $_stableAction'),
           const SizedBox(height: 10),
           const Text(
-            'Focus Shield detected and interrupted this site through Accessibility.',
+            'Focus Shield detected this site and opened the intervention system.',
           ),
           if (widget.showControls) ...[
             const SizedBox(height: 12),

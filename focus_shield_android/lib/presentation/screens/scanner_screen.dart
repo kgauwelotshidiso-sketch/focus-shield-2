@@ -103,7 +103,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ),
         const SizedBox(height: 18),
         NativeProtectionCountersCard(
-          title: 'Native Protection Counters',
+          title: 'Protection Activity',
           reviewQueueCount: _unknownReviewQueue.length,
           showControls: true,
         ),
@@ -125,7 +125,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('AI-lite Website Scanner'),
+              const Text('Testing Tools — Manual AI-lite Scanner'),
               const SizedBox(height: 8),
               const Text(
                 'Local classifier checks saved blocklist, risk signals, domain shape, category, and confidence.',
@@ -235,7 +235,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: const Text(
-            'Manual scanner remains available for testing. Real scanned, new, total, and blocked counters now come from native Accessibility detection.',
+            'Testing tools remain available below. Real scanned, new, total, and blocked counters now come from native Accessibility detection.',
           ),
         ),
       ],

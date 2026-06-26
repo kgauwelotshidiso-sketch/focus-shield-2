@@ -66,7 +66,7 @@ class ProgressScreen extends StatelessWidget {
           ),
         ),
         NativeProtectionCountersCard(
-          title: 'Native Protection Counters',
+          title: 'Protection Activity',
           commitmentLabel: state.commitmentSet
               ? '${state.commitmentDaysRemaining} days left'
               : 'Not set',
