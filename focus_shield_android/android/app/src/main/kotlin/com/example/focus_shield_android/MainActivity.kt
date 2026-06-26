@@ -33,6 +33,7 @@ class MainActivity : FlutterActivity() {
                 "testDnsForwarder" -> testDnsForwarder(result)
                 "accessibilityDetectionStatus" -> accessibilityDetectionStatus(result)
                 "resetAccessibilityDetections" -> resetAccessibilityDetections(result)
+                "syncAccessibilityBlocklist" -> syncAccessibilityBlocklist(call.arguments, result)
                 else -> result.notImplemented()
             }
         }
@@ -99,6 +100,27 @@ class MainActivity : FlutterActivity() {
                 result.success(response)
             }
         }.start()
+    }
+
+
+    private fun syncAccessibilityBlocklist(arguments: Any?, result: MethodChannel.Result) {
+        val domains = mutableListOf<String>()
+
+        if (arguments is List<*>) {
+            for (item in arguments) {
+                val value = item?.toString()?.trim() ?: ""
+                if (value.isNotBlank()) {
+                    domains.add(value)
+                }
+            }
+        }
+
+        FocusShieldAccessibilityDetectionStore.updateCustomBlocklist(
+            context = applicationContext,
+            domains = domains
+        )
+
+        result.success("accessibility_blocklist_synced:${domains.size}")
     }
 
     private fun accessibilityDetectionStatus(result: MethodChannel.Result) {

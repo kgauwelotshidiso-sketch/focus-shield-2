@@ -14,6 +14,8 @@ object FocusShieldAccessibilityDetectionStore {
     private const val KEY_BLOCKED_DETECTIONS = "blocked_detections"
     private const val KEY_UNKNOWN_DETECTIONS = "unknown_detections"
     private const val KEY_SEEN_DOMAINS = "seen_domains"
+    private const val KEY_CUSTOM_BLOCKLIST = "custom_blocklist"
+
     private const val KEY_LAST_DOMAIN = "last_domain"
     private const val KEY_LAST_CATEGORY = "last_category"
     private const val KEY_LAST_DECISION = "last_decision"
@@ -39,13 +41,32 @@ object FocusShieldAccessibilityDetectionStore {
         val shouldOpenApp: Boolean
     )
 
+    fun updateCustomBlocklist(context: Context, domains: List<String>) {
+        val cleanedDomains = domains
+            .map { normalizeDomain(it) }
+            .filter { it.isNotBlank() && it.contains(".") }
+            .toSet()
+
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putStringSet(KEY_CUSTOM_BLOCKLIST, cleanedDomains)
+            .putString(
+                KEY_LAST_MESSAGE,
+                "Native Accessibility blocklist synced: ${cleanedDomains.size} domain(s)"
+            )
+            .putString(KEY_LAST_ACTION, "blocklist_synced")
+            .apply()
+    }
+
     fun recordVisibleText(
         context: Context,
         visibleText: String,
         sourcePackage: String
     ): AccessibilityClassification? {
+        if (isIgnoredPackage(sourcePackage)) return null
+
         val domain = extractDomain(visibleText) ?: return null
-        val classification = classify(domain)
+        val classification = classify(context, domain)
 
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val seen = prefs.getStringSet(KEY_SEEN_DOMAINS, emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -106,12 +127,16 @@ object FocusShieldAccessibilityDetectionStore {
             signals.clear()
         }
 
+        val customBlocklist =
+            prefs.getStringSet(KEY_CUSTOM_BLOCKLIST, emptySet()) ?: emptySet()
+
         return mapOf(
             "events" to prefs.getInt(KEY_EVENTS, 0),
             "websitesScanned" to prefs.getInt(KEY_WEBSITES_SCANNED, 0),
             "newWebsitesScanned" to prefs.getInt(KEY_NEW_WEBSITES_SCANNED, 0),
             "blockedDetections" to prefs.getInt(KEY_BLOCKED_DETECTIONS, 0),
             "unknownDetections" to prefs.getInt(KEY_UNKNOWN_DETECTIONS, 0),
+            "nativeBlocklistDomains" to customBlocklist.size,
             "lastDomain" to (prefs.getString(KEY_LAST_DOMAIN, "") ?: ""),
             "lastCategory" to (prefs.getString(KEY_LAST_CATEGORY, "") ?: ""),
             "lastDecision" to (prefs.getString(KEY_LAST_DECISION, "") ?: ""),
@@ -127,10 +152,23 @@ object FocusShieldAccessibilityDetectionStore {
     }
 
     fun reset(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val customBlocklist =
+            prefs.getStringSet(KEY_CUSTOM_BLOCKLIST, emptySet()) ?: emptySet()
+
+        prefs.edit()
             .clear()
+            .putStringSet(KEY_CUSTOM_BLOCKLIST, customBlocklist)
             .apply()
+    }
+
+    private fun isIgnoredPackage(sourcePackage: String): Boolean {
+        val clean = sourcePackage.lowercase(Locale.US)
+
+        return clean == "android" ||
+            clean == "com.android.systemui" ||
+            clean.contains("focus_shield_android") ||
+            clean.contains("focus_shield")
     }
 
     private fun extractDomain(text: String): String? {
@@ -159,21 +197,30 @@ object FocusShieldAccessibilityDetectionStore {
         return value.trim()
     }
 
-    private fun classify(domain: String): AccessibilityClassification {
+    private fun classify(
+        context: Context,
+        domain: String
+    ): AccessibilityClassification {
         val signals = mutableListOf<String>()
         var score = 0
         var category = "unknown"
 
-        val savedBlocklist = listOf(
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val customBlocklist =
+            prefs.getStringSet(KEY_CUSTOM_BLOCKLIST, emptySet()) ?: emptySet()
+
+        val fallbackBlocklist = listOf(
             "blocked-example.com",
             "unsafe-example.com",
             "risk-example.com"
         )
 
-        if (savedBlocklist.any { domain == it || domain.endsWith(".$it") }) {
+        val fullBlocklist = customBlocklist + fallbackBlocklist
+
+        if (fullBlocklist.any { domain == it || domain.endsWith(".$it") }) {
             score += 95
             category = "saved-blocklist"
-            signals.add("Matched saved blocklist")
+            signals.add("Matched synced blocklist")
         }
 
         val highRiskSignals = listOf(
@@ -270,7 +317,7 @@ object FocusShieldAccessibilityDetectionStore {
     private fun categoryFromSignals(signals: List<String>, score: Int): String {
         val joined = signals.joinToString(" ").lowercase(Locale.US)
 
-        if (joined.contains("saved blocklist")) return "saved-blocklist"
+        if (joined.contains("synced blocklist")) return "saved-blocklist"
         if (joined.contains("casino") || joined.contains("bet") || joined.contains("gambling")) {
             return "gambling"
         }

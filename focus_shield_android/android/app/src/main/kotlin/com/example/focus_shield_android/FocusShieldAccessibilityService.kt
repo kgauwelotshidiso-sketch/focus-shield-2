@@ -42,7 +42,6 @@ class FocusShieldAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         val sourcePackage = event.packageName?.toString() ?: "unknown"
-        if (sourcePackage.contains("focus_shield", ignoreCase = true)) return
 
         val visibleText = collectVisibleText(event)
         if (visibleText.length < 4) return
@@ -157,12 +156,13 @@ class FocusShieldAccessibilityService : AccessibilityService() {
     ) {
         Handler(Looper.getMainLooper()).post {
             try {
-                val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                val launchIntent = Intent(this, FocusShieldInterventionActivity::class.java)
 
                 if (launchIntent != null) {
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    launchIntent.putExtra("focus_shield_open_intervention", true)
                     launchIntent.putExtra("phase6_accessibility_domain", classification.domain)
                     launchIntent.putExtra("phase6_accessibility_category", classification.category)
                     launchIntent.putExtra("phase6_accessibility_decision", classification.decision)
@@ -171,8 +171,8 @@ class FocusShieldAccessibilityService : AccessibilityService() {
 
                     FocusShieldAccessibilityDetectionStore.recordAction(
                         context = applicationContext,
-                        action = "opened_app",
-                        message = "Focus Shield opened after blocked detection: ${classification.domain}"
+                        action = "opened_intervention",
+                        message = "Focus Shield opened native intervention screen after blocked detection: ${classification.domain}"
                     )
                     return@post
                 }
@@ -181,6 +181,7 @@ class FocusShieldAccessibilityService : AccessibilityService() {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    putExtra("focus_shield_open_intervention", true)
                     putExtra("phase6_accessibility_domain", classification.domain)
                     putExtra("phase6_accessibility_category", classification.category)
                     putExtra("phase6_accessibility_decision", classification.decision)
@@ -192,7 +193,7 @@ class FocusShieldAccessibilityService : AccessibilityService() {
                 FocusShieldAccessibilityDetectionStore.recordAction(
                     context = applicationContext,
                     action = "opened_app_fallback",
-                    message = "Focus Shield fallback launch used for: ${classification.domain}"
+                    message = "Focus Shield fallback intervention launch used for: ${classification.domain}"
                 )
             } catch (_: Exception) {
                 FocusShieldAccessibilityDetectionStore.recordAction(
@@ -224,11 +225,11 @@ class FocusShieldAccessibilityService : AccessibilityService() {
         try {
             createNotificationChannel()
 
-            val openIntent = packageManager.getLaunchIntentForPackage(packageName)
-                ?: Intent(this, MainActivity::class.java)
+            val openIntent = Intent(this, FocusShieldInterventionActivity::class.java)
 
             openIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             openIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            openIntent.putExtra("focus_shield_open_intervention", true)
             openIntent.putExtra("phase6_accessibility_domain", classification.domain)
             openIntent.putExtra("phase6_accessibility_category", classification.category)
             openIntent.putExtra("phase6_accessibility_decision", classification.decision)
@@ -254,7 +255,7 @@ class FocusShieldAccessibilityService : AccessibilityService() {
                     .setContentText("${classification.domain} • ${classification.score}/100")
                     .setStyle(
                         Notification.BigTextStyle().bigText(
-                            "Focus Shield blocked ${classification.domain}. Category: ${classification.category}. Score: ${classification.score}/100."
+                            "Focus Shield blocked ${classification.domain}. Category: ${classification.category}. Score: ${classification.score}/100. Tap to return to Focus Shield."
                         )
                     )
                     .setContentIntent(pendingIntent)
@@ -267,7 +268,7 @@ class FocusShieldAccessibilityService : AccessibilityService() {
                     .setContentText("${classification.domain} • ${classification.score}/100")
                     .setStyle(
                         Notification.BigTextStyle().bigText(
-                            "Focus Shield blocked ${classification.domain}. Category: ${classification.category}. Score: ${classification.score}/100."
+                            "Focus Shield blocked ${classification.domain}. Category: ${classification.category}. Score: ${classification.score}/100. Tap to return to Focus Shield."
                         )
                     )
                     .setContentIntent(pendingIntent)

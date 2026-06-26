@@ -54,6 +54,12 @@
                 android:resource="@xml/focus_shield_accessibility_service" />
         </service>
 
+    
+        <activity
+            android:name=".FocusShieldInterventionActivity"
+            android:exported="false"
+            android:theme="@style/LaunchTheme" />
+
     </application>
 
     <queries>

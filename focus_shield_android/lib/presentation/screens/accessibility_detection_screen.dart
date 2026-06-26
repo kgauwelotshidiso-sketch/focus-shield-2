@@ -7,9 +7,14 @@ import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
 class AccessibilityDetectionScreen extends StatefulWidget {
-  const AccessibilityDetectionScreen({super.key, required this.onBack});
+  const AccessibilityDetectionScreen({
+    super.key,
+    required this.onBack,
+    this.blockedDomains = const <String>[],
+  });
 
   final VoidCallback onBack;
+  final List<String> blockedDomains;
 
   @override
   State<AccessibilityDetectionScreen> createState() =>
@@ -28,6 +33,7 @@ class _AccessibilityDetectionScreenState
   void initState() {
     super.initState();
     _loadStatus();
+    _syncBlocklist();
   }
 
   Future<void> _loadStatus() async {
@@ -39,6 +45,24 @@ class _AccessibilityDetectionScreenState
       _status = status;
       _loading = false;
       _message = 'Accessibility detection status refreshed.';
+    });
+  }
+
+  Future<void> _syncBlocklist() async {
+    final domains = widget.blockedDomains
+        .map((domain) => domain.trim().toLowerCase())
+        .where((domain) => domain.isNotEmpty)
+        .toSet()
+        .toList();
+
+    final result = await _channel.syncAccessibilityBlocklist(domains);
+    final status = await _channel.accessibilityDetectionStatus();
+
+    if (!mounted) return;
+
+    setState(() {
+      _status = status;
+      _message = result;
     });
   }
 
@@ -144,6 +168,7 @@ class _AccessibilityDetectionScreenState
               'New': _safeValue('newWebsitesScanned', '0'),
               'Blocked': _safeValue('blockedDetections', '0'),
               'Unknown': _safeValue('unknownDetections', '0'),
+              'Native DB': _safeValue('nativeBlocklistDomains', '0'),
             },
           ),
         ),
@@ -191,7 +216,30 @@ class _AccessibilityDetectionScreenState
               Text(lastMessage),
               const SizedBox(height: 12),
               const Text(
-                'If Android blocks auto-open, Focus Shield will still use toast and notification fallback.',
+                'Blocked detections now open the native intervention screen. If Android blocks auto-open, Focus Shield still uses toast and notification fallback.',
+              ),
+            ],
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Native blocklist sync'),
+              const SizedBox(height: 8),
+              Text(
+                'Flutter saved blocklist domains: ${widget.blockedDomains.length}',
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Native Accessibility DB: ${_safeValue('nativeBlocklistDomains', '0')}',
+              ),
+              const SizedBox(height: 12),
+              ActionButton(
+                label: 'Sync Blocklist to Accessibility',
+                subtitle: 'Use saved blocklist in native detection',
+                onPressed: _syncBlocklist,
               ),
             ],
           ),
@@ -241,7 +289,7 @@ class _AccessibilityDetectionScreenState
         ShieldCard(
           borderColor: AppTheme.primary,
           child: const Text(
-            'Phase 6C keeps detection local, fixes the overflow bug, and improves blocked-site feedback through app launch, toast, and notification fallback.',
+            'Phase 6D ignores Android System UI rescans, syncs the saved blocklist into native Accessibility detection, and opens a real intervention screen after blocked detection.',
           ),
         ),
       ],

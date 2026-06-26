@@ -357,4 +357,17 @@ class ProtectionChannel {
   Future<String> resetAccessibilityDetections() async {
     return _invokeString('resetAccessibilityDetections');
   }
+
+  Future<String> syncAccessibilityBlocklist(List<String> domains) async {
+    try {
+      final result = await _channel.invokeMethod<String>(
+        'syncAccessibilityBlocklist',
+        domains,
+      );
+
+      return result ?? 'accessibility_blocklist_sync_no_response';
+    } catch (error) {
+      return 'error:${error.runtimeType}';
+    }
+  }
 }

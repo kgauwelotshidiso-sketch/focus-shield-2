@@ -714,6 +714,7 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     } else if (_showAccessibilityDetection) {
       overlay = AccessibilityDetectionScreen(
         onBack: _closeAccessibilityDetection,
+        blockedDomains: _blockedDomains.map((item) => item.domain).toList(),
       );
     } else if (_showCloudSync) {
       overlay = CloudSyncScreen(
