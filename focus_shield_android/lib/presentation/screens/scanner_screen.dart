@@ -5,9 +5,9 @@ import '../../domain/models/blocked_domain.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../../domain/services/protection_engine.dart';
 import '../widgets/action_button.dart';
+import '../widgets/native_protection_counters_card.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
-import '../widgets/protection_chain_status_card.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({
@@ -30,7 +30,6 @@ class ScannerScreen extends StatefulWidget {
 class _ScannerScreenState extends State<ScannerScreen> {
   final _controller = TextEditingController();
   final List<ProtectionDecision> _unknownReviewQueue = <ProtectionDecision>[];
-
   ProtectionDecision? _decision;
 
   void _scan(String value) {
@@ -96,9 +95,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
-        const ProtectionChainStatusCard(compact: true, showControls: false),
-        const SizedBox(height: 16),
-
         Text('Scanner', style: Theme.of(context).textTheme.headlineLarge),
         Text(
           widget.protectionEnabled
@@ -106,16 +102,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
               : 'Protection is off until commitment is active',
         ),
         const SizedBox(height: 18),
-        ShieldCard(
-          borderColor: AppTheme.primary,
-          child: StatGrid(
-            items: {
-              'Scanned Today': '${widget.state.websitesScannedToday}',
-              'New Today': '${widget.state.newWebsitesScannedToday}',
-              'Total Scanned': '${widget.state.totalWebsitesScanned}',
-              'Review Queue': '${_unknownReviewQueue.length}',
-            },
-          ),
+        NativeProtectionCountersCard(
+          title: 'Native Protection Counters',
+          reviewQueueCount: _unknownReviewQueue.length,
+          showControls: true,
         ),
         ShieldCard(
           borderColor: AppTheme.secondary,
@@ -245,13 +235,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: const Text(
-            'Phase 5 is local-only. No paid API, no cloud dependency, and no VPN route changes.',
-          ),
-        ),
-        ShieldCard(
-          borderColor: AppTheme.primary,
-          child: const Text(
-            'Native Accessibility counters are shown above through Protection Chain Status.',
+            'Manual scanner remains available for testing. Real scanned, new, total, and blocked counters now come from native Accessibility detection.',
           ),
         ),
       ],

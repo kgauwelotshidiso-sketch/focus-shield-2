@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
+import '../widgets/native_protection_counters_card.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
-import '../widgets/protection_chain_status_card.dart';
 
 class ProgressScreen extends StatelessWidget {
   const ProgressScreen({
@@ -33,9 +34,6 @@ class ProgressScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
-        const ProtectionChainStatusCard(compact: true, showControls: false),
-        const SizedBox(height: 16),
-
         Text('Progress', style: Theme.of(context).textTheme.headlineLarge),
         const Text('XP, streaks, badges, wins'),
         const SizedBox(height: 18),
@@ -67,18 +65,12 @@ class ProgressScreen extends StatelessWidget {
             },
           ),
         ),
-        ShieldCard(
-          borderColor: AppTheme.primary,
-          child: StatGrid(
-            items: {
-              'Scanned Today': '${state.websitesScannedToday}',
-              'New Today': '${state.newWebsitesScannedToday}',
-              'Total Scanned': '${state.totalWebsitesScanned}',
-              'Commitment': state.commitmentSet
-                  ? '${state.commitmentDaysRemaining} days left'
-                  : 'Not set',
-            },
-          ),
+        NativeProtectionCountersCard(
+          title: 'Native Protection Counters',
+          commitmentLabel: state.commitmentSet
+              ? '${state.commitmentDaysRemaining} days left'
+              : 'Not set',
+          showControls: true,
         ),
         ShieldCard(
           child: Column(

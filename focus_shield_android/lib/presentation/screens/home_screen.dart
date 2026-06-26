@@ -8,6 +8,7 @@ import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 import '../widgets/protection_chain_status_card.dart';
 import '../widgets/latest_blocked_site_card.dart';
+import '../widgets/native_protection_counters_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -66,17 +67,13 @@ class HomeScreen extends StatelessWidget {
             ),
           )
         else
-          ShieldCard(
-            borderColor: AppTheme.primary,
-            child: StatGrid(
-              items: {
-                'Commitment': '${state.commitmentDays} days',
-                'Days Left': '${state.commitmentDaysRemaining}',
-                'Scanned Today': '${state.websitesScannedToday}',
-                'New Sites': '${state.newWebsitesScannedToday}',
-              },
-            ),
+          NativeHomeProtectionSummaryCard(
+            commitmentLabel: state.commitmentSet ? 'Active' : 'Required',
+            daysLeftLabel: state.commitmentSet
+                ? '${state.commitmentDaysRemaining} days left'
+                : 'Set commitment',
           ),
+        const SizedBox(height: 16),
         ShieldCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
