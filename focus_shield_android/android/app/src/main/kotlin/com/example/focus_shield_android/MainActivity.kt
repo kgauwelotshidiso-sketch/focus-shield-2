@@ -31,6 +31,8 @@ class MainActivity : FlutterActivity() {
                 "openAccessibilitySettings" -> openAccessibilitySettings(result)
                 "requestLiveObservationUnlock" -> requestLiveObservationUnlock(result)
                 "testDnsForwarder" -> testDnsForwarder(result)
+                "accessibilityDetectionStatus" -> accessibilityDetectionStatus(result)
+                "resetAccessibilityDetections" -> resetAccessibilityDetections(result)
                 else -> result.notImplemented()
             }
         }
@@ -56,9 +58,9 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun reloadBlocklist(result: MethodChannel.Result) {
-    blocklistStore.status()
-    result.success("blocklist_loaded")
-}
+        blocklistStore.status()
+        result.success("blocklist_loaded")
+    }
 
     private fun prepareLiveObservation(result: MethodChannel.Result) {
         val serviceIntent = Intent(this, FocusShieldVpnService::class.java).apply {
@@ -97,6 +99,17 @@ class MainActivity : FlutterActivity() {
                 result.success(response)
             }
         }.start()
+    }
+
+    private fun accessibilityDetectionStatus(result: MethodChannel.Result) {
+        result.success(
+            FocusShieldAccessibilityDetectionStore.status(applicationContext)
+        )
+    }
+
+    private fun resetAccessibilityDetections(result: MethodChannel.Result) {
+        FocusShieldAccessibilityDetectionStore.reset(applicationContext)
+        result.success("accessibility_detections_reset")
     }
 
     private fun openVpnSettings(result: MethodChannel.Result) {

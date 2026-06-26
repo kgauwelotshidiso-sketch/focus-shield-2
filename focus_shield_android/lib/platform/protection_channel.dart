@@ -2,35 +2,35 @@ import 'package:flutter/services.dart';
 
 class ProtectionStatus {
   const ProtectionStatus({
-    required this.nativeStatusVersion,
-    required this.protectionMode,
-    required this.vpnActive,
-    required this.blocklistLoaded,
-    required this.blockedDomainCount,
-    required this.nativeDnsReady,
-    required this.nativeLoadedDomainCount,
-    required this.packetLoopPrepared,
-    required this.packetLoopRunning,
-    required this.packetsObserved,
-    required this.ipPacketsObserved,
+    this.nativeStatusVersion = 0,
+    this.protectionMode = 'unavailable',
+    this.vpnActive = false,
+    this.blocklistLoaded = false,
+    this.blockedDomainCount = 0,
+    this.nativeDnsReady = false,
+    this.nativeLoadedDomainCount = 0,
+    this.packetLoopPrepared = false,
+    this.packetLoopRunning = false,
+    this.packetsObserved = 0,
+    this.ipPacketsObserved = 0,
     this.ipv6PacketsObserved = 0,
-    required this.udpPacketsObserved,
+    this.udpPacketsObserved = 0,
     this.ipv6UdpPacketsObserved = 0,
-    required this.tcpPacketsObserved,
+    this.tcpPacketsObserved = 0,
     this.ipv6TcpPacketsObserved = 0,
-    required this.dnsCandidatePacketsObserved,
+    this.dnsCandidatePacketsObserved = 0,
     this.ipv6DnsCandidatePacketsObserved = 0,
-    required this.dnsParseAttempts,
-    required this.dnsParseFailures,
-    required this.lastPacketProtocol,
-    required this.lastParserError,
-    required this.lastPacketSummary,
-    required this.dnsParserPrepared,
-    required this.dnsQueriesParsed,
-    required this.lastParsedHostname,
-    required this.dryRunModeReady,
-    required this.dryRunBlocksDetected,
-    required this.lastDryRunDecision,
+    this.dnsParseAttempts = 0,
+    this.dnsParseFailures = 0,
+    this.lastPacketProtocol = '',
+    this.lastParserError = '',
+    this.lastPacketSummary = '',
+    this.dnsParserPrepared = false,
+    this.dnsQueriesParsed = 0,
+    this.lastParsedHostname = '',
+    this.dryRunModeReady = false,
+    this.dryRunBlocksDetected = 0,
+    this.lastDryRunDecision = '',
     this.dnsProxyPrepared = false,
     this.dnsProxyRunning = false,
     this.dnsProxyMode = '',
@@ -51,17 +51,17 @@ class ProtectionStatus {
     this.forwardFailures = 0,
     this.lastForwarderDecision = '',
     this.lastForwarderError = '',
-    required this.liveTrafficReadEnabled,
-    required this.blockingEnabled,
-    required this.liveObservationToggleAvailable,
-    required this.liveObservationRequested,
-    required this.liveObservationGateVersion,
-    required this.liveObservationCodeGateReady,
-    required this.liveObservationCodeGateUnlocked,
-    required this.liveObservationSafetyGate,
-    required this.liveObservationUnlockAttempts,
-    required this.statusMessage,
-    required this.blocklistError,
+    this.liveTrafficReadEnabled = false,
+    this.blockingEnabled = false,
+    this.liveObservationToggleAvailable = false,
+    this.liveObservationRequested = false,
+    this.liveObservationGateVersion = 0,
+    this.liveObservationCodeGateReady = false,
+    this.liveObservationCodeGateUnlocked = false,
+    this.liveObservationSafetyGate = '',
+    this.liveObservationUnlockAttempts = 0,
+    this.statusMessage = 'Native protection status is unavailable.',
+    this.blocklistError = '',
   });
 
   final int nativeStatusVersion;
@@ -125,209 +125,189 @@ class ProtectionStatus {
   final String statusMessage;
   final String blocklistError;
 
-  bool get observationLocked {
-    final normalizedGate = liveObservationSafetyGate.trim().toLowerCase();
-
-    if (liveObservationCodeGateUnlocked) {
-      return false;
-    }
-
-    if (normalizedGate == 'unlocked_by_code') {
-      return false;
-    }
-
-    if (normalizedGate.startsWith('unlocked')) {
-      return false;
-    }
-
-    return normalizedGate.isNotEmpty;
-  }
-
   bool get isSafeMode {
-    return blockingEnabled == false;
+    return !blockingEnabled ||
+        protectionMode.contains('dry_run') ||
+        protectionMode.contains('stopped') ||
+        protectionMode.contains('paused') ||
+        protectionMode.contains('unavailable');
   }
 
-  factory ProtectionStatus.fromMap(Object? raw) {
-    if (raw is! Map) {
-      return ProtectionStatus.unavailable();
-    }
+  bool get observationLocked {
+    final gate = liveObservationSafetyGate.toLowerCase();
+    return gate.contains('locked') && !liveObservationCodeGateUnlocked;
+  }
+
+  factory ProtectionStatus.fromMap(dynamic raw) {
+    final map = raw is Map
+        ? raw.map((key, value) => MapEntry(key.toString(), value))
+        : <String, dynamic>{};
 
     return ProtectionStatus(
-      nativeStatusVersion: _readInt(raw['nativeStatusVersion']),
-      protectionMode: _readString(raw['protectionMode']),
-      vpnActive: _readBool(raw['vpnActive']),
-      blocklistLoaded: _readBool(raw['blocklistLoaded']),
-      blockedDomainCount: _readInt(raw['blockedDomainCount']),
-      nativeDnsReady: _readBool(raw['nativeDnsReady']),
-      nativeLoadedDomainCount: _readInt(raw['nativeLoadedDomainCount']),
-      packetLoopPrepared: _readBool(raw['packetLoopPrepared']),
-      packetLoopRunning: _readBool(raw['packetLoopRunning']),
-      packetsObserved: _readInt(raw['packetsObserved']),
-      ipPacketsObserved: _readInt(raw['ipPacketsObserved']),
-      ipv6PacketsObserved: _readInt(raw['ipv6PacketsObserved']),
-      udpPacketsObserved: _readInt(raw['udpPacketsObserved']),
-      ipv6UdpPacketsObserved: _readInt(raw['ipv6UdpPacketsObserved']),
-      tcpPacketsObserved: _readInt(raw['tcpPacketsObserved']),
-      ipv6TcpPacketsObserved: _readInt(raw['ipv6TcpPacketsObserved']),
-      dnsCandidatePacketsObserved: _readInt(raw['dnsCandidatePacketsObserved']),
+      nativeStatusVersion: _readInt(map, 'nativeStatusVersion'),
+      protectionMode: _readString(
+        map,
+        'protectionMode',
+        fallback: 'unavailable',
+      ),
+      vpnActive: _readBool(map, 'vpnActive'),
+      blocklistLoaded: _readBool(map, 'blocklistLoaded'),
+      blockedDomainCount: _readInt(map, 'blockedDomainCount'),
+      nativeDnsReady: _readBool(map, 'nativeDnsReady'),
+      nativeLoadedDomainCount: _readInt(map, 'nativeLoadedDomainCount'),
+      packetLoopPrepared: _readBool(map, 'packetLoopPrepared'),
+      packetLoopRunning: _readBool(map, 'packetLoopRunning'),
+      packetsObserved: _readInt(map, 'packetsObserved'),
+      ipPacketsObserved: _readInt(map, 'ipPacketsObserved'),
+      ipv6PacketsObserved: _readInt(map, 'ipv6PacketsObserved'),
+      udpPacketsObserved: _readInt(map, 'udpPacketsObserved'),
+      ipv6UdpPacketsObserved: _readInt(map, 'ipv6UdpPacketsObserved'),
+      tcpPacketsObserved: _readInt(map, 'tcpPacketsObserved'),
+      ipv6TcpPacketsObserved: _readInt(map, 'ipv6TcpPacketsObserved'),
+      dnsCandidatePacketsObserved: _readInt(map, 'dnsCandidatePacketsObserved'),
       ipv6DnsCandidatePacketsObserved: _readInt(
-        raw['ipv6DnsCandidatePacketsObserved'],
+        map,
+        'ipv6DnsCandidatePacketsObserved',
       ),
-      dnsParseAttempts: _readInt(raw['dnsParseAttempts']),
-      dnsParseFailures: _readInt(raw['dnsParseFailures']),
-      lastPacketProtocol: _readString(raw['lastPacketProtocol']),
-      lastParserError: _readString(raw['lastParserError']),
-      lastPacketSummary: _readString(raw['lastPacketSummary']),
-      dnsParserPrepared: _readBool(raw['dnsParserPrepared']),
-      dnsQueriesParsed: _readInt(raw['dnsQueriesParsed']),
-      lastParsedHostname: _readString(raw['lastParsedHostname']),
-      dryRunModeReady: _readBool(raw['dryRunModeReady']),
-      dryRunBlocksDetected: _readInt(raw['dryRunBlocksDetected']),
-      lastDryRunDecision: _readString(raw['lastDryRunDecision']),
-      dnsProxyPrepared: _readBool(raw['dnsProxyPrepared']),
-      dnsProxyRunning: _readBool(raw['dnsProxyRunning']),
-      dnsProxyMode: _readString(raw['dnsProxyMode']),
-      dnsProxyQueriesReceived: _readInt(raw['dnsProxyQueriesReceived']),
-      dnsProxyQueriesForwarded: _readInt(raw['dnsProxyQueriesForwarded']),
-      dnsProxyResponsesReturned: _readInt(raw['dnsProxyResponsesReturned']),
-      dnsProxyErrors: _readInt(raw['dnsProxyErrors']),
-      lastDnsProxyHost: _readString(raw['lastDnsProxyHost']),
-      lastDnsProxyDecision: _readString(raw['lastDnsProxyDecision']),
-      lastDnsProxyError: _readString(raw['lastDnsProxyError']),
-      dnsForwarderPrepared: _readBool(raw['dnsForwarderPrepared']),
-      dnsForwarderEnabled: _readBool(raw['dnsForwarderEnabled']),
-      dnsForwarderMode: _readString(raw['dnsForwarderMode']),
-      upstreamPrimary: _readString(raw['upstreamPrimary']),
-      upstreamFallback: _readString(raw['upstreamFallback']),
-      forwardAttempts: _readInt(raw['forwardAttempts']),
-      forwardSuccesses: _readInt(raw['forwardSuccesses']),
-      forwardFailures: _readInt(raw['forwardFailures']),
-      lastForwarderDecision: _readString(raw['lastForwarderDecision']),
-      lastForwarderError: _readString(raw['lastForwarderError']),
-      liveTrafficReadEnabled: _readBool(raw['liveTrafficReadEnabled']),
-      blockingEnabled: _readBool(raw['blockingEnabled']),
+      dnsParseAttempts: _readInt(map, 'dnsParseAttempts'),
+      dnsParseFailures: _readInt(map, 'dnsParseFailures'),
+      lastPacketProtocol: _readString(map, 'lastPacketProtocol'),
+      lastParserError: _readString(map, 'lastParserError'),
+      lastPacketSummary: _readString(map, 'lastPacketSummary'),
+      dnsParserPrepared: _readBool(map, 'dnsParserPrepared'),
+      dnsQueriesParsed: _readInt(map, 'dnsQueriesParsed'),
+      lastParsedHostname: _readString(map, 'lastParsedHostname'),
+      dryRunModeReady: _readBool(map, 'dryRunModeReady'),
+      dryRunBlocksDetected: _readInt(map, 'dryRunBlocksDetected'),
+      lastDryRunDecision: _readString(map, 'lastDryRunDecision'),
+      dnsProxyPrepared: _readBool(map, 'dnsProxyPrepared'),
+      dnsProxyRunning: _readBool(map, 'dnsProxyRunning'),
+      dnsProxyMode: _readString(map, 'dnsProxyMode'),
+      dnsProxyQueriesReceived: _readInt(map, 'dnsProxyQueriesReceived'),
+      dnsProxyQueriesForwarded: _readInt(map, 'dnsProxyQueriesForwarded'),
+      dnsProxyResponsesReturned: _readInt(map, 'dnsProxyResponsesReturned'),
+      dnsProxyErrors: _readInt(map, 'dnsProxyErrors'),
+      lastDnsProxyHost: _readString(map, 'lastDnsProxyHost'),
+      lastDnsProxyDecision: _readString(map, 'lastDnsProxyDecision'),
+      lastDnsProxyError: _readString(map, 'lastDnsProxyError'),
+      dnsForwarderPrepared: _readBool(map, 'dnsForwarderPrepared'),
+      dnsForwarderEnabled: _readBool(map, 'dnsForwarderEnabled'),
+      dnsForwarderMode: _readString(map, 'dnsForwarderMode'),
+      upstreamPrimary: _readString(map, 'upstreamPrimary'),
+      upstreamFallback: _readString(map, 'upstreamFallback'),
+      forwardAttempts: _readInt(map, 'forwardAttempts'),
+      forwardSuccesses: _readInt(map, 'forwardSuccesses'),
+      forwardFailures: _readInt(map, 'forwardFailures'),
+      lastForwarderDecision: _readString(map, 'lastForwarderDecision'),
+      lastForwarderError: _readString(map, 'lastForwarderError'),
+      liveTrafficReadEnabled: _readBool(map, 'liveTrafficReadEnabled'),
+      blockingEnabled: _readBool(map, 'blockingEnabled'),
       liveObservationToggleAvailable: _readBool(
-        raw['liveObservationToggleAvailable'],
+        map,
+        'liveObservationToggleAvailable',
       ),
-      liveObservationRequested: _readBool(raw['liveObservationRequested']),
-      liveObservationGateVersion: _readInt(raw['liveObservationGateVersion']),
+      liveObservationRequested: _readBool(map, 'liveObservationRequested'),
+      liveObservationGateVersion: _readInt(map, 'liveObservationGateVersion'),
       liveObservationCodeGateReady: _readBool(
-        raw['liveObservationCodeGateReady'],
+        map,
+        'liveObservationCodeGateReady',
       ),
       liveObservationCodeGateUnlocked: _readBool(
-        raw['liveObservationCodeGateUnlocked'],
+        map,
+        'liveObservationCodeGateUnlocked',
       ),
-      liveObservationSafetyGate: _readString(raw['liveObservationSafetyGate']),
+      liveObservationSafetyGate: _readString(map, 'liveObservationSafetyGate'),
       liveObservationUnlockAttempts: _readInt(
-        raw['liveObservationUnlockAttempts'],
+        map,
+        'liveObservationUnlockAttempts',
       ),
-      statusMessage: _readString(raw['statusMessage']),
-      blocklistError: _readString(raw['blocklistError']),
+      statusMessage: _readString(
+        map,
+        'statusMessage',
+        fallback: 'Native protection status is unavailable.',
+      ),
+      blocklistError: _readString(map, 'blocklistError'),
     );
   }
 
-  factory ProtectionStatus.unavailable() {
-    return const ProtectionStatus(
-      nativeStatusVersion: 0,
-      protectionMode: 'unavailable',
-      vpnActive: false,
-      blocklistLoaded: false,
-      blockedDomainCount: 0,
-      nativeDnsReady: false,
-      nativeLoadedDomainCount: 0,
-      packetLoopPrepared: false,
-      packetLoopRunning: false,
-      packetsObserved: 0,
-      ipPacketsObserved: 0,
-      ipv6PacketsObserved: 0,
-      udpPacketsObserved: 0,
-      ipv6UdpPacketsObserved: 0,
-      tcpPacketsObserved: 0,
-      ipv6TcpPacketsObserved: 0,
-      dnsCandidatePacketsObserved: 0,
-      ipv6DnsCandidatePacketsObserved: 0,
-      dnsParseAttempts: 0,
-      dnsParseFailures: 0,
-      lastPacketProtocol: '',
-      lastParserError: '',
-      lastPacketSummary: '',
-      dnsParserPrepared: false,
-      dnsQueriesParsed: 0,
-      lastParsedHostname: '',
-      dryRunModeReady: false,
-      dryRunBlocksDetected: 0,
-      lastDryRunDecision: '',
-      dnsProxyPrepared: false,
-      dnsProxyRunning: false,
-      dnsProxyMode: '',
-      dnsProxyQueriesReceived: 0,
-      dnsProxyQueriesForwarded: 0,
-      dnsProxyResponsesReturned: 0,
-      dnsProxyErrors: 0,
-      lastDnsProxyHost: '',
-      lastDnsProxyDecision: '',
-      lastDnsProxyError: '',
-      dnsForwarderPrepared: false,
-      dnsForwarderEnabled: false,
-      dnsForwarderMode: '',
-      upstreamPrimary: '',
-      upstreamFallback: '',
-      forwardAttempts: 0,
-      forwardSuccesses: 0,
-      forwardFailures: 0,
-      lastForwarderDecision: '',
-      lastForwarderError: '',
-      liveTrafficReadEnabled: false,
-      blockingEnabled: false,
-      liveObservationToggleAvailable: false,
-      liveObservationRequested: false,
-      liveObservationGateVersion: 0,
-      liveObservationCodeGateReady: false,
-      liveObservationCodeGateUnlocked: false,
-      liveObservationSafetyGate: '',
-      liveObservationUnlockAttempts: 0,
-      statusMessage: 'Native protection status is unavailable.',
-      blocklistError: '',
-    );
-  }
+  static int _readInt(Map<String, dynamic> map, String key) {
+    final value = map[key];
 
-  static int _readInt(Object? value) {
-    if (value is int) {
-      return value;
-    }
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    if (value is String) {
-      return int.tryParse(value) ?? 0;
-    }
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
 
     return 0;
   }
 
-  static bool _readBool(Object? value) {
-    if (value is bool) {
-      return value;
-    }
+  static bool _readBool(Map<String, dynamic> map, String key) {
+    final value = map[key];
 
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is num) return value != 0;
     if (value is String) {
-      return value.toLowerCase() == 'true';
+      final clean = value.toLowerCase();
+      return clean == 'true' || clean == 'yes' || clean == '1';
     }
 
     return false;
   }
 
-  static String _readString(Object? value) {
-    return value?.toString() ?? '';
+  static String _readString(
+    Map<String, dynamic> map,
+    String key, {
+    String fallback = '',
+  }) {
+    final value = map[key];
+
+    if (value == null) return fallback;
+
+    return value.toString();
   }
 }
 
 class ProtectionChannel {
+  factory ProtectionChannel() {
+    return _instance;
+  }
+
+  ProtectionChannel._internal();
+
+  static final ProtectionChannel _instance = ProtectionChannel._internal();
+
   static const MethodChannel _channel = MethodChannel(
     'focus_shield/protection',
   );
+
+  Future<String> _invokeString(String method) async {
+    try {
+      final result = await _channel.invokeMethod<String>(method);
+      return result ?? 'no_response';
+    } catch (error) {
+      return 'error:${error.runtimeType}';
+    }
+  }
+
+  Future<Map<String, dynamic>> _invokeMap(String method) async {
+    try {
+      final result = await _channel.invokeMethod<dynamic>(method);
+
+      if (result is Map) {
+        return result.map((key, value) => MapEntry(key.toString(), value));
+      }
+
+      return <String, dynamic>{
+        'error': 'unexpected_response',
+        'method': method,
+      };
+    } catch (error) {
+      return <String, dynamic>{
+        'error': error.runtimeType.toString(),
+        'method': method,
+      };
+    }
+  }
 
   Future<String> startProtection() async {
     return _invokeString('startProtection');
@@ -338,8 +318,8 @@ class ProtectionChannel {
   }
 
   Future<ProtectionStatus> protectionStatus() async {
-    final result = await _channel.invokeMethod<Object?>('protectionStatus');
-    return ProtectionStatus.fromMap(result);
+    final status = await _invokeMap('protectionStatus');
+    return ProtectionStatus.fromMap(status);
   }
 
   Future<String> reloadBlocklist() async {
@@ -358,20 +338,23 @@ class ProtectionChannel {
     return _invokeString('openVpnSettings');
   }
 
-  Future<String> testDnsForwarder() async {
-    return _invokeString('reloadBlocklist');
+  Future<String> openAccessibilitySettings() async {
+    return _invokeString('openAccessibilitySettings');
   }
 
   Future<String> requestLiveObservationUnlock() async {
     return _invokeString('requestLiveObservationUnlock');
   }
 
-  Future<String> _invokeString(String method) async {
-    final result = await _channel.invokeMethod<Object?>(method);
-    return result?.toString() ?? '';
+  Future<String> testDnsForwarder() async {
+    return _invokeString('testDnsForwarder');
   }
 
-  Future<String> openAccessibilitySettings() async {
-    return _invokeString('openAccessibilitySettings');
+  Future<Map<String, dynamic>> accessibilityDetectionStatus() async {
+    return _invokeMap('accessibilityDetectionStatus');
+  }
+
+  Future<String> resetAccessibilityDetections() async {
+    return _invokeString('resetAccessibilityDetections');
   }
 }

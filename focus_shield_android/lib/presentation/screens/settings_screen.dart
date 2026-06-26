@@ -13,6 +13,7 @@ class SettingsScreen extends StatelessWidget {
     required this.onToggleProtection,
     required this.onSetCommitmentDays,
     required this.onOpenAccessibilitySettings,
+    this.onOpenAccessibilityDetection,
     required this.onOpenProtectionDatabase,
     required this.onOpenGoalsAffirmations,
     required this.onOpenDebugCenter,
@@ -25,6 +26,7 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback onToggleProtection;
   final ValueChanged<int> onSetCommitmentDays;
   final VoidCallback onOpenAccessibilitySettings;
+  final VoidCallback? onOpenAccessibilityDetection;
   final VoidCallback onOpenProtectionDatabase;
   final VoidCallback onOpenGoalsAffirmations;
   final VoidCallback onOpenDebugCenter;
@@ -127,6 +129,12 @@ class SettingsScreen extends StatelessWidget {
                 label: 'Cloud Sync',
                 subtitle: 'Backup, restore, and sync foundation',
                 onPressed: onOpenCloudSync ?? () {},
+              ),
+              const SizedBox(height: 10),
+              ActionButton(
+                label: 'Accessibility Detection',
+                subtitle: 'Native website scan status',
+                onPressed: onOpenAccessibilityDetection ?? () {},
               ),
               const SizedBox(height: 10),
               ActionButton(
