@@ -4,6 +4,7 @@ import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
+import '../widgets/protection_chain_status_card.dart';
 
 class ProgressScreen extends StatelessWidget {
   const ProgressScreen({
@@ -32,6 +33,9 @@ class ProgressScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
+        const ProtectionChainStatusCard(compact: true, showControls: false),
+        const SizedBox(height: 16),
+
         Text('Progress', style: Theme.of(context).textTheme.headlineLarge),
         const Text('XP, streaks, badges, wins'),
         const SizedBox(height: 18),

@@ -292,6 +292,12 @@ class _AccessibilityDetectionScreenState
             'Phase 6D ignores Android System UI rescans, syncs the saved blocklist into native Accessibility detection, and opens a real intervention screen after blocked detection.',
           ),
         ),
+        ShieldCard(
+          borderColor: AppTheme.secondary,
+          child: const Text(
+            'Main app counter sync is active. Home, Scanner, and Progress can now read native Accessibility scanned, new, blocked, unknown, and last blocked site data.',
+          ),
+        ),
       ],
     );
   }

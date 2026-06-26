@@ -6,6 +6,8 @@ import '../../domain/models/goal.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
+import '../widgets/protection_chain_status_card.dart';
+import '../widgets/latest_blocked_site_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -30,6 +32,11 @@ class HomeScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
+        const ProtectionChainStatusCard(compact: true, showControls: false),
+        const SizedBox(height: 16),
+        const LatestBlockedSiteCard(showControls: false),
+        const SizedBox(height: 16),
+
         Text(
           AppConstants.appName,
           style: Theme.of(context).textTheme.headlineLarge,

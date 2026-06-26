@@ -7,6 +7,7 @@ import '../../domain/services/protection_engine.dart';
 import '../widgets/action_button.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
+import '../widgets/protection_chain_status_card.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({
@@ -95,6 +96,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
+        const ProtectionChainStatusCard(compact: true, showControls: false),
+        const SizedBox(height: 16),
+
         Text('Scanner', style: Theme.of(context).textTheme.headlineLarge),
         Text(
           widget.protectionEnabled
@@ -242,6 +246,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
           borderColor: AppTheme.secondary,
           child: const Text(
             'Phase 5 is local-only. No paid API, no cloud dependency, and no VPN route changes.',
+          ),
+        ),
+        ShieldCard(
+          borderColor: AppTheme.primary,
+          child: const Text(
+            'Native Accessibility counters are shown above through Protection Chain Status.',
           ),
         ),
       ],
