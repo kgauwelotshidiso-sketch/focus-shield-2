@@ -595,7 +595,7 @@ if "FocusShieldAccessibilityService" not in manifest_text:
     )
     manifest_path.write_text(manifest_text, encoding="utf-8")
     print("patched AndroidManifest.xml accessibility service")
-  write("lib/platform/protection_channel.dart", r'''
+write("lib/platform/protection_channel.dart", r'''
 import 'package:flutter/services.dart';
 
 class ProtectionChannel {
