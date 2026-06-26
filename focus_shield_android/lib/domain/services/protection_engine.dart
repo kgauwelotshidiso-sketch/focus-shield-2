@@ -1,3 +1,5 @@
+import 'ai_lite_classifier.dart';
+
 class ProtectionDecision {
   const ProtectionDecision({
     required this.domain,
@@ -5,6 +7,9 @@ class ProtectionDecision {
     required this.category,
     required this.confidence,
     required this.reason,
+    this.riskScore = 0,
+    this.signals = const <String>[],
+    this.isUnknown = false,
   });
 
   final String domain;
@@ -12,73 +17,32 @@ class ProtectionDecision {
   final String category;
   final double confidence;
   final String reason;
+  final int riskScore;
+  final List<String> signals;
+  final bool isUnknown;
+
+  factory ProtectionDecision.fromAiLite(AiLiteClassification classification) {
+    return ProtectionDecision(
+      domain: classification.domain,
+      blocked: classification.shouldBlock,
+      category: classification.category,
+      confidence: classification.confidence,
+      reason: classification.explanation,
+      riskScore: classification.riskScore,
+      signals: classification.signals,
+      isUnknown: classification.isUnknown,
+    );
+  }
 }
 
 class ProtectionEngine {
-  ProtectionEngine({List<String>? blockedDomains})
-    : _blockedDomains =
-          blockedDomains ??
-          const [
-            'blocked-example.com',
-            'temptation-test.net',
-            'focus-risk.org',
-          ];
+  const ProtectionEngine({required this.blockedDomains});
 
-  final List<String> _blockedDomains;
+  final List<String> blockedDomains;
 
-  ProtectionDecision analyze(String input) {
-    final domain = _normalizeDomain(input);
-
-    final localMatch = _blockedDomains.any(
-      (blocked) => domain == blocked || domain.endsWith('.$blocked'),
-    );
-
-    final keywordMatch = _safeRiskKeywords.any(domain.contains);
-
-    if (localMatch) {
-      return ProtectionDecision(
-        domain: domain,
-        blocked: true,
-        category: 'local-blocklist',
-        confidence: 0.96,
-        reason: 'Matched local offline database.',
-      );
-    }
-
-    if (keywordMatch) {
-      return ProtectionDecision(
-        domain: domain,
-        blocked: true,
-        category: 'keyword-risk',
-        confidence: 0.88,
-        reason: 'Matched local risk keyword.',
-      );
-    }
-
-    return ProtectionDecision(
-      domain: domain,
-      blocked: false,
-      category: 'safe',
-      confidence: 0.10,
-      reason: 'No local risk match found.',
-    );
+  ProtectionDecision analyze(String rawInput) {
+    final classifier = AiLiteClassifier(blockedDomains: blockedDomains);
+    final classification = classifier.classify(rawInput);
+    return ProtectionDecision.fromAiLite(classification);
   }
-
-  String _normalizeDomain(String input) {
-    var value = input.trim().toLowerCase();
-    value = value.replaceFirst(RegExp(r'^https?://'), '');
-    value = value.replaceFirst(RegExp(r'^www\.'), '');
-    value = value.split('/').first;
-    value = value.split('?').first;
-    value = value.split('#').first;
-    return value;
-  }
-
-  static const _safeRiskKeywords = [
-    'blocked',
-    'temptation',
-    'focus-risk',
-    'unsafe',
-    'risk',
-  ];
 }
