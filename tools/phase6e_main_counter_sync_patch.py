@@ -774,5 +774,173 @@ patch_file(
 )
 
 print("Phase 6E unused widget test import removed successfully.")
+write("test/widget_test.dart", r'''
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:focus_shield_android/app.dart';
+import 'package:focus_shield_android/data/repositories/in_memory_app_state_repository.dart';
+
+void main() {
+  const protectionChannel = MethodChannel('focus_shield/protection');
+
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(protectionChannel, (call) async {
+      switch (call.method) {
+        case 'protectionStatus':
+          return <String, dynamic>{
+            'nativeStatusVersion': 7,
+            'protectionMode': 'dry_run_prepared',
+            'vpnActive': false,
+            'blocklistLoaded': true,
+            'blockedDomainCount': 3,
+            'nativeDnsReady': false,
+            'nativeLoadedDomainCount': 3,
+            'packetLoopPrepared': true,
+            'packetLoopRunning': false,
+            'packetsObserved': 0,
+            'ipPacketsObserved': 0,
+            'ipv6PacketsObserved': 0,
+            'udpPacketsObserved': 0,
+            'ipv6UdpPacketsObserved': 0,
+            'tcpPacketsObserved': 0,
+            'ipv6TcpPacketsObserved': 0,
+            'dnsCandidatePacketsObserved': 0,
+            'ipv6DnsCandidatePacketsObserved': 0,
+            'dnsParseAttempts': 0,
+            'dnsParseFailures': 0,
+            'lastPacketProtocol': '',
+            'lastParserError': '',
+            'lastPacketSummary': '',
+            'dnsParserPrepared': true,
+            'dnsQueriesParsed': 0,
+            'lastParsedHostname': '',
+            'dryRunModeReady': true,
+            'dryRunBlocksDetected': 0,
+            'lastDryRunDecision': '',
+            'dnsProxyPrepared': true,
+            'dnsProxyRunning': false,
+            'dnsProxyMode': 'disabled',
+            'dnsProxyQueriesReceived': 0,
+            'dnsProxyQueriesForwarded': 0,
+            'dnsProxyResponsesReturned': 0,
+            'dnsProxyErrors': 0,
+            'lastDnsProxyHost': '',
+            'lastDnsProxyDecision': '',
+            'lastDnsProxyError': '',
+            'dnsForwarderPrepared': true,
+            'dnsForwarderEnabled': false,
+            'dnsForwarderMode': 'diagnostic_only',
+            'upstreamPrimary': '1.1.1.1',
+            'upstreamFallback': '8.8.8.8',
+            'forwardAttempts': 0,
+            'forwardSuccesses': 0,
+            'forwardFailures': 0,
+            'lastForwarderDecision': '',
+            'lastForwarderError': '',
+            'liveTrafficReadEnabled': false,
+            'blockingEnabled': false,
+            'liveObservationToggleAvailable': true,
+            'liveObservationRequested': false,
+            'liveObservationGateVersion': 2,
+            'liveObservationCodeGateReady': true,
+            'liveObservationCodeGateUnlocked': true,
+            'liveObservationSafetyGate': 'unlocked_by_code',
+            'liveObservationUnlockAttempts': 0,
+            'statusMessage': 'Test native status ready.',
+            'blocklistError': '',
+          };
+
+        case 'accessibilityDetectionStatus':
+          return <String, dynamic>{
+            'events': 7,
+            'websitesScanned': 7,
+            'newWebsitesScanned': 1,
+            'blockedDetections': 7,
+            'unknownDetections': 0,
+            'nativeBlocklistDomains': 3,
+            'lastDomain': 'adult-risk-example.com',
+            'lastCategory': 'adult-content',
+            'lastDecision': 'blocked',
+            'lastScore': 75,
+            'lastConfidence': 75,
+            'lastSignals': <String>['High-risk signal: adult'],
+            'lastDetectedAt': 0,
+            'lastPackage': 'com.android.chrome',
+            'lastAction': 'opened_intervention',
+            'lastMessage':
+                'Focus Shield opened native intervention screen after blocked detection: adult-risk-example.com',
+            'mode': 'local_detection',
+          };
+
+        case 'syncAccessibilityBlocklist':
+          return 'accessibility_blocklist_synced:3';
+
+        case 'resetAccessibilityDetections':
+          return 'accessibility_detections_reset';
+
+        case 'startProtection':
+          return 'started';
+
+        case 'stopProtection':
+          return 'stopped';
+
+        case 'reloadBlocklist':
+          return 'reloaded';
+
+        case 'prepareLiveObservation':
+          return 'observation_prepared_locked';
+
+        case 'disableLiveObservation':
+          return 'observation_disabled';
+
+        case 'openAccessibilitySettings':
+          return 'accessibility_settings_opened';
+
+        case 'openVpnSettings':
+          return 'vpn_settings_opened';
+
+        case 'requestLiveObservationUnlock':
+          return 'phase3_paused_unlock_not_required';
+
+        case 'testDnsForwarder':
+          return 'dns_forwarder_diagnostic_success';
+
+        default:
+          return 'mocked:${call.method}';
+      }
+    });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(protectionChannel, null);
+  });
+
+  testWidgets('Focus Shield app loads home screen', (tester) async {
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1.0;
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      FocusShieldApp(repository: InMemoryAppStateRepository()),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byType(FocusShieldApp), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
+''')
+
+print("Phase 6E widget test made stable for main counter sync.")
 
 
