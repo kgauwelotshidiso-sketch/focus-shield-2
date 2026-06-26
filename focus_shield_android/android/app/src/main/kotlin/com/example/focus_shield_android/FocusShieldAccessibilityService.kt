@@ -2,12 +2,17 @@ package com.example.focus_shield_android
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
 class FocusShieldAccessibilityService : AccessibilityService() {
     private var lastDetectedDomain: String = ""
     private var lastDetectionAt: Long = 0L
+    private var lastLaunchDomain: String = ""
+    private var lastLaunchAt: Long = 0L
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
@@ -26,16 +31,24 @@ class FocusShieldAccessibilityService : AccessibilityService() {
 
         val now = System.currentTimeMillis()
         val duplicateWindowMs = 2500L
-        val isDuplicate = classification.domain == lastDetectedDomain &&
+        val isDuplicateDetection = classification.domain == lastDetectedDomain &&
             now - lastDetectionAt < duplicateWindowMs
 
-        if (isDuplicate) return
-
-        lastDetectedDomain = classification.domain
-        lastDetectionAt = now
+        if (!isDuplicateDetection) {
+            lastDetectedDomain = classification.domain
+            lastDetectionAt = now
+        }
 
         if (classification.shouldOpenApp) {
-            openFocusShield(classification)
+            val launchThrottleMs = 6000L
+            val isDuplicateLaunch = classification.domain == lastLaunchDomain &&
+                now - lastLaunchAt < launchThrottleMs
+
+            if (!isDuplicateLaunch) {
+                lastLaunchDomain = classification.domain
+                lastLaunchAt = now
+                openFocusShield(classification)
+            }
         }
     }
 
@@ -96,19 +109,52 @@ class FocusShieldAccessibilityService : AccessibilityService() {
     private fun openFocusShield(
         classification: FocusShieldAccessibilityDetectionStore.AccessibilityClassification
     ) {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("phase6_accessibility_domain", classification.domain)
-            putExtra("phase6_accessibility_category", classification.category)
-            putExtra("phase6_accessibility_decision", classification.decision)
-            putExtra("phase6_accessibility_score", classification.score)
-        }
+        Handler(Looper.getMainLooper()).post {
+            try {
+                val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
 
-        try {
-            startActivity(intent)
-        } catch (_: Exception) {
-            // If Android blocks launch, the detection is still saved locally.
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    launchIntent.putExtra("phase6_accessibility_domain", classification.domain)
+                    launchIntent.putExtra("phase6_accessibility_category", classification.category)
+                    launchIntent.putExtra("phase6_accessibility_decision", classification.decision)
+                    launchIntent.putExtra("phase6_accessibility_score", classification.score)
+                    startActivity(launchIntent)
+
+                    Toast.makeText(
+                        applicationContext,
+                        "Focus Shield blocked: ${classification.domain}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@post
+                }
+
+                val fallbackIntent = Intent(this, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    putExtra("phase6_accessibility_domain", classification.domain)
+                    putExtra("phase6_accessibility_category", classification.category)
+                    putExtra("phase6_accessibility_decision", classification.decision)
+                    putExtra("phase6_accessibility_score", classification.score)
+                }
+
+                startActivity(fallbackIntent)
+
+                Toast.makeText(
+                    applicationContext,
+                    "Focus Shield blocked: ${classification.domain}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } catch (_: Exception) {
+                Toast.makeText(
+                    applicationContext,
+                    "Focus Shield detected blocked site: ${classification.domain}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 }
