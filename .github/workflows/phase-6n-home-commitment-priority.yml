@@ -1,0 +1,253 @@
+name: Phase 6N Home Commitment Priority APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/phase-6n-home-commitment-priority.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  phase-6n:
+    runs-on: ubuntu-latest
+
+    env:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+      JAVA_TOOL_OPTIONS: -Xmx4096m
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create Phase 6N patch script
+        run: |
+          mkdir -p tools
+          cat > tools/phase6n_home_commitment_priority.py <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("focus_shield_android/lib/presentation/screens/home_screen.dart")
+
+          if not path.exists():
+              raise SystemExit("home_screen.dart not found")
+
+          text = path.read_text(encoding="utf-8")
+
+          pattern = re.compile(
+              r"""
+            _HomeCommitmentStatus\s+_readCommitmentStatus\(SharedPreferences\s+prefs\)\s*\{
+          .*?
+            \}
+
+            Future<void>\s+_logListeningWin
+              """,
+              re.DOTALL | re.VERBOSE,
+          )
+
+          replacement = r'''
+            _HomeCommitmentStatus _readCommitmentStatus(SharedPreferences prefs) {
+              final keys = prefs.getKeys();
+              final candidates = <MapEntry<int, int>>[];
+              var explicitActive = false;
+
+              bool looksRelevant(String key) {
+                final lower = key.toLowerCase();
+                return lower.contains('commit') ||
+                    lower.contains('lock') ||
+                    lower.contains('day') ||
+                    lower.contains('remaining') ||
+                    lower.contains('duration') ||
+                    lower.contains('protection') ||
+                    lower.contains('phase6');
+              }
+
+              int scoreFor(String key, int value) {
+                final lower = key.toLowerCase();
+                var score = 0;
+
+                if (lower.contains('remaining') ||
+                    lower.contains('daysleft') ||
+                    lower.contains('days_left')) {
+                  score += 220;
+                }
+                if (lower.contains('commit')) score += 100;
+                if (lower.contains('lock')) score += 90;
+                if (lower.contains('selected')) score += 70;
+                if (lower.contains('active')) score += 60;
+                if (lower.contains('current')) score += 55;
+                if (lower.contains('duration')) score += 45;
+                if (lower.contains('day')) score += 30;
+                if (lower.contains('phase6')) score += 25;
+
+                // Older phases used 365 as a default/fallback. Do not let it beat
+                // a real shorter commitment selected later.
+                if (lower.contains('phase4') || lower.contains('phase6l')) {
+                  score -= 80;
+                }
+                if (lower.contains('default') || lower.contains('fallback')) {
+                  score -= 120;
+                }
+                if (value == 365) {
+                  score -= 35;
+                }
+
+                return score;
+              }
+
+              void addCandidate(String key, int value) {
+                if (!looksRelevant(key)) return;
+                if (value <= 0 || value > 3650) return;
+
+                final lower = key.toLowerCase();
+                final isAllowedCommitment =
+                    value == 7 || value == 14 || value == 30 || value == 90 || value == 365;
+                final isRemaining = lower.contains('remaining') ||
+                    lower.contains('daysleft') ||
+                    lower.contains('days_left');
+
+                if (!isAllowedCommitment && !isRemaining) return;
+
+                candidates.add(MapEntry(scoreFor(key, value), value));
+              }
+
+              int? parseCommitmentNumber(Object? raw) {
+                if (raw is int) return raw;
+                if (raw is double) return raw.round();
+                if (raw is String) {
+                  final direct = int.tryParse(raw.trim());
+                  if (direct != null) return direct;
+
+                  final match = RegExp(r'\d+').firstMatch(raw);
+                  if (match != null) {
+                    return int.tryParse(match.group(0)!);
+                  }
+                }
+                return null;
+              }
+
+              for (final key in keys) {
+                final raw = prefs.get(key);
+                final lower = key.toLowerCase();
+
+                if ((lower.contains('commit') || lower.contains('lock')) &&
+                    raw is bool &&
+                    raw == true) {
+                  explicitActive = true;
+                }
+
+                final number = parseCommitmentNumber(raw);
+                if (number != null) {
+                  addCandidate(key, number);
+                }
+              }
+
+              // Strong rule: if the user selected 7/14/30/90 anywhere in the
+              // current app data, prefer that over stale 365.
+              final realShortCommitments = candidates
+                  .where((entry) => entry.value == 7 || entry.value == 14 || entry.value == 30 || entry.value == 90)
+                  .toList();
+
+              if (realShortCommitments.isNotEmpty) {
+                realShortCommitments.sort((a, b) {
+                  final scoreCompare = b.key.compareTo(a.key);
+                  if (scoreCompare != 0) return scoreCompare;
+                  return a.value.compareTo(b.value);
+                });
+
+                final days = realShortCommitments.first.value;
+                return _HomeCommitmentStatus(active: true, daysLeft: days);
+              }
+
+              if (candidates.isEmpty) {
+                return const _HomeCommitmentStatus(active: false, daysLeft: 0);
+              }
+
+              candidates.sort((a, b) {
+                final scoreCompare = b.key.compareTo(a.key);
+                if (scoreCompare != 0) return scoreCompare;
+                return a.value.compareTo(b.value);
+              });
+
+              final best = candidates.first.value;
+
+              if (best == 365 && !explicitActive) {
+                return const _HomeCommitmentStatus(active: false, daysLeft: 0);
+              }
+
+              return _HomeCommitmentStatus(
+                active: true,
+                daysLeft: best.clamp(1, 3650),
+              );
+            }
+
+            Future<void> _logListeningWin
+          '''
+
+          text, count = pattern.subn(replacement, text)
+
+          if count != 1:
+              raise SystemExit(f"Could not replace Home commitment reader. Replacements: {count}")
+
+          text = text.replace(
+              "Phase 6M fixed Home commitment sync. Home now reads commitment days from saved commitment data instead of falling back to stale 365 days.",
+              "Phase 6N fixes Home commitment priority. Home now prefers the real selected 7, 14, 30, or 90 day commitment over stale 365-day fallback data."
+          )
+
+          path.write_text(text, encoding="utf-8")
+          print("Phase 6N Home commitment priority patch applied.")
+          PY
+
+      - name: Apply Phase 6N patch
+        run: python3 tools/phase6n_home_commitment_priority.py
+
+      - name: Format Dart files
+        working-directory: focus_shield_android
+        run: dart format lib/presentation/screens/home_screen.dart
+
+      - name: Get Flutter packages
+        working-directory: focus_shield_android
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: focus_shield_android
+        run: flutter analyze
+
+      - name: Run tests
+        working-directory: focus_shield_android
+        run: flutter test
+
+      - name: Commit Phase 6N patch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add focus_shield_android/lib/presentation/screens/home_screen.dart tools/phase6n_home_commitment_priority.py .github/workflows/phase-6n-home-commitment-priority.yml
+          git status
+          git commit -m "Phase 6N fix Home commitment priority" || echo "No changes to commit"
+          git pull --rebase --autostash origin main
+          git push
+
+      - name: Build Phase 6N debug APK
+        working-directory: focus_shield_android
+        run: flutter build apk --debug --android-skip-build-dependency-validation
+
+      - name: Upload Phase 6N debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: focus-shield-phase-6n-debug-apk
+          path: focus_shield_android/build/app/outputs/flutter-apk/app-debug.apk
