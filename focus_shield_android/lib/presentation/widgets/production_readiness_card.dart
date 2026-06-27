@@ -10,8 +10,8 @@ Future<void> Function()? _truthCallback(Object? callback) {
   return null;
 }
 
-class ProtectionStatusCenterCard extends StatelessWidget {
-  const ProtectionStatusCenterCard({
+class ProductionReadinessCard extends StatelessWidget {
+  const ProductionReadinessCard({
     super.key,
     this.nativeStatus,
     this.status,
@@ -23,7 +23,7 @@ class ProtectionStatusCenterCard extends StatelessWidget {
     this.onRefresh,
     this.onRefreshStatus,
     this.onStatusRefresh,
-    this.title = 'Protection Status Center',
+    this.title = 'Protection Health — Production Readiness',
   });
 
   final Object? nativeStatus;
@@ -33,6 +33,42 @@ class ProtectionStatusCenterCard extends StatelessWidget {
   final Object? appState;
   final Object? repository;
   final Object? service;
+  final Object? onRefresh;
+  final Object? onRefreshStatus;
+  final Object? onStatusRefresh;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return ProtectionHealthTruthCard(
+      title: title,
+      nativeStatus: nativeStatus ?? status ?? protectionStatus,
+      onRefresh: _truthCallback(
+        onRefresh ?? onRefreshStatus ?? onStatusRefresh,
+      ),
+    );
+  }
+}
+
+class ProtectionReadinessCard extends StatelessWidget {
+  const ProtectionReadinessCard({
+    super.key,
+    this.nativeStatus,
+    this.status,
+    this.protectionStatus,
+    this.state,
+    this.appState,
+    this.onRefresh,
+    this.onRefreshStatus,
+    this.onStatusRefresh,
+    this.title = 'Protection Health — Production Readiness',
+  });
+
+  final Object? nativeStatus;
+  final Object? status;
+  final Object? protectionStatus;
+  final Object? state;
+  final Object? appState;
   final Object? onRefresh;
   final Object? onRefreshStatus;
   final Object? onStatusRefresh;
