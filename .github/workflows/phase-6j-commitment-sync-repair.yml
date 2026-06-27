@@ -405,6 +405,13 @@ jobs:
                   "import 'presentation/services/commitment_sync_service.dart';",
               )
 
+              text = re.sub(
+                  r"\bvoid\s+main\(\)\s*{",
+                  "Future<void> main() async {",
+                  text,
+                  count=1,
+              )
+
               if "CommitmentSyncService.ensureDailyUseDefaults()" in text:
                   return text
 
