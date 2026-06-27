@@ -726,6 +726,7 @@ jobs:
           git add focus_shield_android/lib/presentation/screens/home_screen.dart focus_shield_android/test/widget_test.dart tools/phase6l_single_truth_home.py .github/workflows/phase-6l-single-truth-home.yml
           git status
           git commit -m "Phase 6L single truth home dashboard" || echo "No changes to commit"
+          git pull --rebase origin main
           git push
 
       - name: Build Phase 6L debug APK
