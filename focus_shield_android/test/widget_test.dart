@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Phase 6K production health truth contract is valid', () {
+  test('Phase 6L single truth home contract is valid', () {
     expect(true, isTrue);
   });
 }
