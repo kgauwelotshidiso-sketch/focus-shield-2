@@ -82,6 +82,7 @@ jobs:
               this.status,
               this.goals,
               this.affirmations,
+              this.primaryAffirmation,
               this.attempts,
               this.dailySummaries,
               this.selectedIndex,
@@ -106,6 +107,7 @@ jobs:
               this.onOpenGoals,
               this.onOpenAffirmations,
               this.onLogListeningWin,
+              this.onListeningWin,
               this.onLogWin,
               this.onStartFocus,
               this.onCompleteReflection,
@@ -123,6 +125,7 @@ jobs:
             final Object? status;
             final Object? goals;
             final Object? affirmations;
+            final Object? primaryAffirmation;
             final Object? attempts;
             final Object? dailySummaries;
 
@@ -149,6 +152,7 @@ jobs:
             final Object? onOpenGoals;
             final Object? onOpenAffirmations;
             final Object? onLogListeningWin;
+            final Object? onListeningWin;
             final Object? onLogWin;
             final Object? onStartFocus;
             final Object? onCompleteReflection;
@@ -201,7 +205,7 @@ jobs:
               await prefs.setInt('phase6l_listening_wins', wins);
               await prefs.setInt('phase6l_xp', xp);
 
-              final callback = widget.onLogListeningWin ?? widget.onLogWin;
+              final callback = widget.onListeningWin ?? widget.onLogListeningWin ?? widget.onLogWin;
               if (callback is void Function()) {
                 callback();
               }
