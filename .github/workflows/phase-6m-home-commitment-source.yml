@@ -1,0 +1,120 @@
+name: Phase 6M Home Commitment Source APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/phase-6m-home-commitment-source.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  phase-6m:
+    runs-on: ubuntu-latest
+
+    env:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+      JAVA_TOOL_OPTIONS: -Xmx4096m
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create Phase 6M patch script
+        run: |
+          mkdir -p tools
+          cat > tools/phase6m_home_commitment_source.py <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("focus_shield_android/lib/presentation/screens/home_screen.dart")
+
+          if not path.exists():
+              raise SystemExit("home_screen.dart not found")
+
+          text = path.read_text(encoding="utf-8")
+
+          old_pattern = re.compile(
+              r"""
+                          CommitmentTruthCard\(
+                            snapshot:\s*snapshot!,
+                            onSetCommitment:\s*_openSettings,
+                          \),
+              """,
+              re.VERBOSE,
+          )
+
+          new_card = """                      ProtectionActivityTruthCard(
+                            title: 'Protection Active',
+                            nativeStatus: widget.nativeStatus ?? widget.status ?? widget.protectionStatus,
+                            showCommitment: true,
+                            onRefresh: _load,
+                          ),"""
+
+          text, count = old_pattern.subn(new_card, text)
+
+          if count == 0:
+              raise SystemExit("Could not find stale CommitmentTruthCard on Home. No patch applied.")
+
+          text = text.replace(
+              "Phase 6L removed the stale Home readiness card. Home now uses the same production-health truth as Settings, Scanner, and Progress.",
+              "Phase 6M fixed Home commitment sync. Home now reads commitment days from the same protection activity truth used by Progress, Scanner, and Settings."
+          )
+
+          path.write_text(text, encoding="utf-8")
+          print("Phase 6M Home commitment source patch applied.")
+          PY
+
+      - name: Apply Phase 6M patch
+        run: python3 tools/phase6m_home_commitment_source.py
+
+      - name: Format Dart files
+        working-directory: focus_shield_android
+        run: dart format lib/presentation/screens/home_screen.dart
+
+      - name: Get Flutter packages
+        working-directory: focus_shield_android
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: focus_shield_android
+        run: flutter analyze
+
+      - name: Run tests
+        working-directory: focus_shield_android
+        run: flutter test
+
+      - name: Commit Phase 6M patch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add focus_shield_android/lib/presentation/screens/home_screen.dart tools/phase6m_home_commitment_source.py .github/workflows/phase-6m-home-commitment-source.yml
+          git status
+          git commit -m "Phase 6M fix Home commitment source" || echo "No changes to commit"
+          git pull --rebase origin main
+          git push
+
+      - name: Build Phase 6M debug APK
+        working-directory: focus_shield_android
+        run: flutter build apk --debug --android-skip-build-dependency-validation
+
+      - name: Upload Phase 6M debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: focus-shield-phase-6m-debug-apk
+          path: focus_shield_android/build/app/outputs/flutter-apk/app-debug.apk
