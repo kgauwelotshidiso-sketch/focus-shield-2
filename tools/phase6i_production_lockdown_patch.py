@@ -1770,3 +1770,10 @@ void main() {
 ''')
 
 print("Phase 6I production lockdown and real-use stability patch completed successfully.")
+patch_file(
+    "lib/presentation/widgets/blocked_site_history_card.dart",
+    lambda text: text.replace(
+        "AppTheme.surface.withValues(alpha: 0.45)",
+        "AppTheme.cardSoft.withValues(alpha: 0.45)",
+    ),
+)
