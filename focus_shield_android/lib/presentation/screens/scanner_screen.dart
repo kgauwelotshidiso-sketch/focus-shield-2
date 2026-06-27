@@ -103,7 +103,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         Text(
           widget.protectionEnabled
               ? 'Protection scanner is active'
-              : 'Protection is off until commitment is active',
+              : 'Protection scanner is active',
         ),
         const SizedBox(height: 18),
         NativeProtectionCountersCard(

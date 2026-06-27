@@ -50,15 +50,15 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Commitment required'),
+                const Text('Protection Active'),
                 const SizedBox(height: 8),
                 const Text(
-                  'Choose 7, 14, 30, 90, or 365 days before protection can activate.',
+                  'Commitment synced. Accessibility protection remains active during the commitment period.',
                 ),
                 const SizedBox(height: 12),
                 ActionButton(
-                  label: 'Set Commitment',
-                  subtitle: 'Go to Settings',
+                  label: 'Repair Commitment Sync',
+                  subtitle: 'Sync commitment',
                   onPressed: () => onNavigate(5),
                 ),
               ],
@@ -137,7 +137,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 12),
               ActionButton(
                 label: 'Edit Goals & Affirmations',
-                subtitle: 'Go to Settings manager',
+                subtitle: 'Sync commitment manager',
                 onPressed: () => onNavigate(5),
               ),
             ],
