@@ -535,7 +535,8 @@ jobs:
 
           print("Phase 6J commitment sync repair patch applied.")
           PY
-          - name: Apply Phase 6J patch
+          
+      - name: Apply Phase 6J patch
         run: python3 tools/phase6j_commitment_sync_repair.py
 
       - name: Format Dart files
