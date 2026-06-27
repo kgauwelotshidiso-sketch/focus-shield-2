@@ -2,6 +2,7 @@ package com.example.focus_shield_android
 
 import android.content.Context
 import org.json.JSONArray
+import org.json.JSONObject
 import java.util.Locale
 import java.util.regex.Pattern
 
@@ -28,6 +29,7 @@ object FocusShieldAccessibilityDetectionStore {
     private const val KEY_LAST_SIGNALS = "last_signals"
     private const val KEY_LAST_DETECTED_AT = "last_detected_at"
     private const val KEY_LAST_PACKAGE = "last_package"
+    private const val KEY_BLOCKED_HISTORY = "blocked_history"
 
     private const val KEY_LAST_ACTION = "last_action"
     private const val KEY_LAST_MESSAGE = "last_message"
@@ -161,6 +163,10 @@ object FocusShieldAccessibilityDetectionStore {
             .putLong(KEY_LAST_SCAN_AT, now)
             .apply()
 
+        if (classification.decision == "blocked") {
+            recordBlockedHistory(prefs, classification, sourcePackage, now)
+        }
+
         if (classification.decision == "unknown") {
             prefs.edit()
                 .putString(KEY_LAST_UNKNOWN_DOMAIN, domain)
@@ -227,6 +233,8 @@ object FocusShieldAccessibilityDetectionStore {
                 stableLastAction == "opened_app_fallback" ||
                 stableLastAction == "notification_sent"
 
+        val blockedHistory = readBlockedHistory(prefs)
+
         val readinessScore =
             listOf(
                 nativeDbCount > 0,
@@ -278,8 +286,84 @@ object FocusShieldAccessibilityDetectionStore {
             "readinessScore" to readinessScore,
             "readinessLabel" to readinessLabel,
             "interventionReady" to interventionReady,
+            "blockedHistory" to blockedHistory,
+            "blockedHistoryCount" to blockedHistory.size,
             "mode" to "local_detection_noise_control"
         )
+    }
+
+    private fun recordBlockedHistory(
+        prefs: android.content.SharedPreferences,
+        classification: AccessibilityClassification,
+        sourcePackage: String,
+        now: Long
+    ) {
+        val currentRaw = prefs.getString(KEY_BLOCKED_HISTORY, "[]") ?: "[]"
+        val next = JSONArray()
+
+        val latest = JSONObject()
+            .put("domain", classification.domain)
+            .put("category", classification.category)
+            .put("decision", classification.decision)
+            .put("score", classification.score)
+            .put("confidence", classification.confidence)
+            .put("package", sourcePackage)
+            .put("detectedAt", now)
+
+        next.put(latest)
+
+        try {
+            val current = JSONArray(currentRaw)
+
+            for (index in 0 until current.length()) {
+                if (next.length() >= 10) break
+
+                val item = current.optJSONObject(index) ?: continue
+                val domain = item.optString("domain", "")
+
+                if (domain.isBlank()) continue
+                if (domain == classification.domain) continue
+
+                next.put(item)
+            }
+        } catch (_: Exception) {
+            // Keep only the latest item if old history is unreadable.
+        }
+
+        prefs.edit()
+            .putString(KEY_BLOCKED_HISTORY, next.toString())
+            .apply()
+    }
+
+    private fun readBlockedHistory(
+        prefs: android.content.SharedPreferences
+    ): List<Map<String, Any?>> {
+        val raw = prefs.getString(KEY_BLOCKED_HISTORY, "[]") ?: "[]"
+        val items = mutableListOf<Map<String, Any?>>()
+
+        try {
+            val array = JSONArray(raw)
+
+            for (index in 0 until array.length()) {
+                val item = array.optJSONObject(index) ?: continue
+
+                items.add(
+                    mapOf(
+                        "domain" to item.optString("domain", ""),
+                        "category" to item.optString("category", ""),
+                        "decision" to item.optString("decision", ""),
+                        "score" to item.optInt("score", 0),
+                        "confidence" to item.optInt("confidence", 0),
+                        "package" to item.optString("package", ""),
+                        "detectedAt" to item.optLong("detectedAt", 0L)
+                    )
+                )
+            }
+        } catch (_: Exception) {
+            items.clear()
+        }
+
+        return items
     }
 
     fun reset(context: Context) {

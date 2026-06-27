@@ -6,6 +6,7 @@ import '../../domain/models/focus_shield_state.dart';
 import '../../domain/services/protection_engine.dart';
 import '../widgets/action_button.dart';
 import '../widgets/native_protection_counters_card.dart';
+import '../widgets/production_mode_card.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
@@ -28,8 +29,9 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
-  final _controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
   final List<ProtectionDecision> _unknownReviewQueue = <ProtectionDecision>[];
+
   ProtectionDecision? _decision;
 
   void _scan(String value) {
@@ -73,12 +75,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Color _riskColor(ProtectionDecision decision) {
     if (decision.blocked) return AppTheme.danger;
     if (decision.isUnknown) return AppTheme.warning;
+
     return AppTheme.primary;
   }
 
   String _decisionTitle(ProtectionDecision decision) {
     if (decision.blocked) return 'Blocked by AI-lite classifier';
     if (decision.isUnknown) return 'Unknown site added to review queue';
+
     return 'Domain allowed';
   }
 
@@ -118,124 +122,132 @@ class _ScannerScreenState extends State<ScannerScreen> {
             },
           ),
         ),
-        ShieldCard(
-          borderColor: widget.protectionEnabled
-              ? AppTheme.secondary
-              : AppTheme.warning,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Testing Tools — Manual AI-lite Scanner'),
-              const SizedBox(height: 8),
-              const Text(
-                'Local classifier checks saved blocklist, risk signals, domain shape, category, and confidence.',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('scannerDomainInput'),
-                controller: _controller,
-                decoration: const InputDecoration(
-                  hintText: 'example.com or suspicious-example.com',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ActionButton(
-                label: 'Scan Website',
-                subtitle: 'AI-lite risk score + explanation',
-                onPressed: () => _scan(_controller.text),
-              ),
-            ],
-          ),
-        ),
-        ShieldCard(
+        TestingToolsVisibilityGate(
           child: Column(
             children: [
-              ActionButton(
-                label: 'Test Safe Domain',
-                subtitle: 'study-example.com',
-                onPressed: _scanSafeExample,
-              ),
-              const SizedBox(height: 10),
-              ActionButton(
-                label: 'Test Blocked Domain',
-                subtitle: 'blocked-example.com',
-                onPressed: _scanBlockedExample,
-              ),
-              const SizedBox(height: 10),
-              ActionButton(
-                label: 'Test High-Risk Signal',
-                subtitle: 'adult-risk-example.com',
-                onPressed: _scanHighRiskExample,
-              ),
-            ],
-          ),
-        ),
-        if (decision != null)
-          ShieldCard(
-            borderColor: _riskColor(decision),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_decisionTitle(decision)),
-                const SizedBox(height: 8),
-                Text('Domain: ${decision.domain}'),
-                Text('Category: ${decision.category}'),
-                Text('Risk score: ${decision.riskScore}/100'),
-                Text('Confidence: ${(decision.confidence * 100).round()}%'),
-                const SizedBox(height: 8),
-                Text(decision.reason),
-                const SizedBox(height: 12),
-                const Text('Risk signals'),
-                const SizedBox(height: 6),
-                ...decision.signals.map(
-                  (signal) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text('• $signal'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ShieldCard(
-          borderColor: AppTheme.warning,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Unknown-site review queue'),
-              const SizedBox(height: 8),
-              Text(
-                _unknownReviewQueue.isEmpty
-                    ? 'No unknown sites waiting for review.'
-                    : '${_unknownReviewQueue.length} unknown site(s) waiting for review.',
-              ),
-              const SizedBox(height: 12),
-              if (_unknownReviewQueue.isNotEmpty)
-                ..._unknownReviewQueue
-                    .take(5)
-                    .map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          '• ${item.domain} — ${item.riskScore}/100 — ${item.category}',
-                        ),
+              ShieldCard(
+                borderColor: widget.protectionEnabled
+                    ? AppTheme.secondary
+                    : AppTheme.warning,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Testing Tools — Manual AI-lite Scanner'),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Local classifier checks saved blocklist, risk signals, domain shape, category, and confidence.',
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key('scannerDomainInput'),
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'example.com or suspicious-example.com',
+                        border: OutlineInputBorder(),
                       ),
                     ),
-              if (_unknownReviewQueue.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                ActionButton(
-                  label: 'Clear Review Queue',
-                  subtitle: 'Local queue only',
-                  onPressed: _clearUnknownQueue,
+                    const SizedBox(height: 12),
+                    ActionButton(
+                      label: 'Scan Website',
+                      subtitle: 'AI-lite risk score + explanation',
+                      onPressed: () => _scan(_controller.text),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              ShieldCard(
+                child: Column(
+                  children: [
+                    ActionButton(
+                      label: 'Test Safe Domain',
+                      subtitle: 'study-example.com',
+                      onPressed: _scanSafeExample,
+                    ),
+                    const SizedBox(height: 10),
+                    ActionButton(
+                      label: 'Test Blocked Domain',
+                      subtitle: 'blocked-example.com',
+                      onPressed: _scanBlockedExample,
+                    ),
+                    const SizedBox(height: 10),
+                    ActionButton(
+                      label: 'Test High-Risk Signal',
+                      subtitle: 'adult-risk-example.com',
+                      onPressed: _scanHighRiskExample,
+                    ),
+                  ],
+                ),
+              ),
+              if (decision != null)
+                ShieldCard(
+                  borderColor: _riskColor(decision),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_decisionTitle(decision)),
+                      const SizedBox(height: 8),
+                      Text('Domain: ${decision.domain}'),
+                      Text('Category: ${decision.category}'),
+                      Text('Risk score: ${decision.riskScore}/100'),
+                      Text(
+                        'Confidence: ${(decision.confidence * 100).round()}%',
+                      ),
+                      const SizedBox(height: 8),
+                      Text(decision.reason),
+                      const SizedBox(height: 12),
+                      const Text('Risk signals'),
+                      const SizedBox(height: 6),
+                      ...decision.signals.map(
+                        (signal) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text('• $signal'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ShieldCard(
+                borderColor: AppTheme.warning,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Unknown-site review queue'),
+                    const SizedBox(height: 8),
+                    Text(
+                      _unknownReviewQueue.isEmpty
+                          ? 'No unknown sites waiting for review.'
+                          : '${_unknownReviewQueue.length} unknown site(s) waiting for review.',
+                    ),
+                    const SizedBox(height: 12),
+                    if (_unknownReviewQueue.isNotEmpty)
+                      ..._unknownReviewQueue
+                          .take(5)
+                          .map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                '• ${item.domain} — ${item.riskScore}/100 — ${item.category}',
+                              ),
+                            ),
+                          ),
+                    if (_unknownReviewQueue.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ActionButton(
+                        label: 'Clear Review Queue',
+                        subtitle: 'Local queue only',
+                        onPressed: _clearUnknownQueue,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ],
           ),
         ),
         ShieldCard(
           borderColor: AppTheme.secondary,
           child: const Text(
-            'Testing tools remain available below. Real scanned, new, total, and blocked counters now come from native Accessibility detection. Phase 6H noise control is active with duplicate cooldown and unknown-site cooldown.',
+            'Phase 6I Real Use Mode hides manual testing tools by default. Native Accessibility detection, intervention, notifications, counters, and noise control remain active.',
           ),
         ),
       ],

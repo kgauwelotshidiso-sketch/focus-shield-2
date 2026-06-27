@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../platform/protection_channel.dart';
 import '../widgets/action_button.dart';
+import '../widgets/blocked_site_history_card.dart';
+import '../widgets/production_mode_card.dart';
+import '../widgets/protection_readiness_card.dart';
+import '../widgets/protection_status_center_card.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
-import '../widgets/protection_readiness_card.dart';
 
 class AccessibilityDetectionScreen extends StatefulWidget {
   const AccessibilityDetectionScreen({
@@ -91,13 +94,17 @@ class _AccessibilityDetectionScreenState
 
   String _value(String key) {
     final value = _status[key];
+
     if (value == null) return '';
+
     return value.toString();
   }
 
   String _safeValue(String key, String fallback) {
     final value = _value(key);
+
     if (value.trim().isEmpty) return fallback;
+
     return value;
   }
 
@@ -108,19 +115,14 @@ class _AccessibilityDetectionScreenState
       return raw.map((item) => item.toString()).toList();
     }
 
-    return <String>[];
+    return const <String>[];
   }
 
   String _cleanMode() {
     final mode = _value('mode').toLowerCase();
 
-    if (mode.contains('local')) {
-      return 'Local';
-    }
-
-    if (mode.isEmpty) {
-      return 'Local';
-    }
+    if (mode.contains('local')) return 'Local';
+    if (mode.isEmpty) return 'Local';
 
     return 'Active';
   }
@@ -186,6 +188,12 @@ class _AccessibilityDetectionScreenState
         ),
         const ProtectionReadinessCard(),
         const SizedBox(height: 16),
+        const ProtectionStatusCenterCard(),
+        const SizedBox(height: 16),
+        const ProductionModeCard(showControls: false),
+        const SizedBox(height: 16),
+        const BlockedSiteHistoryCard(),
+        const SizedBox(height: 16),
         ShieldCard(
           borderColor: _decisionColor(),
           child: Column(
@@ -230,7 +238,7 @@ class _AccessibilityDetectionScreenState
               Text(lastMessage),
               const SizedBox(height: 12),
               const Text(
-                'Blocked detections open the native intervention screen. Blocklist sync is now tracked separately so it does not overwrite the protection action.',
+                'Blocked detections open the native intervention screen.\nBlocklist sync is tracked separately so it does not overwrite the protection action.',
               ),
             ],
           ),
@@ -266,7 +274,7 @@ class _AccessibilityDetectionScreenState
               const Text('Setup'),
               const SizedBox(height: 8),
               const Text(
-                'Android requires you to manually enable Focus Shield in Accessibility Settings. If Android shows Restricted setting, open Settings > Apps > Focus Shield > More options > Allow restricted settings.',
+                'Android requires you to manually enable Focus Shield in Accessibility Settings.\nIf Android shows Restricted setting, open Settings > Apps > Focus Shield > More options > Allow restricted settings.',
               ),
               const SizedBox(height: 12),
               ActionButton(
@@ -303,13 +311,7 @@ class _AccessibilityDetectionScreenState
         ShieldCard(
           borderColor: AppTheme.primary,
           child: const Text(
-            'Phase 6H ignores Android System UI rescans, suppresses repeated visible-domain events, cools down repeated unknown-site detections, syncs the saved blocklist into native Accessibility detection, and keeps the intervention screen active.',
-          ),
-        ),
-        ShieldCard(
-          borderColor: AppTheme.secondary,
-          child: const Text(
-            'Main app counter sync is active. Home, Scanner, and Progress can now read native Accessibility counters, readiness health, noise-control stats, and latest blocked-site data.',
+            'Phase 6I production lockdown is active. Real Use Mode hides testing tools by default, blocked-site history is tracked, and protection status is centralized.',
           ),
         ),
       ],

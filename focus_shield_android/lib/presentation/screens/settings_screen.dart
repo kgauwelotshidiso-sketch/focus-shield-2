@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../widgets/action_button.dart';
+import '../widgets/blocked_site_history_card.dart';
+import '../widgets/production_mode_card.dart';
 import '../widgets/protection_status_card.dart';
+import '../widgets/protection_status_center_card.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
 
@@ -45,6 +49,12 @@ class SettingsScreen extends StatelessWidget {
         const Text('Protection control center'),
         Text('Active day: ${state.lastActiveDate}'),
         const SizedBox(height: 18),
+        const ProductionModeCard(),
+        const SizedBox(height: 16),
+        const ProtectionStatusCenterCard(),
+        const SizedBox(height: 16),
+        const BlockedSiteHistoryCard(),
+        const SizedBox(height: 16),
         ShieldCard(
           borderColor: state.commitmentSet
               ? AppTheme.primary
@@ -56,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 state.commitmentSet
-                    ? 'Commitment: ${state.commitmentDays} days. Days remaining: ${state.commitmentDaysRemaining}.'
+                    ? 'Commitment: ${state.commitmentDays} days.\nDays remaining: ${state.commitmentDaysRemaining}.'
                     : 'Protection cannot activate until a commitment duration is set.',
               ),
               const SizedBox(height: 12),
@@ -106,7 +116,7 @@ class SettingsScreen extends StatelessWidget {
         ShieldCard(
           borderColor: AppTheme.warning,
           child: const Text(
-            'System-wide VPN filtering is paused while the DNS route issue is repaired. Accessibility setup must be enabled manually by the user.',
+            'System-wide VPN filtering is paused while the DNS route issue is repaired.\nAccessibility detection is the active production protection layer.',
           ),
         ),
         ShieldCard(
@@ -115,7 +125,7 @@ class SettingsScreen extends StatelessWidget {
             children: [
               ActionButton(
                 label: state.protectionEnabled
-                    ? 'Turn Protection Off'
+                    ? 'Protection Active'
                     : 'Turn Protection On',
                 subtitle: !state.commitmentSet
                     ? 'Set commitment first'

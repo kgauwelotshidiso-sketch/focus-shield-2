@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/focus_shield_state.dart';
 import '../../domain/models/goal.dart';
 import '../widgets/action_button.dart';
+import '../widgets/blocked_site_history_card.dart';
+import '../widgets/native_protection_counters_card.dart';
+import '../widgets/production_mode_card.dart';
+import '../widgets/protection_readiness_card.dart';
+import '../widgets/protection_status_center_card.dart';
 import '../widgets/shield_card.dart';
 import '../widgets/stat_grid.dart';
-import '../widgets/native_protection_counters_card.dart';
-import '../widgets/protection_readiness_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -70,7 +74,12 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 16),
         const ProtectionReadinessCard(),
         const SizedBox(height: 16),
-
+        const ProtectionStatusCenterCard(),
+        const SizedBox(height: 16),
+        const ProductionModeCard(showControls: false),
+        const SizedBox(height: 16),
+        const BlockedSiteHistoryCard(compact: true),
+        const SizedBox(height: 16),
         ShieldCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
