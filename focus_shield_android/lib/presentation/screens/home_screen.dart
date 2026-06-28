@@ -78,7 +78,7 @@ class HomeScreen extends StatelessWidget {
         ShieldCard(
           borderColor: AppTheme.primary,
           child: const Text(
-            'Phase 6O fixed Home readiness sync. Home now uses the same production-readiness truth card as Settings, so the stale 0% Setup required Home card is removed.',
+            'Phase 6P keeps Home focused on protection truth, daily mission, goals, and motivation. Quick Actions were removed because the bottom navigation already handles screen movement.',
           ),
         ),
 

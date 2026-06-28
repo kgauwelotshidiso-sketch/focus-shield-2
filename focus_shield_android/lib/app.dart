@@ -31,6 +31,7 @@ import 'presentation/screens/recovery_screen.dart';
 import 'presentation/screens/reflection_screen.dart';
 import 'presentation/screens/scanner_screen.dart';
 import 'presentation/screens/settings_screen.dart';
+import 'presentation/screens/startup_commitment_gate_screen.dart';
 import 'presentation/widgets/focus_shield_bottom_nav.dart';
 
 class FocusShieldApp extends StatelessWidget {
@@ -59,6 +60,10 @@ class FocusShieldShell extends StatefulWidget {
 }
 
 class _FocusShieldShellState extends State<FocusShieldShell> {
+  Future<void> _openVpnSetup() async {
+    await ProtectionChannel().openVpnSettings();
+  }
+
   int _selectedIndex = 0;
 
   bool _showIntervention = false;
@@ -727,12 +732,42 @@ class _FocusShieldShellState extends State<FocusShieldShell> {
     }
 
     if (overlay != null) {
+      // Phase6PStartupGateInserted
+      if (!_state.commitmentSet) {
+        return StartupCommitmentGateScreen(
+          state: _state,
+          onSetCommitmentDays: _setCommitmentDays,
+          onOpenAccessibilitySettings: () {
+            _openAccessibilitySettings();
+          },
+          onOpenVpnSetup: () {
+            _openVpnSetup();
+          },
+          onContinueToApp: () {
+            setState(() {});
+          },
+        );
+      }
+
       return Scaffold(
         body: SafeArea(child: overlay),
         bottomNavigationBar: FocusShieldBottomNav(
           currentIndex: _selectedIndex,
           onTap: _goTo,
         ),
+      );
+    }
+
+    // Phase6PPostLoadingStartupGate
+    if (!_state.commitmentSet) {
+      return StartupCommitmentGateScreen(
+        state: _state,
+        onSetCommitmentDays: _setCommitmentDays,
+        onOpenAccessibilitySettings: _openAccessibilitySettings,
+        onOpenVpnSetup: _openVpnSetup,
+        onContinueToApp: () {
+          setState(() {});
+        },
       );
     }
 
