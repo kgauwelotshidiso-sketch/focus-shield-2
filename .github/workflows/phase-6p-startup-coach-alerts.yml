@@ -977,8 +977,9 @@ jobs:
           path.write_text(text, encoding="utf-8")
           print("Phase 6P analyze repair applied.")
           PY
+          
           - name: Force repair Phase 6P app.dart helpers
-        run: |
+           run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
