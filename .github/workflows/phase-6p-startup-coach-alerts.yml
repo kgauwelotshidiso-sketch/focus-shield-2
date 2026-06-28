@@ -937,6 +937,46 @@ jobs:
 
       - name: Apply Phase 6P patch
         run: python3 tools/phase6p_startup_coach_alerts.py
+        
+      - name: Repair Phase 6P analyze issues
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("focus_shield_android/lib/app.dart")
+          text = path.read_text(encoding="utf-8")
+
+          # Fix: existing _setCommitmentDays is void, so do not await it.
+          text = text.replace(
+              "onSetCommitmentDays: (days) async {\n                    await _setCommitmentDays(days);\n                  },",
+              "onSetCommitmentDays: _setCommitmentDays,"
+          )
+          text = text.replace("await _setCommitmentDays(days);", "_setCommitmentDays(days);")
+
+          # Remove the wrongly inserted top-level _openVpnSetup helper that uses mounted/context outside State.
+          text = re.sub(
+              r"\n\s*Future<void>\s+_openVpnSetup\s*\(\)\s+async\s*\{\s*try\s*\{.*?Open Android VPN settings manually if the setup screen does not open\.',\s*\),\s*\);\s*\}\s*\}\s*",
+              "\n",
+              text,
+              flags=re.DOTALL,
+          )
+
+          # Add the correct _openVpnSetup method inside _FocusShieldShellState,
+          # next to the existing _openAccessibilitySettings method.
+          if "_openVpnSetup()" not in text:
+              anchor = "Future _openAccessibilitySettings() async { await ProtectionChannel().openAccessibilitySettings(); }"
+              replacement = (
+                  "Future _openAccessibilitySettings() async { await ProtectionChannel().openAccessibilitySettings(); }\n"
+                  "Future _openVpnSetup() async { await ProtectionChannel().openVpnSettings(); }"
+              )
+              if anchor not in text:
+                  raise SystemExit("Could not find _openAccessibilitySettings anchor in app.dart")
+              text = text.replace(anchor, replacement, 1)
+
+          path.write_text(text, encoding="utf-8")
+          print("Phase 6P analyze repair applied.")
+          PY
 
       - name: Format Dart files
         working-directory: focus_shield_android
