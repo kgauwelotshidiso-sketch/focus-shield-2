@@ -1034,6 +1034,21 @@ jobs:
           print("Phase 6P app.dart helper repair complete.")
           PY
 
+      - name: Remove unused services import
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("focus_shield_android/lib/app.dart")
+          text = path.read_text(encoding="utf-8")
+
+          text = text.replace("import 'package:flutter/services.dart';\n", "")
+          text = text.replace('import "package:flutter/services.dart";\n', "")
+
+          path.write_text(text, encoding="utf-8")
+          print("Removed unused flutter/services.dart import from app.dart.")
+          PY
+
       - name: Format Dart files
         working-directory: focus_shield_android
         run: |
