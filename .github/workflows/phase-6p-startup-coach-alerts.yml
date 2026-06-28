@@ -977,6 +977,109 @@ jobs:
           path.write_text(text, encoding="utf-8")
           print("Phase 6P analyze repair applied.")
           PY
+          - name: Force repair Phase 6P app.dart helpers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("focus_shield_android/lib/app.dart")
+          text = path.read_text(encoding="utf-8")
+
+          def remove_function_before_class(source, function_name, class_name):
+              class_index = source.find(f"class {class_name}")
+              if class_index == -1:
+                  raise SystemExit(f"Could not find {class_name}")
+
+              prefix = source[:class_index]
+              suffix = source[class_index:]
+
+              pattern = re.compile(
+                  rf"(?:Future<void>|Future|void)\s+{re.escape(function_name)}\s*\([^)]*\)\s*(?:async\s*)?\{{",
+                  re.MULTILINE,
+              )
+
+              match = pattern.search(prefix)
+              if not match:
+                  return source
+
+              start = match.start()
+              brace_start = prefix.find("{", match.start())
+              depth = 0
+              end = None
+
+              for i in range(brace_start, len(prefix)):
+                  if prefix[i] == "{":
+                      depth += 1
+                  elif prefix[i] == "}":
+                      depth -= 1
+                      if depth == 0:
+                          end = i + 1
+                          break
+
+              if end is None:
+                  raise SystemExit(f"Could not remove bad top-level {function_name}")
+
+              new_prefix = prefix[:start].rstrip() + "\n\n" + prefix[end:].lstrip()
+              return new_prefix + suffix
+
+          # Remove the broken top-level helper that causes mounted/context errors.
+          text = remove_function_before_class(
+              text,
+              "_openVpnSetup",
+              "_FocusShieldShellState",
+          )
+
+          # Fix callback that wrongly awaited a void method.
+          text = re.sub(
+              r"onSetCommitmentDays:\s*\(days\)\s*async\s*\{\s*await\s+_setCommitmentDays\(days\);\s*\},",
+              "onSetCommitmentDays: _setCommitmentDays,",
+              text,
+              flags=re.DOTALL,
+          )
+          text = text.replace("await _setCommitmentDays(days);", "_setCommitmentDays(days);")
+
+          # Ensure MethodChannel import exists for the VPN setup helper.
+          if "package:flutter/services.dart" not in text:
+              text = text.replace(
+                  "import 'package:flutter/material.dart';",
+                  "import 'package:flutter/material.dart';\nimport 'package:flutter/services.dart';",
+              )
+
+          # Add the correct helper INSIDE _FocusShieldShellState.
+          class_match = re.search(
+              r"class\s+_FocusShieldShellState\s+extends\s+State<[^>]+>\s*\{",
+              text,
+          )
+
+          if not class_match:
+              raise SystemExit("Could not find _FocusShieldShellState class opening")
+
+          class_body_start = class_match.end()
+          class_body = text[class_body_start:]
+
+          if not re.search(r"(?:Future<void>|Future|void)\s+_openVpnSetup\s*\(", class_body):
+              helper = r'''
+
+            Future<void> _openVpnSetup() async {
+              try {
+                const channel = MethodChannel('focus_shield/protection');
+                await channel.invokeMethod('openVpnSettings');
+              } catch (_) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Open Android VPN settings manually if the setup screen does not open.'),
+                  ),
+                );
+              }
+            }
+          '''
+              text = text[:class_body_start] + helper + text[class_body_start:]
+
+          path.write_text(text, encoding="utf-8")
+          print("Forced Phase 6P helper repair complete.")
+          PY
 
       - name: Format Dart files
         working-directory: focus_shield_android
